@@ -1,0 +1,15 @@
+/* Budget page — refinements on top of the shared design system. */
+
+[data-budget-state] {
+  padding: 4px 0;
+}
+
+/* Budget rows sit inside a card-body list. */
+[data-budget-list] .budget-list {
+  gap: 18px;
+}
+
+[data-budget-list] .budget-item .b-meta .month {
+  font-size: 0.78rem;
+  color: var(--muted);
+}

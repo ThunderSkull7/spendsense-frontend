@@ -1,0 +1,25 @@
+/* Reports page — chart layout refinements on top of the shared design system. */
+
+.chart-box {
+  width: 100%;
+}
+
+.chart-box canvas {
+  width: 100% !important;
+}
+
+[data-spending-chart] .legend,
+[data-cashflow-chart] .legend {
+  gap: 16px;
+}
+
+[data-alerts] .notif-item:first-child,
+[data-budget-status] .budget-item:first-child {
+  padding-top: 0;
+}
+
+@media (max-width: 1180px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}

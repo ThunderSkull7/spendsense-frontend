@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="api-base-url" content="http://127.0.0.1:8002" />
+    <title>Categories | SpendSense</title>
+    <script src="../theme.js"></script>
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="categories.css" />
+  </head>
+  <body class="app-body">
+    <aside class="sidebar" data-sidebar>
+      <a class="sidebar-brand" href="../dashboard/dashboard.html">
+        <span class="brand-mark">S</span>
+        <span>SpendSense</span>
+      </a>
+      <nav class="sidebar-nav" aria-label="Main navigation">
+        <p class="sidebar-group">Overview</p>
+        <a class="sidebar-link" href="../dashboard/dashboard.html" data-nav="dashboard"><span class="nav-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Dashboard</a>
+        <p class="sidebar-group">Money</p>
+        <a class="sidebar-link" href="../expense-management/expenses.html" data-nav="expenses"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>Expenses</a>
+        <a class="sidebar-link" href="../income-management/income.html" data-nav="income"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income</a>
+        <a class="sidebar-link" href="../budget-planning/budget.html" data-nav="budgets"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budgets</a>
+        <a class="sidebar-link active" href="../categories-management/categories.html" data-nav="categories"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h6l10 10-8 8L3 11z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg></span>Categories</a>
+        <p class="sidebar-group">Insights</p>
+        <a class="sidebar-link" href="../reports-analytics/reports.html" data-nav="reports"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg></span>Reports</a>
+        <p class="sidebar-group">Account</p>
+        <a class="sidebar-link" href="../notifications/notifications.html" data-nav="notifications"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>Notifications</a>
+        <a class="sidebar-link" href="../settings/settings.html" data-nav="settings"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</a>
+        <a class="sidebar-link" href="../support/support.html" data-nav="support"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 1 1 3.8 2.6c-.8.3-1 .9-1 1.6v.4"/><path d="M12 17.2v.01"/></svg></span>Support</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-chip">
+          <span class="user-avatar" data-user-avatar>S</span>
+          <span class="user-meta"><strong data-user-name>Account</strong><small data-user-email>Signed-in session</small></span>
+        </div>
+        <button class="btn ghost sm block" type="button" data-logout>Log out</button>
+      </div>
+    </aside>
+    <div class="sidebar-overlay" data-sidebar-overlay></div>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
+        <div class="topbar-titles">
+          <span class="topbar-title">Categories</span>
+          <span class="topbar-sub">Organize how your money is grouped</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="grid grid-main-side">
+          <article class="card">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">All categories</h2>
+                <p class="card-sub" data-category-summary>Loading…</p>
+              </div>
+            </div>
+
+            <div data-category-state>
+              <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading categories…</p></div>
+            </div>
+
+            <div class="card-body">
+              <div class="category-grid" data-category-list hidden></div>
+            </div>
+          </article>
+
+          <aside class="card">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">New category</h2>
+                <p class="card-sub">Group expenses or income</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <form class="category-form" novalidate>
+                <div class="field">
+                  <label for="categoryName">Category name</label>
+                  <input id="categoryName" name="name" type="text" placeholder="e.g. Groceries" maxlength="255" required />
+                </div>
+
+                <div class="choice-chips" role="group" aria-label="Common categories">
+                  <button class="chip" type="button" data-quick-name="Food">Food</button>
+                  <button class="chip" type="button" data-quick-name="Groceries">Groceries</button>
+                  <button class="chip" type="button" data-quick-name="Rent">Rent</button>
+                  <button class="chip" type="button" data-quick-name="Transport">Transport</button>
+                  <button class="chip" type="button" data-quick-name="Utilities">Utilities</button>
+                  <button class="chip" type="button" data-quick-name="Salary">Salary</button>
+                  <button class="chip" type="button" data-quick-name="Freelance">Freelance</button>
+                </div>
+
+                <div class="field">
+                  <span class="field-label">Category type</span>
+                  <div class="choice-chips" data-category-type-selector>
+                    <button class="chip active" type="button" data-category-choice="expense">Expense</button>
+                    <button class="chip" type="button" data-category-choice="income">Income</button>
+                  </div>
+                </div>
+
+                <button class="btn primary block" type="submit">Add category</button>
+                <button class="btn ghost block" type="button" data-cancel-edit hidden>Cancel edit</button>
+                <p class="category-message" data-category-message aria-live="polite"></p>
+              </form>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+
+    <script src="../script.js"></script>
+    <script src="categories.js"></script>
+  </body>
+</html>

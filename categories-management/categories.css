@@ -1,0 +1,26 @@
+/* Categories page — refinements on top of the shared design system. */
+
+.field-label {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--ink-2);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.choice-chips {
+  margin-bottom: 4px;
+}
+
+[data-category-state] {
+  padding: 4px 0;
+}
+
+[data-category-list] {
+  padding: 0;
+}
+
+/* Tiles live inside a card-body; keep spacing when list is populated. */
+.category-tile .pill {
+  margin-top: 2px;
+}

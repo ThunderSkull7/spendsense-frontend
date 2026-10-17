@@ -1,0 +1,26 @@
+/* Expenses pages — refinements on top of the shared design system. */
+
+[data-expense-state] {
+  padding: 4px 0;
+}
+
+.filter-field {
+  min-width: 210px;
+}
+
+.filter-field select {
+  width: 100%;
+}
+
+.card-footer.center {
+  display: flex;
+  justify-content: center;
+}
+
+/* Keep long descriptions readable on narrow screens. */
+@media (max-width: 760px) {
+  .filter-field {
+    min-width: 0;
+    width: 100%;
+  }
+}

@@ -1,0 +1,11 @@
+/* Support page — refinements on top of the shared design system. */
+
+.faq-list details summary {
+  user-select: none;
+}
+
+@media (max-width: 1180px) {
+  .grid-main-side {
+    grid-template-columns: 1fr;
+  }
+}

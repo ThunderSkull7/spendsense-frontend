@@ -1,0 +1,23 @@
+/* Settings page — refinements on top of the shared design system. */
+
+.currency-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+
+.currency-preview strong {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1180px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}

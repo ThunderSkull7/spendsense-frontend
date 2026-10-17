@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="api-base-url" content="http://127.0.0.1:8002" />
+    <title>SpendSense — Personal finance, simplified</title>
+    <script src="theme.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="app-body">
+    <header class="landing-nav">
+      <div class="l-container l-bar">
+        <a class="brand" href="index.html" aria-label="SpendSense home">
+          <span class="brand-mark">S</span>
+          <span>SpendSense</span>
+        </a>
+        <nav class="l-links" aria-label="Site">
+          <a href="#features">Features</a>
+          <a href="dashboard/dashboard.html">Dashboard</a>
+          <a href="support/support.html">Support</a>
+        </nav>
+        <div class="l-actions">
+          <button class="btn ghost" type="button" data-auth-toggle="login">Log in</button>
+          <button class="btn primary" type="button" data-auth-toggle="register">Get started</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="l-container hero">
+        <div class="hero-copy">
+          <span class="hero-badge">
+            <span class="dot"></span>
+            Personal finance, simplified
+          </span>
+          <h1>Track every rupee.<br />Spend with confidence.</h1>
+          <p class="hero-sub">
+            SpendSense brings your income, expenses, budgets, and reports into one calm
+            dashboard — so you always know where your money stands.
+          </p>
+          <div class="hero-actions">
+            <button class="btn primary" type="button" data-auth-toggle="register">Create free account</button>
+            <button class="btn secondary" type="button" data-auth-toggle="login">Log in</button>
+          </div>
+          <div class="trust-row">
+            <div><strong>₹ INR-ready</strong><span>Rupee formatting built in</span></div>
+            <div><strong>Budget alerts</strong><span>Warnings before you overspend</span></div>
+            <div><strong>Clear reports</strong><span>Category &amp; cash-flow charts</span></div>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="preview-card">
+            <div class="preview-head">
+              <strong>Monthly overview</strong>
+              <span class="pill green">Sample preview</span>
+            </div>
+            <div class="preview-stats">
+              <div class="preview-stat"><span>Income</span><strong>₹82,000</strong></div>
+              <div class="preview-stat"><span>Expenses</span><strong>₹46,500</strong></div>
+              <div class="preview-stat"><span>Net flow</span><strong>₹35,500</strong></div>
+            </div>
+            <div class="preview-bars">
+              <div class="bar-row">
+                <div class="bar-meta"><span><span class="dot"></span> Food</span><strong>₹12,400</strong></div>
+                <div class="progress"><span style="width: 62%"></span></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-meta"><span><span class="dot teal"></span> Travel</span><strong>₹7,800</strong></div>
+                <div class="progress"><span style="width: 39%"></span></div>
+              </div>
+              <div class="bar-row">
+                <div class="bar-meta"><span><span class="dot amber"></span> Shopping</span><strong>₹5,200</strong></div>
+                <div class="progress"><span style="width: 26%"></span></div>
+              </div>
+            </div>
+            <div class="preview-rows">
+              <div class="preview-row">
+                <span class="pill neutral">Groceries</span>
+                <span class="amt amount-neg">−₹2,340</span>
+              </div>
+              <div class="preview-row">
+                <span class="pill neutral">Metro card</span>
+                <span class="amt amount-neg">−₹1,000</span>
+              </div>
+              <div class="preview-row">
+                <span class="pill neutral">Salary</span>
+                <span class="amt amount-pos">+₹68,000</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="l-container features" id="features">
+        <div class="feature-grid">
+          <article class="feature-card">
+            <span class="stat-icon">
+              <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg>
+            </span>
+            <h3>Track income &amp; expenses</h3>
+            <p>Log spending in seconds with categories, dates, and notes — then see recent activity at a glance.</p>
+          </article>
+          <article class="feature-card">
+            <span class="stat-icon tone-amber">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg>
+            </span>
+            <h3>Budgets with alerts</h3>
+            <p>Set monthly category limits and get warned before a budget tips over — not after.</p>
+          </article>
+          <article class="feature-card">
+            <span class="stat-icon tone-blue">
+              <svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-6"/><path d="M22 20H2"/></svg>
+            </span>
+            <h3>Reports &amp; insights</h3>
+            <p>Category breakdowns, month-over-month cash flow, and budget progress — from your real data.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="landing-footer">
+      <div class="l-container l-bar">
+        <span>© 2026 SpendSense · Personal expense tracking</span>
+        <div class="row">
+          <a class="link" href="support/support.html">Support</a>
+          <a class="link" href="dashboard/dashboard.html">Open dashboard</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Auth modal (login / register) -->
+    <div id="auth-modal" role="dialog" aria-modal="true" aria-label="Sign in to SpendSense" aria-hidden="true">
+      <div class="modal-backdrop">
+        <div class="modal" tabindex="-1">
+          <button class="modal-close" type="button" data-auth-close aria-label="Close">×</button>
+          <h2>Welcome to SpendSense</h2>
+          <p class="modal-sub">Log in or create an account to start tracking your money.</p>
+
+          <div class="auth-tabs" role="tablist" aria-label="Authentication mode">
+            <button class="auth-tab" type="button" role="tab" data-auth-tab="login" aria-selected="true">Log in</button>
+            <button class="auth-tab" type="button" role="tab" data-auth-tab="register" aria-selected="false">Create account</button>
+          </div>
+
+          <div data-login-section>
+            <form data-auth-form data-redirect="dashboard/dashboard.html" novalidate>
+              <div class="field">
+                <label for="login-email">Email</label>
+                <input id="login-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+              </div>
+              <div class="field">
+                <label for="login-password">Password</label>
+                <div class="password-field">
+                  <input id="login-password" name="password" type="password" placeholder="Your password" autocomplete="current-password" required />
+                  <button type="button" data-toggle-password aria-label="Show password">Show</button>
+                </div>
+              </div>
+              <button class="btn primary block" type="submit">Log in</button>
+              <p class="auth-message" data-auth-message aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div data-register-section style="display: none">
+            <form data-auth-form data-redirect="dashboard/dashboard.html" novalidate>
+              <div class="field">
+                <label for="register-name">Name</label>
+                <input id="register-name" name="name" type="text" placeholder="Your name" autocomplete="name" required />
+              </div>
+              <div class="field">
+                <label for="register-email">Email</label>
+                <input id="register-email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+              </div>
+              <div class="field">
+                <label for="register-password">Password</label>
+                <div class="password-field">
+                  <input id="register-password" name="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" required />
+                  <button type="button" data-toggle-password aria-label="Show password">Show</button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="register-confirm">Confirm password</label>
+                <div class="password-field">
+                  <input id="register-confirm" name="password_confirmation" type="password" placeholder="Repeat your password" autocomplete="new-password" required />
+                  <button type="button" data-toggle-password aria-label="Show password">Show</button>
+                </div>
+              </div>
+              <button class="btn primary block" type="submit">Create account</button>
+              <p class="auth-message" data-auth-message aria-live="polite"></p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

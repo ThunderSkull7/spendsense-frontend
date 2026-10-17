@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="api-base-url" content="http://127.0.0.1:8002" />
+    <title>Create account | SpendSense</title>
+    <script src="../theme.js"></script>
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="auth.css" />
+  </head>
+  <body class="app-body auth-page">
+    <main class="auth-card">
+      <div class="auth-head">
+        <span class="brand-mark">S</span>
+        <h1>Create your account</h1>
+        <p>Start tracking income, expenses, and budgets in minutes.</p>
+      </div>
+
+      <form class="auth-form" data-auth-form novalidate>
+        <div class="field">
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" placeholder="Your name" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="password-field">
+            <input id="password" name="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" required />
+            <button type="button" data-toggle-password aria-label="Show password">Show</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="password_confirmation">Confirm password</label>
+          <div class="password-field">
+            <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Repeat your password" autocomplete="new-password" required />
+            <button type="button" data-toggle-password aria-label="Show password">Show</button>
+          </div>
+        </div>
+        <button class="btn primary block" type="submit">Create account</button>
+        <p class="auth-message" data-auth-message aria-live="polite"></p>
+      </form>
+
+      <p class="auth-switch">
+        Already have an account? <a href="login.html">Log in</a>
+      </p>
+      <p class="auth-switch secondary-switch">
+        <a href="../index.html">← Back to home</a>
+      </p>
+    </main>
+
+    <script src="../script.js"></script>
+    <script src="auth.js"></script>
+  </body>
+</html>

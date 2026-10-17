@@ -1,0 +1,40 @@
+/* Authentication pages — refinements on top of the shared design system. */
+
+.auth-page {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Soft sage glow in the corner for a calm, branded backdrop. */
+.auth-page::before {
+  content: "";
+  position: absolute;
+  top: -180px;
+  right: -160px;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--primary-100), transparent);
+  pointer-events: none;
+}
+
+.auth-page::after {
+  content: "";
+  position: absolute;
+  bottom: -220px;
+  left: -160px;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--teal-100), transparent);
+  pointer-events: none;
+}
+
+.auth-card {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-message {
+  text-align: center;
+}

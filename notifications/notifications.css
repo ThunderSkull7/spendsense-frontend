@@ -1,0 +1,13 @@
+/* Notifications page — refinements on top of the shared design system. */
+
+.mb-2 {
+  margin-bottom: 14px;
+}
+
+.reminder-form .check-row {
+  padding: 4px 0;
+}
+
+.notification-message {
+  min-height: 1.2em;
+}

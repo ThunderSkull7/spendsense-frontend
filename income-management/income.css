@@ -1,0 +1,17 @@
+/* Income page — refinements on top of the shared design system. */
+
+[data-income-state] {
+  padding: 4px 0;
+}
+
+.card-footer.center {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 1180px) {
+  /* The form card should not stretch awkwardly once the grid collapses. */
+  .grid-main-side > aside .card-body {
+    padding-bottom: 22px;
+  }
+}

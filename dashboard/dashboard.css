@@ -1,0 +1,42 @@
+/* Dashboard page — layout refinements on top of the shared design system. */
+
+[data-stat] {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 34px;
+}
+
+.stat-value.pos {
+  color: var(--success);
+}
+
+.stat-value.neg {
+  color: var(--danger);
+}
+
+/* Category share bars reuse the shared progress component. */
+.progress > span.teal { background: var(--teal); }
+.progress > span.amber { background: var(--amber); }
+.progress > span.blue { background: var(--blue); }
+.progress > span.rose { background: var(--rose); }
+
+[data-comparison] .legend {
+  margin-top: 16px;
+}
+
+[data-comparison] .delta-line {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+[data-comparison] .delta-line .up {
+  color: var(--danger);
+  font-weight: 650;
+}
+
+[data-comparison] .delta-line .down {
+  color: var(--success);
+  font-weight: 650;
+}
