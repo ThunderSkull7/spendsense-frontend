@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const stateEl = document.querySelector('[data-category-state]');
   const summaryEl = document.querySelector('[data-category-summary]');
   const typeButtons = document.querySelectorAll('[data-category-choice]');
-  const quickNames = document.querySelectorAll('[data-quick-name]');
+  const quickNameChips = document.querySelectorAll('[data-quick-name]');
   const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
   const cancelEditBtn = document.querySelector('[data-cancel-edit]');
   let editingCategoryId = null;
@@ -49,10 +49,42 @@ document.addEventListener('DOMContentLoaded', () => {
     return (data && data.message) || fallback;
   };
 
+  // --- Custom ("Other") category mode state ---
+  // Explicit mode flag — never inferred from placeholder text.
+  let isCustomCategoryMode = false;
+
+  const updateCustomCategoryState = () => {
+    if (!nameInput) return;
+    if (isCustomCategoryMode) {
+      nameInput.setAttribute('required', '');
+      nameInput.setAttribute('pattern', '[^\\s].*'); // reject whitespace-only names
+      nameInput.placeholder = 'Enter your category name';
+    } else {
+      nameInput.removeAttribute('required');
+      nameInput.removeAttribute('pattern');
+      nameInput.placeholder = 'e.g. Groceries';
+    }
+  };
+
+  const setCustomCategoryMode = (isCustom) => {
+    isCustomCategoryMode = isCustom;
+    updateCustomCategoryState();
+  };
+
+  const resetCustomCategoryState = () => {
+    if (!nameInput) return;
+    isCustomCategoryMode = false;
+    nameInput.value = '';
+    nameInput.removeAttribute('required');
+    nameInput.removeAttribute('pattern');
+    nameInput.placeholder = 'e.g. Groceries';
+  };
+
   const exitEditMode = () => {
     editingCategoryId = null;
     if (cancelEditBtn) cancelEditBtn.hidden = true;
     if (submitBtn) submitBtn.textContent = 'Add category';
+    resetCustomCategoryState();
   };
 
   const enterEditMode = (category) => {
@@ -60,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editingCategoryId = category.id;
     if (nameInput) nameInput.value = category.name || '';
     setType(category.type);
+    setCustomCategoryMode(false);
     if (submitBtn) submitBtn.textContent = 'Update category';
     if (cancelEditBtn) cancelEditBtn.hidden = false;
     setMessage('Editing this category — save to update it.');
@@ -76,48 +109,46 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Quick-name chips fill the input (and hint the type) ---
+  // --- Quick-name chips: predefined suggestions vs. "Other" ---
   const incomeNames = new Set(['Salary', 'Freelance']);
-  quickNames.forEach((chip) => {
+  quickNameChips.forEach((chip) => {
     chip.addEventListener('click', () => {
       const name = chip.dataset.quickName;
-      if (nameInput) nameInput.value = name;
-      setType(incomeNames.has(name) ? 'income' : 'expense');
-      nameInput && nameInput.focus();
+      if (!nameInput) return;
+
+      if (name === 'Other') {
+        // Explicitly activate custom-category mode; the user picks the type.
+        nameInput.value = '';
+        setCustomCategoryMode(true);
+        nameInput.focus();
+      } else {
+        // Predefined suggestion: fill the input and leave custom mode.
+        nameInput.value = name;
+        setCustomCategoryMode(false);
+        setType(incomeNames.has(name) ? 'income' : 'expense');
+        nameInput.focus();
+      }
     });
   });
 
-  // --- Handle "Other" category logic ---
-  const handleOtherCategory = () => {
-    if (nameInput && nameInput.placeholder === 'Enter your category name') {
-      nameInput.setAttribute('required', '');
-      nameInput.setAttribute('pattern', '[^\\s].*'); // Prevent only whitespace
-    } else {
-      nameInput?.removeAttribute('required');
-      nameInput?.removeAttribute('pattern');
-    }
-  };
-
-  // --- Create category ---
+  // --- Create / update category ---
   if (form) {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
+
+      // Prevent duplicate submissions while a request is in progress.
+      if (form.dataset.submitting === 'true') return;
+
       const name = nameInput ? nameInput.value.trim() : '';
-      
-      // Special validation for "Other" category
-      if (nameInput && nameInput.placeholder === 'Enter your category name') {
-        if (!name) {
-          return setMessage('Please enter a custom category name.', 'error');
-        }
-        // Additional check for whitespace-only names
-        if (/^\s*$/.test(name)) {
-          return setMessage('Category name cannot be only whitespace.', 'error');
-        }
-        // Check for duplicate category names (the API will also handle this)
-      } else if (!name) {
-        return setMessage('Please enter a category name.', 'error');
+      if (!name) {
+        setMessage(
+          isCustomCategoryMode ? 'Please enter a custom category name.' : 'Please enter a category name.',
+          'error'
+        );
+        return;
       }
 
+      form.dataset.submitting = 'true';
       setMessage(editingCategoryId ? 'Updating category…' : 'Saving category…');
 
       try {
@@ -130,26 +161,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editingCategoryId ? status === 200 : status === 201) {
           setMessage(editingCategoryId ? 'Category updated.' : data.message || 'Category added!', 'success');
           UI.showToast(editingCategoryId ? 'Category updated' : 'Category added', 'success');
-          if (nameInput) {
-            nameInput.value = '';
-            nameInput.placeholder = 'e.g. Groceries';
-            nameInput.focus();
-          }
-          exitEditMode();
+          exitEditMode(); // restores the form and clears custom-category state
           loadCategories();
         } else {
           setMessage(errorDetail(data, editingCategoryId ? 'Failed to update category.' : 'Failed to add category.'), 'error');
         }
       } catch (err) {
         setMessage('Error saving category. ' + (err.message || ''), 'error');
+      } finally {
+        form.dataset.submitting = 'false';
       }
     });
-  }
-
-  // Update Other category handling on input changes
-  if (nameInput) {
-    nameInput.addEventListener('input', handleOtherCategory);
-    nameInput.addEventListener('blur', handleOtherCategory);
   }
 
   // --- List rendering ---
