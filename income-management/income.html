@@ -70,10 +70,10 @@
               <table class="table" data-income-table>
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Source</th>
-                    <th class="num">Amount</th>
-                    <th></th>
+                    <th class="col-tight">Date</th>
+                    <th class="cell-wrap">Source</th>
+                    <th class="num col-tight">Amount</th>
+                    <th class="col-tight"></th>
                   </tr>
                 </thead>
                 <tbody data-income-rows></tbody>
@@ -117,15 +117,20 @@
                 <div class="field">
                   <label for="frequency">Frequency <span class="muted small">(optional)</span></label>
                   <select id="frequency" name="frequency">
-                    <option>One-time</option>
-                    <option>Monthly</option>
-                    <option>Quarterly</option>
-                    <option>Yearly</option>
+                    <option value="one-time">One-time</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Biweekly (every 2 weeks)</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly (every 3 months)</option>
+                    <option value="half-yearly">Half-yearly (every 6 months)</option>
+                    <option value="yearly">Yearly</option>
                   </select>
+                  <p class="field-hint">How often you receive this income. It is saved with the entry — future income is never added automatically.</p>
                 </div>
                 <div class="field">
                   <label for="notes">Notes <span class="muted small">(optional)</span></label>
-                  <textarea id="notes" name="notes" rows="2" placeholder="e.g. October salary"></textarea>
+                  <textarea id="notes" name="notes" rows="2" maxlength="1000" placeholder="e.g. October salary"></textarea>
                 </div>
                 <button class="btn primary block" type="submit">Save income</button>
                 <button class="btn ghost block" type="button" data-cancel-edit hidden>Cancel edit</button>

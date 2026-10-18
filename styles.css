@@ -433,11 +433,8 @@ select {
 .form-grid { gap: 20px; }
 .field { gap: 10px; }
 .field > label { font-size: 0.85rem; margin-bottom: 6px; }
+.field-hint { font-size: 0.78rem; color: var(--muted); margin: 0; }
 .form-actions { gap: 12px; margin-top: 20px; }
-
-/* Table spacing */
-.table th { padding: 12px 20px; }
-.table td { padding: 14px 20px; }
 
 /* Category grid spacing */
 [data-category-list] { gap: 20px; }
@@ -519,6 +516,9 @@ textarea {
 
 /* ---------- Tables ---------- */
 .table-wrap {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   overflow-x: auto;
   border: 1px solid var(--border);
   border-radius: var(--r);
@@ -532,17 +532,29 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--faint);
-  padding: 11px 16px;
+  padding: 12px 20px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
-.table td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.table td { padding: 14px 20px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .table tbody tr:last-child td { border-bottom: 0; }
 .table tbody tr:hover { background: var(--surface-2); }
-.table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.table .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .table .cell-main { font-weight: 600; }
 .table .cell-sub { font-size: 0.78rem; color: var(--muted); }
+/* Columns that hug their content instead of stretching across the table. */
+.table .col-tight { width: 1%; white-space: nowrap; }
+/* Free-form text columns wrap, and long unbroken strings never stretch the table. */
+.table .cell-wrap { overflow-wrap: anywhere; }
+/* Pills inside tables stay readable: long labels truncate with an ellipsis. */
+.table .pill {
+  display: inline-block;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
 
 .amount-pos { color: var(--success); font-weight: 650; font-variant-numeric: tabular-nums; }
 .amount-neg { color: var(--ink); font-weight: 650; font-variant-numeric: tabular-nums; }
@@ -904,7 +916,6 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .mt-1 { margin-top: 8px; }
 .mt-2 { margin-top: 16px; }
 .mt-3 { margin-top: 24px; }
-.hide-sm { display: initial; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1180px) {
@@ -933,7 +944,10 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
   .feature-grid { grid-template-columns: 1fr; }
   .preview-stats { grid-template-columns: 1fr; }
   .hero { padding-top: 34px; }
-  .hide-sm { display: none; }
+  .table th { padding: 10px 12px; }
+  .table td { padding: 12px 12px; }
+  table.table { font-size: 0.85rem; }
+  .table .pill { max-width: 140px; }
   .landing-nav .l-links { display: none; }
   .columns-chart { height: 140px; gap: 12px; }
 }
@@ -941,4 +955,33 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 @media (max-width: 640px) {
   .topbar-actions { gap: 6px; }
   .topbar-actions [data-refresh] { display: none; }
+
+  /* Phones: stack table rows into cards so every column stays readable
+     without horizontal scrolling. Cells expose labels via data-label. */
+  .table-wrap { overflow-x: visible; border: 0; border-radius: 0; background: transparent; }
+  table.table, .table tbody, .table tr, .table td { display: block; width: 100%; box-sizing: border-box; }
+  .table thead { display: none; }
+  .table tbody tr {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    margin-bottom: 12px;
+    padding: 8px 0;
+  }
+  .table tbody tr:last-child { margin-bottom: 0; }
+  .table td { display: flex; align-items: baseline; gap: 14px; padding: 5px 16px; border: 0; }
+  .table td[data-label]::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .table td > * { min-width: 0; }
+  .table .col-tight { width: 100%; }
+  .table .num { text-align: left; }
+  .table .pill { max-width: none; }
+  .table td.actions-cell { justify-content: flex-end; }
 }
