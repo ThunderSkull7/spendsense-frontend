@@ -16,11 +16,128 @@
   padding: 4px 0;
 }
 
+/* Grid layout for category tiles */
 [data-category-list] {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
   padding: 0;
 }
 
-/* Tiles live inside a card-body; keep spacing when list is populated. */
-.category-tile .pill {
-  margin-top: 2px;
+/* Category tile redesign */
+.category-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 140px;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  position: relative;
+}
+
+.category-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--border-strong);
+}
+
+category-tile .c-ico {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--primary-100);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 6px var(--primary-ring);
+}
+
+category-tile .c-ico.income {
+  background: var(--primary-100);
+  color: var(--primary);
+}
+
+category-tile .c-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+category-tile .c-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.3;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+category-tile .pill {
+  margin-top: 4px;
+  align-self: flex-start;
+  background: var(--primary-100);
+  color: var(--primary);
+}
+
+/* Actions container - always visible and properly positioned */
+category-tile .row-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+category-tile .row-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+category-tile .row-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+
+category-tile .row-btn.danger {
+  color: var(--danger);
+}
+
+category-tile .row-btn.danger:hover {
+  background: var(--danger-100);
+  border-color: var(--danger-100);
+  color: var(--danger-600);
+}
+
+category-tile .row-btn.secondary {
+  color: var(--ink-2);
+}
+
+category-tile .row-btn.secondary:hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+
+/* Loading state */
+.category-loading {
+  padding: 40px 20px;
 }

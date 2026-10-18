@@ -87,12 +87,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // --- Handle "Other" category logic ---
+  const handleOtherCategory = () => {
+    if (nameInput && nameInput.placeholder === 'Enter your category name') {
+      nameInput.setAttribute('required', '');
+      nameInput.setAttribute('pattern', '[^\\s].*'); // Prevent only whitespace
+    } else {
+      nameInput?.removeAttribute('required');
+      nameInput?.removeAttribute('pattern');
+    }
+  };
+
   // --- Create category ---
   if (form) {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
       const name = nameInput ? nameInput.value.trim() : '';
-      if (!name) return setMessage('Please enter a category name.', 'error');
+      
+      // Special validation for "Other" category
+      if (nameInput && nameInput.placeholder === 'Enter your category name') {
+        if (!name) {
+          return setMessage('Please enter a custom category name.', 'error');
+        }
+        // Additional check for whitespace-only names
+        if (/^\s*$/.test(name)) {
+          return setMessage('Category name cannot be only whitespace.', 'error');
+        }
+        // Check for duplicate category names (the API will also handle this)
+      } else if (!name) {
+        return setMessage('Please enter a category name.', 'error');
+      }
 
       setMessage(editingCategoryId ? 'Updating category…' : 'Saving category…');
 
@@ -106,7 +130,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (editingCategoryId ? status === 200 : status === 201) {
           setMessage(editingCategoryId ? 'Category updated.' : data.message || 'Category added!', 'success');
           UI.showToast(editingCategoryId ? 'Category updated' : 'Category added', 'success');
-          if (nameInput) nameInput.value = '';
+          if (nameInput) {
+            nameInput.value = '';
+            nameInput.placeholder = 'e.g. Groceries';
+            nameInput.focus();
+          }
           exitEditMode();
           loadCategories();
         } else {
@@ -116,6 +144,12 @@ document.addEventListener('DOMContentLoaded', () => {
         setMessage('Error saving category. ' + (err.message || ''), 'error');
       }
     });
+  }
+
+  // Update Other category handling on input changes
+  if (nameInput) {
+    nameInput.addEventListener('input', handleOtherCategory);
+    nameInput.addEventListener('blur', handleOtherCategory);
   }
 
   // --- List rendering ---
@@ -154,6 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
     meta.appendChild(pill);
     main.append(name, meta);
 
+    const actions = document.createElement('div');
+    actions.className = 'row-actions';
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
     deleteBtn.className = 'row-btn danger';
@@ -169,7 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
     editBtn.title = 'Edit category';
     editBtn.textContent = 'Edit';
 
-    tile.append(icon, main, editBtn, deleteBtn);
+    actions.append(editBtn, deleteBtn);
+    tile.append(icon, main, actions);
     return tile;
   };
 

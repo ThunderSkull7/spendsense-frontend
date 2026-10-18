@@ -26,7 +26,7 @@
 
   const skipTags = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "OPTION", "TEXTAREA"]);
 
-  const savedColor = localStorage.getItem(KEYS.color) || "green";
+  const savedColor = localStorage.getItem(KEYS.color) || "emerald";
   const savedMode = localStorage.getItem(KEYS.mode) || "light";
   const savedCurrency = localStorage.getItem(KEYS.currency) || "INR";
 
@@ -62,11 +62,12 @@
   };
 
   const applyTheme = (color, mode) => {
-    root.dataset.themeColor = color;
+    // Only use the new emerald theme, ignore custom colors
+    root.dataset.themeColor = "emerald";
     root.dataset.mode = mode;
-    localStorage.setItem(KEYS.color, color);
+    localStorage.setItem(KEYS.color, "emerald");
     localStorage.setItem(KEYS.mode, mode);
-    window.dispatchEvent(new CustomEvent("spendsense:theme-change", { detail: { color, mode } }));
+    window.dispatchEvent(new CustomEvent("spendsense:theme-change", { detail: { color: "emerald", mode } }));
   };
 
   const applyCurrency = (currency) => {

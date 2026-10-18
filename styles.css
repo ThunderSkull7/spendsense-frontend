@@ -7,105 +7,84 @@
 /* ---------- Tokens ---------- */
 :root {
   color-scheme: light;
-  --bg: #f5f3ee;
-  --surface: #ffffff;
-  --surface-2: #faf9f5;
-  --surface-3: #f0eee8;
-  --border: #e6e3da;
-  --border-strong: #d9d5c9;
+  --bg: #111713;
+  --surface: #191F1A;
+  --surface-2: #202820;
+  --surface-3: #272C24;
+  --border: #303A31;
+  --border-strong: #3a4136;
 
-  --ink: #23281f;
-  --ink-2: #3d4437;
-  --muted: #6e7568;
-  --faint: #9aa093;
+  --ink: #F3F6F3;
+  --ink-2: #A6B2A7;
+  --muted: #7c8679;
+  --faint: #5e675f;
 
-  --primary: #6f9166;
-  --primary-600: #5d7d55;
-  --primary-700: #4d6a47;
-  --primary-100: #eaf1e6;
-  --primary-ring: rgba(111, 145, 102, 0.32);
+  /* Emerald-green primary accent */
+  --primary: #10B981;
+  --primary-600: #059669;
+  --primary-700: #047857;
+  --primary-100: rgba(16, 185, 129, 0.1);
+  --primary-ring: rgba(16, 185, 129, 0.32);
 
-  --accent: #c9a26b;
-  --accent-100: #f6efdf;
-  --teal: #5f8f8b;
-  --teal-100: #e6f0ef;
-  --blue: #5f7f9e;
-  --blue-100: #e8eef4;
-  --rose: #b06a63;
-  --rose-100: #f7eae8;
-  --amber: #b9803a;
-  --amber-100: #f7eedd;
-  --danger: #ab5049;
-  --danger-600: #93423c;
-  --danger-100: #f7e9e7;
-  --success: #4f7d5c;
-  --success-100: #e8f0e9;
-  --warn: #b9803a;
-  --warn-100: #f7eedd;
-  --info: #5f7f9e;
-  --info-100: #e8eef4;
+  /* Neutral colors for backgrounds, borders, secondary elements */
+  --accent: #10B981;
+  --accent-100: rgba(16, 185, 129, 0.1);
+  --teal: #10B981;
+  --teal-100: rgba(16, 185, 129, 0.1);
+  --blue: #10B981;
+  --blue-100: rgba(16, 185, 129, 0.1);
+  --rose: #10B981;
+  --rose-100: rgba(16, 185, 129, 0.1);
+  --amber: #10B981;
+  --amber-100: rgba(16, 185, 129, 0.1);
+  --danger: #EF4444;
+  --danger-600: #DC2626;
+  --danger-100: rgba(239, 68, 68, 0.1);
+  --success: #10B981;
+  --success-100: rgba(16, 185, 129, 0.1);
+  --warn: #F59E0B;
+  --warn-100: rgba(245, 158, 11, 0.1);
+  --info: #10B981;
+  --info-100: rgba(16, 185, 129, 0.1);
 
   --r-sm: 8px;
   --r: 11px;
   --r-lg: 16px;
   --r-pill: 999px;
 
-  --shadow-sm: 0 1px 2px rgba(31, 36, 28, 0.06);
-  --shadow: 0 4px 14px rgba(31, 36, 28, 0.07);
-  --shadow-lg: 0 18px 44px rgba(31, 36, 28, 0.12);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.45);
 
   --sidebar-w: 256px;
   --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 }
 
-/* Theme colour variants (Settings page) */
-:root[data-theme-color="blue"] {
-  --primary: #5f7f9e;
-  --primary-600: #4f6d8c;
-  --primary-700: #425c77;
-  --primary-100: #e8eef4;
-  --primary-ring: rgba(95, 127, 158, 0.32);
-}
-:root[data-theme-color="red"] {
-  --primary: #ac5f57;
-  --primary-600: #954e47;
-  --primary-700: #7e413b;
-  --primary-100: #f7eae8;
-  --primary-ring: rgba(172, 95, 87, 0.32);
-}
-:root[data-theme-color="yellow"] {
-  --primary: #b0803a;
-  --primary-600: #986d30;
-  --primary-700: #805b28;
-  --primary-100: #f7eedd;
-  --primary-ring: rgba(176, 128, 58, 0.32);
-}
-
 /* Dark mode */
 :root[data-mode="dark"] {
   color-scheme: dark;
-  --bg: #151814;
-  --surface: #1d211c;
-  --surface-2: #22261f;
-  --surface-3: #2a2f27;
-  --border: #2e342b;
+  --bg: #111713;
+  --surface: #191F1A;
+  --surface-2: #202820;
+  --surface-3: #272C24;
+  --border: #303A31;
   --border-strong: #3a4136;
 
-  --ink: #e9ece4;
-  --ink-2: #c9cec2;
-  --muted: #9aa294;
-  --faint: #6f776a;
+  --ink: #F3F6F3;
+  --ink-2: #A6B2A7;
+  --muted: #7c8679;
+  --faint: #5e675f;
 
-  --primary-100: rgba(111, 145, 102, 0.18);
-  --teal-100: rgba(95, 143, 139, 0.16);
-  --blue-100: rgba(95, 127, 158, 0.16);
-  --rose-100: rgba(176, 106, 99, 0.16);
-  --amber-100: rgba(185, 128, 58, 0.16);
-  --danger-100: rgba(171, 80, 73, 0.16);
-  --success-100: rgba(79, 125, 92, 0.16);
-  --warn-100: rgba(185, 128, 58, 0.16);
-  --info-100: rgba(95, 127, 158, 0.16);
-  --accent-100: rgba(201, 162, 107, 0.16);
+  --primary-100: rgba(16, 185, 129, 0.1);
+  --teal-100: rgba(16, 185, 129, 0.1);
+  --blue-100: rgba(16, 185, 129, 0.1);
+  --rose-100: rgba(16, 185, 129, 0.1);
+  --amber-100: rgba(16, 185, 129, 0.1);
+  --danger-100: rgba(239, 68, 68, 0.1);
+  --success-100: rgba(16, 185, 129, 0.1);
+  --warn-100: rgba(245, 158, 11, 0.1);
+  --info-100: rgba(16, 185, 129, 0.1);
+  --accent-100: rgba(16, 185, 129, 0.1);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
@@ -235,22 +214,43 @@ img, svg { display: block; }
 input[type="text"], input[type="email"], input[type="password"], input[type="number"],
 input[type="date"], input[type="month"], input[type="search"], select, textarea {
   width: 100%;
-  padding: 9px 12px;
+  padding: 12px 14px;
   border: 1px solid var(--border-strong);
   border-radius: var(--r-sm);
   background: var(--surface);
   color: var(--ink);
   font: inherit;
-  font-size: 0.92rem;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  font-size: 0.95rem;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  height: 48px;
+  box-sizing: border-box;
 }
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--primary-ring);
+  background: var(--surface);
 }
 input::placeholder, textarea::placeholder { color: var(--faint); }
-textarea { resize: vertical; min-height: 74px; }
+textarea { 
+  resize: vertical; 
+  min-height: 74px; 
+  height: auto;
+  padding: 12px 14px;
+}
+
+/* Button height consistency */
+.btn, .button {
+  padding: 12px 16px;
+  height: 48px;
+  font-size: 0.95rem;
+}
+
+.btn.sm, .button.sm {
+  padding: 10px 14px;
+  height: 44px;
+  font-size: 0.9rem;
+}
 
 select {
   appearance: none;
@@ -421,7 +421,47 @@ select {
 .topbar-sub { font-size: 0.78rem; color: var(--muted); }
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 
-.content { width: 100%; max-width: 1240px; margin: 0 auto; padding: 26px 28px 64px; }
+.content { width: 100%; max-width: 1240px; margin: 0 auto; padding: 24px 28px 64px; }
+
+/* Page-specific spacing */
+.card { margin-bottom: 24px; }
+.card-body { padding: 24px; }
+.card-head { padding: 16px 20px; }
+.card-footer { padding: 14px 20px; }
+
+/* Form spacing */
+.form-grid { gap: 20px; }
+.field { gap: 10px; }
+.field > label { font-size: 0.85rem; margin-bottom: 6px; }
+.form-actions { gap: 12px; margin-top: 20px; }
+
+/* Table spacing */
+.table th { padding: 12px 20px; }
+.table td { padding: 14px 20px; }
+
+/* Category grid spacing */
+[data-category-list] { gap: 20px; }
+
+/* Section headers */
+.page-head { margin-bottom: 24px; }
+.page-head h1 { font-size: 1.6rem; }
+.page-head p { font-size: 0.9rem; margin-top: 4px; }
+
+/* Button sizes */
+.btn, .button { height: 48px; padding: 12px 20px; }
+.btn.sm, .button.sm { height: 44px; padding: 10px 16px; }
+.icon-btn { width: 44px; height: 44px; }
+
+/* Input height consistency */
+input, select, textarea {
+  height: 48px;
+  padding: 12px 14px;
+}
+
+textarea {
+  min-height: 80px;
+  padding: 12px 14px;
+}
 
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .page-head p { color: var(--muted); font-size: 0.9rem; margin-top: 2px; }
@@ -521,20 +561,17 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
   color: var(--ink-2);
   white-space: nowrap;
 }
-.pill.green { background: var(--primary-100); color: var(--primary-700); }
-.pill.amber { background: var(--amber-100); color: var(--amber); }
-.pill.teal { background: var(--teal-100); color: var(--teal); }
-.pill.blue { background: var(--blue-100); color: var(--blue); }
-.pill.rose { background: var(--rose-100); color: var(--rose); }
+.pill.green { background: var(--primary-100); color: var(--primary); }
+.pill.teal { background: var(--primary-100); color: var(--primary); }
 .pill.danger { background: var(--danger-100); color: var(--danger); }
 .pill.success { background: var(--success-100); color: var(--success); }
 .pill.neutral { background: var(--surface-3); color: var(--muted); }
 
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex: 0 0 8px; }
-.dot.amber { background: var(--amber); }
-.dot.teal { background: var(--teal); }
-.dot.blue { background: var(--blue); }
-.dot.rose { background: var(--rose); }
+.dot.amber { background: var(--primary); }
+.dot.teal { background: var(--primary); }
+.dot.blue { background: var(--primary); }
+.dot.rose { background: var(--primary); }
 
 /* Row actions */
 .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
