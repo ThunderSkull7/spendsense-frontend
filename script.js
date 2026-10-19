@@ -350,6 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
       input.type = isHidden ? 'text' : 'password';
       toggle.textContent = isHidden ? 'Hide' : 'Show';
       toggle.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+      toggle.setAttribute('aria-pressed', String(isHidden));
     });
   });
 
@@ -414,11 +415,15 @@ window.SpendSenseUI = {
     return window.SpendSenseSettings.formatDate(value);
   },
 
-  // renderState(container, 'loading' | 'empty' | 'error', { message, retry })
+  // renderState(container, 'loading' | 'empty' | 'error', {
+  //   message, retry, action: { href, label }, secondaryAction: { href, label }
+  // })
   renderState(container, type, options = {}) {
     if (!container) return;
     const state = document.createElement('div');
     state.className = `state ${type}`;
+    state.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    if (type === 'loading') state.setAttribute('aria-busy', 'true');
 
     const icons = {
       loading: '<span class="spinner" aria-hidden="true"></span>',
@@ -435,15 +440,29 @@ window.SpendSenseUI = {
       (type === 'loading' ? 'Loading…' : type === 'error' ? 'Could not load data.' : 'Nothing here yet.');
     state.appendChild(text);
 
+    const actions = document.createElement('div');
+    actions.className = 'state-actions';
+    const addAction = (action, style) => {
+      if (!action || !action.label) return;
+      const link = document.createElement('a');
+      link.className = `btn ${style} sm`;
+      link.href = action.href || '#';
+      link.textContent = action.label;
+      actions.appendChild(link);
+    };
+    addAction(options.action, 'primary');
+    addAction(options.secondaryAction, 'secondary');
+
     if (type === 'error' && typeof options.retry === 'function') {
       const retryBtn = document.createElement('button');
       retryBtn.type = 'button';
       retryBtn.className = 'btn secondary sm';
       retryBtn.textContent = 'Try again';
       retryBtn.addEventListener('click', options.retry);
-      state.appendChild(retryBtn);
+      actions.appendChild(retryBtn);
     }
 
+    if (actions.childElementCount) state.appendChild(actions);
     container.replaceChildren(state);
     return state;
   },
@@ -453,6 +472,8 @@ window.SpendSenseUI = {
     if (!stack) {
       stack = document.createElement('div');
       stack.className = 'toast-stack';
+      stack.setAttribute('role', 'status');
+      stack.setAttribute('aria-live', 'polite');
       document.body.appendChild(stack);
     }
     const toast = document.createElement('div');

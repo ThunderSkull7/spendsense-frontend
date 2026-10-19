@@ -10,47 +10,97 @@
     <link rel="stylesheet" href="auth.css" />
   </head>
   <body class="app-body auth-page">
-    <main class="auth-card">
-      <div class="auth-head">
-        <span class="brand-mark">S</span>
-        <h1>Create your account</h1>
-        <p>Start tracking income, expenses, and budgets in minutes.</p>
-      </div>
+    <button class="icon-btn auth-theme" type="button" data-theme-toggle aria-label="Toggle dark mode">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
 
-      <form class="auth-form" data-auth-form novalidate>
-        <div class="field">
-          <label for="name">Name</label>
-          <input id="name" name="name" type="text" placeholder="Your name" autocomplete="name" required />
-        </div>
-        <div class="field">
-          <label for="email">Email</label>
-          <input id="email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
-        </div>
-        <div class="field">
-          <label for="password">Password</label>
-          <div class="password-field">
-            <input id="password" name="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" required />
-            <button type="button" data-toggle-password aria-label="Show password">Show</button>
-          </div>
-        </div>
-        <div class="field">
-          <label for="password_confirmation">Confirm password</label>
-          <div class="password-field">
-            <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Repeat your password" autocomplete="new-password" required />
-            <button type="button" data-toggle-password aria-label="Show password">Show</button>
-          </div>
-        </div>
-        <button class="btn primary block" type="submit">Create account</button>
-        <p class="auth-message" data-auth-message aria-live="polite"></p>
-      </form>
+    <div class="auth-shell">
+      <aside class="auth-aside" aria-label="About SpendSense">
+        <a class="auth-brand" href="../index.html">
+          <span class="brand-mark">S</span>
+          <span>SpendSense</span>
+        </a>
 
-      <p class="auth-switch">
-        Already have an account? <a href="login.html">Log in</a>
-      </p>
-      <p class="auth-switch secondary-switch">
-        <a href="../index.html">← Back to home</a>
-      </p>
-    </main>
+        <div class="auth-aside-copy">
+          <p class="auth-eyebrow">A clearer month starts here</p>
+          <h2>Make your money easier to understand.</h2>
+          <p>Log what comes in and goes out, set a budget you can actually follow, and see the patterns behind your spending.</p>
+        </div>
+
+        <ul class="auth-features">
+          <li><span class="auth-check" aria-hidden="true">✓</span> One place for income and expenses</li>
+          <li><span class="auth-check" aria-hidden="true">✓</span> Monthly budgets with progress at a glance</li>
+          <li><span class="auth-check" aria-hidden="true">✓</span> Reports built from your real records</li>
+        </ul>
+
+        <div class="auth-preview" aria-hidden="true">
+          <div class="auth-preview-head">
+            <span>Monthly overview</span>
+            <span class="preview-tag">Illustrative</span>
+          </div>
+          <div class="auth-preview-bars">
+            <span style="--h: 42%"></span>
+            <span style="--h: 55%"></span>
+            <span style="--h: 48%"></span>
+            <span style="--h: 68%"></span>
+            <span style="--h: 63%"></span>
+            <span style="--h: 79%"></span>
+          </div>
+          <div class="auth-preview-cats">
+            <span><i class="dot income"></i> Income</span>
+            <span><i class="dot expense"></i> Expenses</span>
+          </div>
+          <p>Your own figures appear after you sign in.</p>
+        </div>
+
+        <p class="auth-aside-note">No spreadsheets required.</p>
+      </aside>
+
+      <main class="auth-card">
+        <div class="auth-mobile-brand">
+          <span class="brand-mark">S</span>
+          <span>SpendSense</span>
+        </div>
+
+        <div class="auth-head">
+          <p class="auth-eyebrow">Get started</p>
+          <h1>Create your account</h1>
+          <p>Start with your income and expenses, then add budgets as you go.</p>
+        </div>
+
+        <form class="auth-form" data-auth-form novalidate>
+          <div class="field">
+            <label for="name">Name</label>
+            <input id="name" name="name" type="text" placeholder="Your name" autocomplete="name" required />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <div class="password-field">
+              <input id="password" name="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required />
+              <button type="button" data-toggle-password aria-label="Show password" aria-pressed="false">Show</button>
+            </div>
+            <p class="field-hint">Use at least 8 characters.</p>
+          </div>
+          <div class="field">
+            <label for="password_confirmation">Confirm password</label>
+            <div class="password-field">
+              <input id="password_confirmation" name="password_confirmation" type="password" placeholder="Repeat your password" autocomplete="new-password" minlength="8" required />
+              <button type="button" data-toggle-password aria-label="Show password" aria-pressed="false">Show</button>
+            </div>
+          </div>
+          <button class="btn primary block" type="submit">Create account</button>
+          <p class="auth-message" data-auth-message role="status" aria-live="polite"></p>
+        </form>
+
+        <p class="auth-switch">Already have an account? <a href="login.html">Log in</a></p>
+        <p class="auth-switch secondary-switch">Need help? <a href="../support/support.html">Visit support</a></p>
+        <p class="auth-switch secondary-switch"><a href="../index.html">← Back to home</a></p>
+      </main>
+    </div>
 
     <script src="../script.js"></script>
     <script src="auth.js"></script>

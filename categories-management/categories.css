@@ -53,7 +53,7 @@
   place-items: center;
   border-radius: 10px;
   background: var(--primary-100);
-  color: var(--primary);
+  color: var(--primary-700);
   font-weight: 700;
   font-size: 1.1rem;
   box-shadow: 0 2px 6px var(--primary-ring);
@@ -61,7 +61,7 @@
 
 .category-tile .c-ico.income {
   background: var(--primary-100);
-  color: var(--primary);
+  color: var(--primary-700);
 }
 
 .category-tile .c-main {
@@ -83,8 +83,6 @@
 .category-tile .pill {
   margin-top: 4px;
   align-self: flex-start;
-  background: var(--primary-100);
-  color: var(--primary);
 }
 
 /* Actions container - always visible and properly positioned */
@@ -121,10 +119,16 @@
   color: var(--danger);
 }
 
+/* At phone widths the fixed 280px minimum is wider than the content box,
+   so let tiles use the available width instead of forcing a scrollbar. */
+@media (max-width: 420px) {
+  [data-category-list] { grid-template-columns: 1fr; }
+}
+
 .category-tile .row-btn.danger:hover {
   background: var(--danger-100);
   border-color: var(--danger-100);
-  color: var(--danger-600);
+  color: var(--danger);
 }
 
 .category-tile .row-btn.secondary {

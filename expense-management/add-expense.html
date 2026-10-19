@@ -44,7 +44,7 @@
       <header class="topbar">
         <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
         <div class="topbar-titles">
-          <span class="topbar-title">Add expense</span>
+          <h1 class="topbar-title">Add expense</h1>
           <span class="topbar-sub">Log a new expense</span>
         </div>
         <div class="topbar-actions">
@@ -84,6 +84,12 @@
                     </div>
                     <p class="expense-message" data-custom-category-message aria-live="polite"></p>
                   </div>
+                  <div class="field full">
+                    <p class="field-label" id="suggested-categories-label">Common categories</p>
+                    <div class="suggestion-chips" data-suggestion-chips role="group" aria-labelledby="suggested-categories-label"></div>
+                    <p class="field-hint">Tap a suggestion to select it. Items marked “+” are created in your categories when you pick them; existing categories are reused.</p>
+                    <p class="expense-message" data-suggestion-message aria-live="polite"></p>
+                  </div>
                   <div class="field">
                     <label for="date">Date</label>
                     <input id="date" name="expense_date" type="date" required />
@@ -108,7 +114,7 @@
             </div>
             <div class="card-body stack">
               <p class="small muted">Pick the category that matches the expense — it drives your budget progress and reports.</p>
-              <p class="small muted">Missing a category? Choose “Other (add new)…” and create it without leaving this page.</p>
+              <p class="small muted">Missing a category? Pick a suggestion above or choose “Other (add new)…” to create one without leaving this page.</p>
               <p class="small muted">Add a short description for big-ticket items so reports stay readable later.</p>
               <p class="small muted">Log expenses on the day they happen; dated entries keep month comparisons accurate.</p>
             </div>

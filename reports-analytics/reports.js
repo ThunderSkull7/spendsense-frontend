@@ -20,22 +20,107 @@ document.addEventListener('DOMContentLoaded', () => {
   const cashflowChartBox = document.querySelector('[data-cashflow-chart]');
   const alertsEl = document.querySelector('[data-alerts]');
   const budgetStatusEl = document.querySelector('[data-budget-status]');
+  const summarySection = document.querySelector('.report-summary');
+  const summaryEls = {
+    income: document.querySelector('[data-report-summary="income"]'),
+    expenses: document.querySelector('[data-report-summary="expenses"]'),
+    net: document.querySelector('[data-report-summary="net"]'),
+    topCategory: document.querySelector('[data-report-summary="top-category"]'),
+  };
+  const summaryFootEls = {
+    income: document.querySelector('[data-report-foot="income"]'),
+    expenses: document.querySelector('[data-report-foot="expenses"]'),
+    net: document.querySelector('[data-report-foot="net"]'),
+    topCategory: document.querySelector('[data-report-foot="top-category"]'),
+  };
+  const spendingTotalEl = document.querySelector('[data-spending-total]');
+  const spendingSummaryEl = document.querySelector('[data-spending-summary]');
+  const cashflowSummaryEl = document.querySelector('[data-cashflow-summary]');
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let spendingChartInstance = null;
   let cashflowChartInstance = null;
+  let lastSpending = null; // cached payloads so theme changes can re-render
+  let lastCashflow = null;
+
+  const setSummaryValue = (key, value, { tone = '', foot } = {}) => {
+    const valueEl = summaryEls[key];
+    if (!valueEl) return;
+    valueEl.textContent = value;
+    valueEl.classList.toggle('pos', tone === 'pos');
+    valueEl.classList.toggle('neg', tone === 'neg');
+    const footEl = summaryFootEls[key];
+    if (footEl && typeof foot === 'string') footEl.textContent = foot;
+  };
+
+  // Build the at-a-glance row from the two analytics payloads that have
+  // already been fetched. Every value comes from the API; "—" is used when a
+  // payload is unavailable rather than inventing a number.
+  const renderSummary = () => {
+    const cashflow = lastCashflow && lastCashflow.status === 200 && lastCashflow.data && lastCashflow.data.data
+      ? lastCashflow.data.data
+      : null;
+    const current = cashflow ? cashflow.current_month || {} : null;
+    if (current) {
+      const net = typeof current.net === 'number'
+        ? current.net
+        : (current.income || 0) - (current.expenses || 0);
+      setSummaryValue('income', money(current.income || 0), { foot: 'Income this month' });
+      setSummaryValue('expenses', money(current.expenses || 0), { foot: 'Expenses this month' });
+      setSummaryValue('net', (net > 0 ? '+' : '') + money(net), {
+        tone: net < 0 ? 'neg' : 'pos',
+        foot: 'Income minus expenses',
+      });
+    } else {
+      setSummaryValue('income', '—', { foot: 'Unavailable' });
+      setSummaryValue('expenses', '—', { foot: 'Unavailable' });
+      setSummaryValue('net', '—', { tone: '', foot: 'Income minus expenses' });
+    }
+
+    const spending = lastSpending && lastSpending.status === 200 && lastSpending.data && lastSpending.data.data
+      ? lastSpending.data.data
+      : null;
+    const items = spending ? (spending.breakdown || []).slice().sort((a, b) => b.total_spent - a.total_spent) : [];
+    const total = items.reduce((sum, item) => sum + (item.total_spent || 0), 0);
+    if (items.length) {
+      const top = items[0];
+      const share = total > 0 ? Math.round((top.total_spent / total) * 100) : 0;
+      setSummaryValue('topCategory', top.category_name, {
+        foot: `${money(top.total_spent)} · ${share}% of spending`,
+      });
+    } else {
+      setSummaryValue('topCategory', '—', { foot: spending ? 'No spending recorded yet' : 'Unavailable' });
+    }
+  };
 
   const css = getComputedStyle(document.documentElement);
   const cssVar = (name, fallback) => (css.getPropertyValue(name) || fallback).trim() || fallback;
-  const palette = () => [
-    cssVar('--primary', '#6f9166'),
-    cssVar('--teal', '#5f8f8b'),
-    cssVar('--amber', '#b9803a'),
-    cssVar('--blue', '#5f7f9e'),
-    cssVar('--rose', '#b06a63'),
-    cssVar('--accent', '#c9a26b'),
-    cssVar('--primary-600', '#5d7d55'),
+
+  const settings = window.SpendSenseSettings;
+  const CHART_FALLBACKS = [
+    '#059669', '#2563EB', '#D97706', '#7C3AED', '#DC2626',
+    '#0891B2', '#DB2777', '#92400E', '#64748B', '#1E293B',
   ];
-  const barTones = ['', 'teal', 'amber', 'blue', 'rose'];
+  // Categorical colours come from the --chart-N CSS tokens (light/dark aware).
+  const chartColors = () =>
+    settings && typeof settings.chartColors === 'function'
+      ? settings.chartColors()
+      : CHART_FALLBACKS.map((fallback, index) => cssVar(`--chart-${index + 1}`, fallback));
+
+  // Stable per-category colour key + assignment (shared with the dashboard, so
+  // a category keeps the same colour across pages and refreshes).
+  const toneKey = (item) =>
+    item && item.category_id != null
+      ? `cat:${item.category_id}`
+      : `name:${String((item && item.category_name) || '').toLowerCase()}`;
+  const colorMapFor = (items) => {
+    const tones =
+      settings && typeof settings.categoryTones === 'function'
+        ? settings.categoryTones(items.map(toneKey))
+        : new Map();
+    const colors = chartColors();
+    return (item) => colors[(tones.get(toneKey(item)) || 0) % colors.length];
+  };
 
   const monthName = (month, year) =>
     new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
@@ -66,12 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ---------- CSS bar fallback (also used for the spending legend) ----------
-  const buildBars = (items) => {
+  const buildBars = (items, colorFor) => {
     const max = items[0].total_spent || 1;
     const total = items.reduce((sum, item) => sum + item.total_spent, 0) || 1;
     const list = document.createElement('div');
     list.className = 'bar-list';
-    items.forEach((item, index) => {
+    items.forEach((item) => {
       const row = document.createElement('div');
       row.className = 'bar-row';
 
@@ -79,7 +164,8 @@ document.addEventListener('DOMContentLoaded', () => {
       meta.className = 'bar-meta';
       const label = document.createElement('span');
       const dot = document.createElement('span');
-      dot.className = 'dot ' + barTones[index % barTones.length];
+      dot.className = 'dot';
+      dot.style.background = colorFor(item);
       label.append(dot, document.createTextNode(' ' + item.category_name));
       const value = document.createElement('strong');
       value.textContent = `${money(item.total_spent)} · ${Math.round((item.total_spent / total) * 100)}%`;
@@ -88,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const track = document.createElement('div');
       track.className = 'progress';
       const fill = document.createElement('span');
-      fill.className = barTones[index % barTones.length];
+      fill.style.background = colorFor(item);
       fill.style.width = Math.max(4, Math.round((item.total_spent / max) * 100)) + '%';
       track.appendChild(fill);
 
@@ -101,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- Spending by category ----------
   const renderSpending = (result) => {
     if (!result || result.status !== 200 || !result.data || !result.data.data) {
+      lastSpending = null;
       showChartState(spendingState, spendingChartBox, 'error', {
         message: 'Could not load spending data.',
         retry: loadAll,
@@ -108,25 +195,42 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const payload = result.data.data;
+    lastSpending = result;
     setMonthLabels(payload.month, payload.year);
 
     const items = (payload.breakdown || []).slice().sort((a, b) => b.total_spent - a.total_spent);
     if (!items.length) {
       showChartState(spendingState, spendingChartBox, 'empty', {
         message: 'No expenses recorded this month yet.',
+        action: { href: '../expense-management/add-expense.html', label: 'Add an expense' },
       });
       return;
     }
 
     showChart(spendingState, spendingChartBox);
+    const totalSpent = items.reduce((sum, item) => sum + (item.total_spent || 0), 0);
+    if (spendingTotalEl) spendingTotalEl.textContent = money(totalSpent);
+    if (spendingSummaryEl) {
+      const details = items
+        .map((item) => {
+          const share = totalSpent > 0 ? Math.round((item.total_spent / totalSpent) * 100) : 0;
+          return `${item.category_name}: ${money(item.total_spent)}, ${share} percent`;
+        })
+        .join('; ');
+      spendingSummaryEl.textContent = `Spending by category${payload.month && payload.year ? ` for ${monthName(payload.month, payload.year)}` : ''}. Total ${money(totalSpent)}. ${details}.`;
+    }
+
+    // One stable colour per category, reused by the chart and the legend.
+    const colorFor = colorMapFor(items);
 
     if (spendingLegend) {
       spendingLegend.replaceChildren();
-      items.forEach((item, index) => {
+      items.forEach((item) => {
         const entry = document.createElement('span');
         entry.className = 'legend-item';
         const dot = document.createElement('span');
-        dot.className = 'dot ' + barTones[index % barTones.length];
+        dot.className = 'dot';
+        dot.style.background = colorFor(item);
         entry.append(dot, document.createTextNode(`${item.category_name} · ${money(item.total_spent)}`));
         spendingLegend.appendChild(entry);
       });
@@ -135,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.querySelector('#spendingChart');
     if (window.Chart && canvas) {
       if (spendingChartInstance) spendingChartInstance.destroy();
-      const colors = palette();
+      const surface = cssVar('--surface', '#ffffff');
       spendingChartInstance = new window.Chart(canvas, {
         type: 'doughnut',
         data: {
@@ -143,8 +247,10 @@ document.addEventListener('DOMContentLoaded', () => {
           datasets: [
             {
               data: items.map((item) => item.total_spent),
-              backgroundColor: items.map((_, index) => colors[index % colors.length]),
-              borderWidth: 0,
+              backgroundColor: items.map((item) => colorFor(item)),
+              borderColor: surface,
+              borderWidth: 2,
+              hoverBorderColor: surface,
               hoverOffset: 6,
             },
           ],
@@ -152,6 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: prefersReducedMotion ? false : undefined,
           cutout: '62%',
           plugins: {
             legend: { display: false },
@@ -161,9 +268,10 @@ document.addEventListener('DOMContentLoaded', () => {
           },
         },
       });
-    } else if (canvas) {
-      const host = canvas.parentElement;
-      if (host) host.replaceChildren(buildBars(items));
+    } else {
+      // CSS fallback: render into the chart box (the canvas is replaced).
+      const box = spendingChartBox ? spendingChartBox.querySelector('.chart-box') : null;
+      if (box) box.replaceChildren(buildBars(items, colorFor));
     }
   };
 
@@ -206,6 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const renderCashflow = (result) => {
     if (!result || result.status !== 200 || !result.data || !result.data.data) {
+      lastCashflow = null;
       showChartState(cashflowState, cashflowChartBox, 'error', {
         message: 'Could not load cash flow data.',
         retry: loadAll,
@@ -213,14 +322,36 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     const payload = result.data.data;
+    lastCashflow = result;
     const current = payload.current_month || {};
     const previous = payload.previous_month || {};
     showChart(cashflowState, cashflowChartBox);
+    if (cashflowSummaryEl) {
+      const currentLabel = current.month && current.year ? monthName(current.month, current.year) : 'This month';
+      const previousLabel = previous.month && previous.year ? monthName(previous.month, previous.year) : 'Last month';
+      cashflowSummaryEl.textContent =
+        `Income versus expenses. ${previousLabel}: income ${money(previous.income || 0)}, expenses ${money(previous.expenses || 0)}. ` +
+        `${currentLabel}: income ${money(current.income || 0)}, expenses ${money(current.expenses || 0)}.`;
+    }
+
+    const hasCashflow = ['income', 'expenses'].some(
+      (key) => (current[key] || 0) > 0 || (previous[key] || 0) > 0
+    );
+    if (!hasCashflow) {
+      showChartState(cashflowState, cashflowChartBox, 'empty', {
+        message: 'No income or expenses recorded for this month or last month.',
+        action: { href: '../expense-management/add-expense.html', label: 'Add an expense' },
+      });
+      return;
+    }
 
     const canvas = document.querySelector('#cashflowChart');
     if (window.Chart && canvas) {
       if (cashflowChartInstance) cashflowChartInstance.destroy();
-      const colors = palette();
+      const incomeColor = cssVar('--chart-income', '#059669');
+      const expenseColor = cssVar('--chart-expense', '#6366F1');
+      const tickColor = cssVar('--muted', '#6D786F');
+      const gridColor = cssVar('--border', '#E3E9E1');
       cashflowChartInstance = new window.Chart(canvas, {
         type: 'bar',
         data: {
@@ -229,14 +360,14 @@ document.addEventListener('DOMContentLoaded', () => {
             {
               label: 'Income',
               data: [previous.income || 0, current.income || 0],
-              backgroundColor: colors[0],
+              backgroundColor: incomeColor,
               borderRadius: 8,
               maxBarThickness: 46,
             },
             {
               label: 'Expenses',
               data: [previous.expenses || 0, current.expenses || 0],
-              backgroundColor: colors[2],
+              backgroundColor: expenseColor,
               borderRadius: 8,
               maxBarThickness: 46,
             },
@@ -245,13 +376,14 @@ document.addEventListener('DOMContentLoaded', () => {
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          animation: prefersReducedMotion ? false : undefined,
           scales: {
             y: {
               beginAtZero: true,
-              ticks: { callback: (value) => money(value) },
-              grid: { color: 'rgba(127, 127, 127, 0.12)' },
+              ticks: { color: tickColor, callback: (value) => money(value) },
+              grid: { color: gridColor },
             },
-            x: { grid: { display: false } },
+            x: { grid: { display: false }, ticks: { color: tickColor } },
           },
           plugins: {
             legend: { display: false },
@@ -261,11 +393,12 @@ document.addEventListener('DOMContentLoaded', () => {
           },
         },
       });
-    } else if (canvas) {
-      const host = canvas.parentElement;
-      if (host) {
+    } else {
+      // CSS fallback: render into the chart box (the canvas is replaced).
+      const box = cashflowChartBox ? cashflowChartBox.querySelector('.chart-box') : null;
+      if (box) {
         const max = Math.max(current.income || 0, current.expenses || 0, previous.income || 0, previous.expenses || 0, 1);
-        host.replaceChildren(buildColumns(previous, current, max));
+        box.replaceChildren(buildColumns(previous, current, max));
       }
     }
   };
@@ -278,7 +411,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const alerts = result.data.data.alerts || [];
     if (!alerts.length) {
-      UI.renderState(alertsEl, 'empty', { message: 'No alerts this month — all budgets are on track.' });
+      UI.renderState(alertsEl, 'empty', {
+        message: 'No alerts this month — all budgets are on track.',
+        action: { href: '../budget-planning/budget.html', label: 'Review budgets' },
+      });
       return;
     }
 
@@ -324,7 +460,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const budgets = result.data.data.budgets || [];
     if (!budgets.length) {
-      UI.renderState(budgetStatusEl, 'empty', { message: 'No budgets set for this month yet.' });
+      UI.renderState(budgetStatusEl, 'empty', {
+        message: 'No budgets set for this month yet.',
+        action: { href: '../budget-planning/budget.html', label: 'Set a budget' },
+      });
       return;
     }
 
@@ -357,6 +496,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const track = document.createElement('div');
       track.className = 'progress' + (budget.is_overspent ? ' danger' : percentage >= 80 ? ' warn' : '');
+      track.setAttribute('role', 'progressbar');
+      track.setAttribute('aria-label', `${budget.category_name} budget used`);
+      track.setAttribute('aria-valuemin', '0');
+      track.setAttribute('aria-valuemax', '100');
+      track.setAttribute('aria-valuenow', String(Math.round(percentage)));
+      track.setAttribute('aria-valuetext', `${Math.round(percentage)}% used, ${money(budget.spent_amount)} of ${money(budget.limit_amount)}`);
       const fill = document.createElement('span');
       fill.style.width = Math.max(3, percentage) + '%';
       track.appendChild(fill);
@@ -370,6 +515,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------- Load everything ----------
   const setLoading = () => {
     monthResolved = false;
+    if (summarySection) summarySection.setAttribute('aria-busy', 'true');
+    setSummaryValue('income', '—', { foot: 'Loading…' });
+    setSummaryValue('expenses', '—', { foot: 'Loading…' });
+    setSummaryValue('net', '—', { tone: '', foot: 'Loading…' });
+    setSummaryValue('topCategory', '—', { foot: 'Loading…' });
     showChartState(spendingState, spendingChartBox, 'loading', { message: 'Loading chart…' });
     showChartState(cashflowState, cashflowChartBox, 'loading', { message: 'Loading chart…' });
     UI.renderState(alertsEl, 'loading', { message: 'Loading alerts…' });
@@ -390,6 +540,8 @@ document.addEventListener('DOMContentLoaded', () => {
     renderCashflow(cashflow.status === 'fulfilled' ? cashflow.value : null);
     renderAlerts(alerts.status === 'fulfilled' ? alerts.value : null);
     renderBudgetStatus(budgetStatus.status === 'fulfilled' ? budgetStatus.value : null);
+    renderSummary();
+    if (summarySection) summarySection.removeAttribute('aria-busy');
 
     if (!monthResolved) {
       monthLabels.forEach((el) => {
@@ -409,6 +561,13 @@ document.addEventListener('DOMContentLoaded', () => {
       UI.showToast('Reports refreshed', 'success');
     });
   }
+
+  // Re-draw charts with the new tokens when the theme palette/mode changes.
+  window.addEventListener('spendsense:theme-change', () => {
+    if (lastSpending) renderSpending(lastSpending);
+    if (lastCashflow) renderCashflow(lastCashflow);
+    renderSummary();
+  });
 
   loadAll();
 });

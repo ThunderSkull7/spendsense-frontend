@@ -1,13 +1,104 @@
-/* Notifications page — refinements on top of the shared design system. */
+/* Notifications — honest availability state on top of the shared design system. */
 
-.mb-2 {
-  margin-bottom: 14px;
+.notification-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 22px 4px 14px;
+}
+.notification-empty-ico {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--surface-3);
+  color: var(--muted);
+}
+.notification-empty-ico svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.notification-empty h3 {
+  margin-top: 4px;
+  font-size: 1.08rem;
+}
+.notification-empty p {
+  max-width: 52ch;
+  color: var(--muted);
+  font-size: 0.89rem;
+  line-height: 1.6;
+}
+.notification-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 8px;
 }
 
-.reminder-form .check-row {
-  padding: 4px 0;
+.alert-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.alert-guide-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 10px;
+  margin: 0 -10px;
+  border-radius: 10px;
+  transition: background 0.14s;
+}
+.alert-guide-row:hover { background: var(--hover-bg); }
+.alert-guide-row:focus-visible { outline-offset: 0; }
+.alert-guide-row > span:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.alert-guide-row strong { font-size: 0.88rem; }
+.alert-guide-row small { color: var(--muted); font-size: 0.79rem; line-height: 1.45; }
+.alert-guide-ico {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--surface-3);
+  color: var(--muted);
+}
+.alert-guide-ico.tone-amber { background: var(--amber-100); color: var(--amber); }
+.alert-guide-ico.tone-teal { background: var(--teal-100); color: var(--teal); }
+.alert-guide-ico svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-.notification-message {
-  min-height: 1.2em;
+.notification-note {
+  margin-top: 16px;
+  padding: 14px 15px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+.notification-note strong { font-size: 0.83rem; }
+.notification-note p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 440px) {
+  .notification-actions .btn { flex: 1 1 auto; }
+  .alert-guide-row { padding-left: 6px; padding-right: 6px; margin: 0; }
 }

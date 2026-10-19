@@ -44,8 +44,8 @@
       <header class="topbar">
         <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
         <div class="topbar-titles">
-          <span class="topbar-title">Help &amp; support</span>
-          <span class="topbar-sub">Answers, guides, and a way to reach us</span>
+          <h1 class="topbar-title">Help &amp; support</h1>
+          <span class="topbar-sub">Guides, answers, and honest support options</span>
         </div>
         <div class="topbar-actions">
           <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
@@ -58,34 +58,42 @@
             <div class="card-head">
               <div>
                 <h2 class="card-title">Common questions</h2>
-                <p class="card-sub">Quick answers about tracking, budgets, and reports</p>
+                <p class="card-sub">Quick answers about tracking, budgets, reports, and account access</p>
               </div>
             </div>
             <div class="card-body">
               <div class="faq-list">
                 <details open>
                   <summary>How does SpendSense organize expenses?</summary>
-                  <p>Expenses are grouped by category and by date, so budgets and reports reflect exactly what you logged.</p>
+                  <p>Expenses are grouped by the category you choose and by their dates, so budgets and reports reflect exactly what you logged.</p>
                 </details>
                 <details>
                   <summary>Can I add my own categories?</summary>
-                  <p>Yes. Open Categories, give it a name, choose expense or income, and save.</p>
+                  <p>Yes. Open Categories, give the category a name, choose expense or income, and save. You can also create a category while adding an expense.</p>
                 </details>
                 <details>
                   <summary>How do budget alerts work?</summary>
-                  <p>When a category reaches 80% of its monthly limit — or goes over — it appears in Budget alerts on the Reports page.</p>
+                  <p>When a category reaches 80% of its monthly limit — or goes over — it appears in Budget alerts on the Reports page. SpendSense does not send email or push alerts.</p>
                 </details>
                 <details>
                   <summary>Can I change the currency?</summary>
-                  <p>Yes. Open Settings and pick a currency; amounts across the app update to that symbol.</p>
+                  <p>You can change the display currency in Settings. This changes the currency symbol shown across the app; it does not convert or rewrite the amounts already stored.</p>
                 </details>
                 <details>
                   <summary>Where can I review spending trends?</summary>
-                  <p>Open Reports to see spending by category, income vs expenses, and budget progress for the month.</p>
+                  <p>Open Reports to see spending by category, income versus expenses, and budget progress for the current month compared with the previous month.</p>
                 </details>
                 <details>
                   <summary>Does dark mode work across pages?</summary>
-                  <p>Yes. Use the toggle in the top bar or Settings, and your choice is remembered on this device.</p>
+                  <p>Yes. Use the theme control in any top bar or in Settings. Your palette and light/dark choice are remembered on this device.</p>
+                </details>
+                <details>
+                  <summary>Can I reset my password in the app?</summary>
+                  <p>No. Self-service password reset is not implemented yet, so SpendSense cannot send reset emails. The password-help page explains the available options.</p>
+                </details>
+                <details>
+                  <summary>Does SpendSense send notifications?</summary>
+                  <p>Not yet. There is no in-app notification feed or reminder scheduler. Budget alerts are available on the Reports page instead.</p>
                 </details>
               </div>
             </div>
@@ -95,29 +103,44 @@
             <aside class="card">
               <div class="card-head">
                 <div>
-                  <h2 class="card-title">Send a message</h2>
-                  <p class="card-sub">We typically respond within 24 hours</p>
+                  <h2 class="card-title">Get help</h2>
+                  <p class="card-sub">Support options that actually exist</p>
                 </div>
               </div>
               <div class="card-body">
-                <form class="contact-form stack" data-contact-form>
-                  <div class="field">
-                    <label for="topic">Topic</label>
-                    <select id="topic" name="topic" required>
-                      <option>Account help</option>
-                      <option>Expense tracking</option>
-                      <option>Budget planning</option>
-                      <option>Reports issue</option>
-                      <option>Security question</option>
-                    </select>
+                <div class="support-option">
+                  <span class="support-option-ico" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.4 8.2-8 9-4.6-.8-8-4-8-9V7z"/><path d="M9.5 12l1.8 1.8L15 10"/></svg>
+                  </span>
+                  <div>
+                    <strong>In-app messages aren’t available</strong>
+                    <p>This version doesn’t send support requests from the app. There is no form to submit and nothing is queued.</p>
                   </div>
-                  <div class="field">
-                    <label for="message">Message</label>
-                    <textarea id="message" name="message" rows="5" placeholder="Tell us what you need help with" required></textarea>
+                </div>
+
+                <div class="support-option">
+                  <span class="support-option-ico tone-blue" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 1 1 3.8 2.6c-.8.3-1 .9-1 1.6v.4"/><path d="M12 17.2v.01"/></svg>
+                  </span>
+                  <div>
+                    <strong>Public issue tracker</strong>
+                    <p>For technical problems, use the project’s public issue tracker. It has no guaranteed response time.</p>
+                    <a class="btn secondary sm mt-1" href="https://github.com/ThunderSkull7/spendsense-frontend/issues" target="_blank" rel="noopener noreferrer">Open issue tracker</a>
                   </div>
-                  <button class="btn primary" type="submit">Send message</button>
-                  <p class="support-message msg" data-support-message aria-live="polite"></p>
-                </form>
+                </div>
+
+                <div class="support-option">
+                  <span class="support-option-ico tone-amber" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                  </span>
+                  <div>
+                    <strong>Account access</strong>
+                    <p>Password reset isn’t supported yet. Return to log in and try your current password, or read the password-help page.</p>
+                    <a class="link small" href="../authentication/forgot-password.html">Password help</a>
+                  </div>
+                </div>
+
+                <p class="support-warning">Never include your password, full card numbers, or private transaction details in a public support request.</p>
               </div>
             </aside>
 
@@ -125,25 +148,15 @@
               <div class="card-head">
                 <div>
                   <h2 class="card-title">Quick guides</h2>
-                  <p class="card-sub">Get set up in a few steps</p>
+                  <p class="card-sub">Go straight to the page you need</p>
                 </div>
               </div>
-              <div class="card-body stack">
-                <div>
-                  <strong class="small">Set your first budget</strong>
-                  <p class="small muted">Create monthly limits for Food, Transport, Bills, and Shopping.</p>
-                </div>
-                <div>
-                  <strong class="small">Log an expense</strong>
-                  <p class="small muted">Record amount, category, date, and an optional note.</p>
-                </div>
-                <div>
-                  <strong class="small">Read reports</strong>
-                  <p class="small muted">Spot high-spend categories and compare months at a glance.</p>
-                </div>
-                <div>
-                  <strong class="small">Manage reminders</strong>
-                  <p class="small muted">Choose budget, monthly, and payment reminders in Notifications.</p>
+              <div class="card-body">
+                <div class="guide-list">
+                  <a class="guide-link" href="../budget-planning/budget.html"><span><strong>Set your first budget</strong><small>Create monthly limits by category.</small></span><span aria-hidden="true">→</span></a>
+                  <a class="guide-link" href="../expense-management/add-expense.html"><span><strong>Log an expense</strong><small>Record amount, category, date, and an optional note.</small></span><span aria-hidden="true">→</span></a>
+                  <a class="guide-link" href="../reports-analytics/reports.html"><span><strong>Read reports</strong><small>Spot high-spend categories and compare months.</small></span><span aria-hidden="true">→</span></a>
+                  <a class="guide-link" href="../settings/settings.html"><span><strong>Change theme or currency</strong><small>Adjust appearance and the display currency symbol.</small></span><span aria-hidden="true">→</span></a>
                 </div>
               </div>
             </article>
@@ -153,6 +166,5 @@
     </div>
 
     <script src="../script.js"></script>
-    <script src="support.js"></script>
   </body>
 </html>

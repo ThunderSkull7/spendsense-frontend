@@ -54,18 +54,77 @@
 
 /* Primary button styling for consistency */
 .btn.primary {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
+  background: var(--primary-action);
+  color: var(--on-primary);
+  border-color: var(--primary-action);
   box-shadow: 0 1px 2px var(--primary-ring);
 }
 
 .btn.primary:hover {
-  background: var(--primary-600);
-  border-color: var(--primary-600);
+  background: var(--primary-action-hover);
+  border-color: var(--primary-action-hover);
 }
 
 .btn.primary:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--primary-700);
   outline-offset: 2px;
+}
+
+/* Quick-pick category suggestions in the expense form. */
+.field-label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 2px 2px 2px 0;
+}
+
+.suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.suggestion-chip .chip-mark {
+  width: 10px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.suggestion-chip.is-new {
+  border-style: dashed;
+}
+.suggestion-chip.is-new:hover { border-style: solid; }
+.suggestion-chip.exists .chip-mark { color: var(--success); }
+.suggestion-chip.blocked {
+  border-style: dashed;
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: help;
+}
+.suggestion-chip.blocked .chip-mark { color: var(--warn); }
+.suggestion-chip.blocked:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.suggestion-chip:disabled { opacity: 0.55; cursor: wait; }
+
+.suggestion-chip span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .suggestion-chip { flex: 0 1 auto; }
 }

@@ -179,12 +179,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const item = document.createElement('div');
     item.className = 'budget-item';
     item.dataset.budgetId = budget.id;
+    const categoryName = budget.category ? budget.category.name : budget.category_name || 'Budget';
+    const periodLabel = budget.month_year || `${budget.month}/${budget.year}`;
 
     const meta = document.createElement('div');
     meta.className = 'b-meta';
 
     const left = document.createElement('span');
-    left.append(document.createTextNode(budget.category ? budget.category.name : 'Budget'));
+    left.append(document.createTextNode(categoryName));
     const month = document.createElement('span');
     month.className = 'month';
     month.textContent = '· ' + formatMonthYear(budget.month_year);
@@ -218,12 +220,14 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteBtn.dataset.deleteBudget = '';
     deleteBtn.dataset.id = budget.id;
     deleteBtn.textContent = 'Delete';
+    deleteBtn.setAttribute('aria-label', `Delete ${categoryName} budget for ${periodLabel}`);
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'row-btn secondary';
     editBtn.dataset.editBudget = '';
     editBtn.dataset.id = budget.id;
     editBtn.textContent = 'Edit';
+    editBtn.setAttribute('aria-label', `Edit ${categoryName} budget for ${periodLabel}`);
     right.append(value, editBtn, deleteBtn);
 
     meta.append(left, right);
@@ -233,6 +237,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const percentage = Math.min(100, Math.max(0, progress.percentage_used || 0));
       const track = document.createElement('div');
       track.className = 'progress' + (progress.is_overspent ? ' danger' : percentage >= 80 ? ' warn' : '');
+      track.setAttribute('role', 'progressbar');
+      track.setAttribute('aria-label', `${categoryName} budget used`);
+      track.setAttribute('aria-valuemin', '0');
+      track.setAttribute('aria-valuemax', '100');
+      track.setAttribute('aria-valuenow', String(Math.round(percentage)));
+      track.setAttribute('aria-valuetext', `${Math.round(percentage)}% used, ${money(progress.spent_amount)} of ${money(progress.limit_amount)}`);
       const fill = document.createElement('span');
       fill.style.width = Math.max(3, percentage) + '%';
       track.appendChild(fill);
@@ -269,7 +279,10 @@ document.addEventListener('DOMContentLoaded', () => {
           budgetsById.delete(String(button.dataset.id));
           UI.showToast('Budget deleted', 'success');
           if (!listEl.querySelector('.budget-item')) {
-            showState('empty', { message: 'No budgets yet — set your first monthly limit.' });
+            showState('empty', {
+              message: 'No budgets yet — set your first monthly limit.',
+              action: { href: '#budget-form', label: 'Set a budget' },
+            });
           }
         } else {
           button.disabled = false;
@@ -319,7 +332,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!budgets.length) {
-      showState('empty', { message: 'No budgets yet — set your first monthly limit.' });
+      showState('empty', {
+              message: 'No budgets yet — set your first monthly limit.',
+              action: { href: '#budget-form', label: 'Set a budget' },
+            });
       return;
     }
 

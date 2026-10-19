@@ -44,62 +44,34 @@
       <header class="topbar">
         <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
         <div class="topbar-titles">
-          <span class="topbar-title">Notifications</span>
-          <span class="topbar-sub">Alerts, reminders, and payment nudges</span>
+          <h1 class="topbar-title">Notifications</h1>
+          <span class="topbar-sub">Alerts available today and what is still planned</span>
         </div>
         <div class="topbar-actions">
           <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
-          <button class="btn secondary sm" type="button" data-mark-read>Mark all read</button>
         </div>
       </header>
 
       <main class="content">
-        <section class="grid grid-3" aria-label="Notification summary">
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Budget alerts</span>
-              <span class="stat-icon tone-amber"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg></span>
-            </div>
-            <div class="stat-value">2</div>
-            <div class="stat-foot">Categories need attention</div>
-          </article>
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Monthly reminders</span>
-              <span class="stat-icon"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>
-            </div>
-            <div class="stat-value">3</div>
-            <div class="stat-foot">Planning actions due soon</div>
-          </article>
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Payment reminders</span>
-              <span class="stat-icon tone-teal"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>
-            </div>
-            <div class="stat-value">4</div>
-            <div class="stat-foot">Bills and subscriptions</div>
-          </article>
-        </section>
-
-        <section class="grid grid-main-side section-gap">
+        <section class="grid grid-main-side" aria-label="Notification availability">
           <article class="card">
             <div class="card-head">
               <div>
                 <h2 class="card-title">Inbox</h2>
-                <p class="card-sub">Recent notifications</p>
+                <p class="card-sub">No notifications to show</p>
               </div>
+              <span class="pill neutral">Not enabled</span>
             </div>
-            <div class="card-body tight">
-              <div class="notif-list" data-notification-list>
-                <div class="empty-state">
-                  <div class="empty-icon">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/>
-                      <path d="M10 19a2 2 0 0 0 4 0"/>
-                    </svg>
-                  </div>
-                  <h3>No notifications yet</h3>
-                  <p>Notifications are not yet supported. Check back later for budget alerts and payment reminders.</p>
+            <div class="card-body">
+              <div class="notification-empty">
+                <span class="notification-empty-ico" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+                </span>
+                <h3>Notifications aren’t available yet</h3>
+                <p>SpendSense doesn’t have an in-app notifications feed in this version. We won’t show sample alerts as if they were yours.</p>
+                <div class="notification-actions">
+                  <a class="btn primary sm" href="../reports-analytics/reports.html#budget-alerts">View budget alerts</a>
+                  <a class="btn secondary sm" href="../budget-planning/budget.html">Review budgets</a>
                 </div>
               </div>
             </div>
@@ -108,24 +80,30 @@
           <aside class="card">
             <div class="card-head">
               <div>
-                <h2 class="card-title">Reminder settings</h2>
-                <p class="card-sub">Choose what you want to hear about</p>
+                <h2 class="card-title">Where to find alerts</h2>
+                <p class="card-sub">Available in the current app</p>
               </div>
             </div>
             <div class="card-body">
-              <form class="reminder-form stack" data-reminder-form>
-                <label class="check-row"><input type="checkbox" checked /> Budget exceeded alerts</label>
-                <label class="check-row"><input type="checkbox" checked /> Monthly planning reminders</label>
-                <label class="check-row"><input type="checkbox" checked /> Payment due reminders</label>
+              <div class="alert-guide">
+                <a class="alert-guide-row" href="../reports-analytics/reports.html#budget-alerts">
+                  <span class="alert-guide-ico tone-amber" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg></span>
+                  <span><strong>Budget alerts</strong><small>See which categories are near or over their limit.</small></span>
+                </a>
+                <a class="alert-guide-row" href="../reports-analytics/reports.html">
+                  <span class="alert-guide-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg></span>
+                  <span><strong>Monthly insights</strong><small>Compare income and expenses with last month.</small></span>
+                </a>
+                <a class="alert-guide-row" href="../dashboard/dashboard.html">
+                  <span class="alert-guide-ico tone-teal" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
+                  <span><strong>Dashboard summaries</strong><small>Check remaining budget and recent activity.</small></span>
+                </a>
+              </div>
 
-                <div class="field">
-                  <label for="reminderTime">Daily reminder time</label>
-                  <input id="reminderTime" name="reminderTime" type="time" value="09:00" />
-                </div>
-
-                <button class="btn primary block" type="submit">Save reminders</button>
-                <p class="notification-message msg" data-notification-message aria-live="polite"></p>
-              </form>
+              <div class="notification-note">
+                <strong>Reminders are not live</strong>
+                <p>Email reminders, push notifications, and reminder-time settings aren’t implemented. Nothing is scheduled or sent.</p>
+              </div>
             </div>
           </aside>
         </section>
@@ -133,6 +111,5 @@
     </div>
 
     <script src="../script.js"></script>
-    <script src="notifications.js"></script>
   </body>
 </html>

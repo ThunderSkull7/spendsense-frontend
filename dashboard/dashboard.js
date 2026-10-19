@@ -8,6 +8,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const UI = window.SpendSenseUI;
   const api = window.SpendSenseAPI;
   const money = (value) => UI.formatMoney(value);
+  const settings = window.SpendSenseSettings;
+
+  // Stable category → colour mapping shared with the reports page.
+  const toneKeyOf = (item) =>
+    item && item.category_id != null
+      ? `cat:${item.category_id}`
+      : `name:${String((item && item.category_name) || '').toLowerCase()}`;
+  const colorMapFor = (items) => {
+    const tones =
+      settings && typeof settings.categoryTones === 'function'
+        ? settings.categoryTones(items.map(toneKeyOf))
+        : new Map();
+    const colors =
+      settings && typeof settings.chartColors === 'function'
+        ? settings.chartColors()
+        : ['#10B981'];
+    return (item) => colors[(tones.get(toneKeyOf(item)) || 0) % colors.length];
+  };
 
   const refreshButton = document.querySelector('[data-refresh]');
   const statEls = {
@@ -21,8 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const budgetsEl = document.querySelector('[data-budgets]');
   const transactionsEl = document.querySelector('[data-transactions]');
   const monthLabels = document.querySelectorAll('[data-month-label]');
-
-  const barTones = ['', 'teal', 'amber', 'blue', 'rose'];
 
   const monthName = (month, year) =>
     new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
@@ -39,16 +55,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  const renderStat = (el, { value, foot = '', tone = '' }) => {
+  const renderStat = (el, { value, foot = '', tone = '', delta = null, textValue = false }) => {
     if (!el) return;
     el.replaceChildren();
     const valueEl = document.createElement('div');
-    valueEl.className = 'stat-value' + (tone ? ' ' + tone : '');
+    valueEl.className = 'stat-value' + (tone ? ' ' + tone : '') + (textValue ? ' text-value' : '');
     valueEl.textContent = value;
-    const footEl = document.createElement('div');
-    footEl.className = 'stat-foot';
-    footEl.textContent = foot;
-    el.append(valueEl, footEl);
+    el.appendChild(valueEl);
+    if (delta && delta.text) {
+      const deltaEl = document.createElement('div');
+      deltaEl.className = 'stat-delta ' + (delta.tone || 'neutral');
+      deltaEl.textContent = delta.text;
+      el.appendChild(deltaEl);
+    } else {
+      const footEl = document.createElement('div');
+      footEl.className = 'stat-foot';
+      footEl.textContent = foot;
+      el.appendChild(footEl);
+    }
   };
 
   const renderStatError = (el) => {
@@ -75,7 +99,10 @@ document.addEventListener('DOMContentLoaded', () => {
     UI.renderState(transactionsEl, 'loading', { message: 'Loading transactions…' });
   };
 
+  let lastBreakdownResult = null;
+
   const renderBreakdown = (result) => {
+    lastBreakdownResult = result;
     if (!result || result.status !== 200 || !result.data || !result.data.data) {
       UI.renderState(breakdownEl, 'error', { message: 'Could not load spending breakdown.', retry: loadDashboard });
       return;
@@ -85,16 +112,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (payload.month && payload.year) setMonthLabels(payload.month, payload.year);
 
     if (!items.length) {
-      UI.renderState(breakdownEl, 'empty', { message: 'No expenses recorded this month yet.' });
+      UI.renderState(breakdownEl, 'empty', {
+        message: 'No expenses recorded this month yet.',
+        action: { href: '../expense-management/add-expense.html', label: 'Add an expense' },
+      });
       return;
     }
 
     const max = items[0].total_spent || 1;
     const total = items.reduce((sum, item) => sum + item.total_spent, 0) || 1;
+    const colorFor = colorMapFor(items);
     const list = document.createElement('div');
     list.className = 'bar-list';
 
-    items.forEach((item, index) => {
+    items.forEach((item) => {
       const row = document.createElement('div');
       row.className = 'bar-row';
 
@@ -102,7 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
       meta.className = 'bar-meta';
       const label = document.createElement('span');
       const dot = document.createElement('span');
-      dot.className = 'dot ' + barTones[index % barTones.length];
+      dot.className = 'dot';
+      dot.style.background = colorFor(item);
       label.append(dot, document.createTextNode(' ' + item.category_name));
       const value = document.createElement('strong');
       value.textContent = `${money(item.total_spent)} · ${Math.round((item.total_spent / total) * 100)}%`;
@@ -111,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const track = document.createElement('div');
       track.className = 'progress';
       const fill = document.createElement('span');
-      fill.className = barTones[index % barTones.length];
+      fill.style.background = colorFor(item);
       fill.style.width = Math.max(4, Math.round((item.total_spent / max) * 100)) + '%';
       track.appendChild(fill);
 
@@ -122,6 +154,12 @@ document.addEventListener('DOMContentLoaded', () => {
     breakdownEl.replaceChildren(list);
   };
 
+  // Inline category colours are resolved from the live theme tokens; redraw
+  // them when the palette or mode changes so the dashboard never goes stale.
+  window.addEventListener('spendsense:theme-change', () => {
+    if (lastBreakdownResult) renderBreakdown(lastBreakdownResult);
+  });
+
   const renderComparison = (result) => {
     if (!result || result.status !== 200 || !result.data || !result.data.data) {
       UI.renderState(comparisonEl, 'error', { message: 'Could not load cash flow comparison.', retry: loadDashboard });
@@ -131,11 +169,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const current = payload.current_month || {};
     const previous = payload.previous_month || {};
     const change = payload.change_percentage || {};
+
+    // The comparison endpoint has the previous month, so enrich the summary
+    // cards with an honest month-over-month delta instead of a static caption.
+    const trend = (percent, direction) => {
+      if (typeof percent !== 'number' || !Number.isFinite(percent)) return null;
+      const flat = Math.abs(percent) < 0.05;
+      if (flat) return { text: 'Level with last month', tone: 'neutral' };
+      const rising = percent > 0;
+      const tone = direction === 'income' ? (rising ? 'pos' : 'neg') : (rising ? 'neg' : 'pos');
+      return {
+        text: `${rising ? '↑' : '↓'} ${Math.abs(percent).toFixed(1)}% vs last month`,
+        tone,
+      };
+    };
+    if (typeof current.income === 'number') {
+      renderStat(statEls.income, {
+        value: money(current.income),
+        foot: 'Income this month',
+        delta: previous.income > 0 ? trend(change.income, 'income') : null,
+      });
+    }
+    if (typeof current.expenses === 'number') {
+      renderStat(statEls.expenses, {
+        value: money(current.expenses),
+        foot: 'Spending this month',
+        delta: previous.expenses > 0 ? trend(change.expenses, 'expense') : null,
+      });
+    }
+
     const max = Math.max(current.income || 0, current.expenses || 0, previous.income || 0, previous.expenses || 0, 1);
 
     comparisonEl.replaceChildren();
 
-    if (typeof change.expenses === 'number') {
+    if (previous.expenses > 0 && typeof change.expenses === 'number') {
       const delta = document.createElement('p');
       delta.className = 'delta-line';
       const rising = change.expenses > 0;
@@ -146,6 +213,11 @@ document.addEventListener('DOMContentLoaded', () => {
         ? 'Spending is level with last month'
         : `Spending ${rising ? 'up' : 'down'} ${Math.abs(change.expenses).toFixed(1)}% vs last month`;
       delta.appendChild(span);
+      comparisonEl.appendChild(delta);
+    } else if (previous.expenses === 0 && current.expenses > 0) {
+      const delta = document.createElement('p');
+      delta.className = 'delta-line';
+      delta.textContent = 'No spending was recorded last month to compare against.';
       comparisonEl.appendChild(delta);
     }
 
@@ -186,8 +258,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const legend = document.createElement('div');
     legend.className = 'legend';
     legend.innerHTML =
-      '<span class="legend-item"><span class="dot"></span> Income</span>' +
-      '<span class="legend-item"><span class="dot" style="background: var(--surface-3); border: 1px solid var(--border-strong)"></span> Expenses</span>';
+      '<span class="legend-item"><span class="dot income"></span> Income</span>' +
+      '<span class="legend-item"><span class="dot expense"></span> Expenses</span>';
     comparisonEl.appendChild(legend);
   };
 
@@ -202,7 +274,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!budgets.length) {
       renderStat(statEls.budget, { value: '—', foot: 'No budgets set for this month' });
-      UI.renderState(budgetsEl, 'empty', { message: 'No budgets for this month yet — set one from the Budgets page.' });
+      UI.renderState(budgetsEl, 'empty', {
+        message: 'No budgets for this month yet — set one from the Budgets page.',
+        action: { href: '../budget-planning/budget.html', label: 'Set a budget' },
+      });
       return;
     }
 
@@ -245,6 +320,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const track = document.createElement('div');
       track.className = 'progress' + (budget.is_overspent ? ' danger' : percentage >= 80 ? ' warn' : '');
+      track.setAttribute('role', 'progressbar');
+      track.setAttribute('aria-label', `${budget.category_name} budget used`);
+      track.setAttribute('aria-valuemin', '0');
+      track.setAttribute('aria-valuemax', '100');
+      track.setAttribute('aria-valuenow', String(Math.round(percentage)));
+      track.setAttribute('aria-valuetext', `${Math.round(percentage)}% used, ${money(budget.spent_amount)} of ${money(budget.limit_amount)}`);
       const fill = document.createElement('span');
       fill.style.width = Math.max(3, percentage) + '%';
       track.appendChild(fill);
@@ -262,15 +343,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const rows = result.data.data.data || [];
     if (!rows.length) {
-      UI.renderState(transactionsEl, 'empty', { message: 'No expenses logged yet. Add your first expense to see it here.' });
+      UI.renderState(transactionsEl, 'empty', {
+        message: 'No expenses logged yet. Add your first expense to see it here.',
+        action: { href: '../expense-management/add-expense.html', label: 'Add an expense' },
+      });
       return;
     }
 
     const list = document.createElement('div');
     list.className = 'tx-list';
     rows.slice(0, 6).forEach((row) => {
-      const wrap = document.createElement('div');
+      const wrap = document.createElement('a');
       wrap.className = 'tx-row';
+      wrap.href = '../expense-management/expenses.html';
+      const label = row.description || (row.category ? row.category.name : 'expense');
+      wrap.setAttribute('aria-label', `View expenses. ${label}, ${money(row.amount)} on ${UI.formatDate(row.expense_date)}`);
 
       const ico = document.createElement('span');
       ico.className = 'tx-ico';

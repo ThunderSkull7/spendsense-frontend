@@ -44,8 +44,8 @@
       <header class="topbar">
         <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
         <div class="topbar-titles">
-          <span class="topbar-title">Settings</span>
-          <span class="topbar-sub">Profile, currency, appearance, and security</span>
+          <h1 class="topbar-title">Settings</h1>
+          <span class="topbar-sub">Account, display, appearance, and security</span>
         </div>
         <div class="topbar-actions">
           <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
@@ -57,41 +57,43 @@
           <article class="card">
             <div class="card-head">
               <div>
-                <h2 class="card-title">Profile</h2>
-                <p class="card-sub">Account details and display currency</p>
+                <h2 class="card-title">Account &amp; display</h2>
+                <p class="card-sub">Account details and the currency shown in the app</p>
               </div>
             </div>
             <div class="card-body">
-              <form class="settings-form stack" data-settings-form>
-                <div class="field">
-                  <label for="name">Name</label>
-                  <input id="name" name="name" type="text" placeholder="Your name" value="SpendSense User" />
+              <div class="account-summary">
+                <span class="account-summary-ico" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+                </span>
+                <div>
+                  <strong>Signed-in account</strong>
+                  <p>Your name and email are managed by the account you use to sign in. Profile editing isn’t available in this version.</p>
                 </div>
-                <div class="field">
-                  <label for="email">Email</label>
-                  <input id="email" name="email" type="email" placeholder="you@example.com" value="user@spendsense.app" />
-                </div>
-                <div class="field">
-                  <label for="currency">Currency</label>
-                  <select id="currency" name="currency" data-currency-select>
-                    <option value="INR">INR — Indian Rupee</option>
-                    <option value="USD">USD — US Dollar</option>
-                    <option value="EUR">EUR — Euro</option>
-                    <option value="GBP">GBP — British Pound</option>
-                    <option value="JPY">JPY — Japanese Yen</option>
-                    <option value="AUD">AUD — Australian Dollar</option>
-                    <option value="CAD">CAD — Canadian Dollar</option>
-                    <option value="SGD">SGD — Singapore Dollar</option>
-                    <option value="AED">AED — UAE Dirham</option>
-                  </select>
-                </div>
-                <div class="currency-preview">
-                  <span class="muted small">Currency preview</span>
-                  <strong data-currency-preview>₹2,486</strong>
-                </div>
-                <button class="btn primary" type="submit">Save profile</button>
-                <p class="settings-message msg" data-settings-message aria-live="polite"></p>
-              </form>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="field">
+                <label for="currency">Display currency</label>
+                <select id="currency" name="currency" data-currency-select>
+                  <option value="INR">INR — Indian Rupee</option>
+                  <option value="USD">USD — US Dollar</option>
+                  <option value="EUR">EUR — Euro</option>
+                  <option value="GBP">GBP — British Pound</option>
+                  <option value="JPY">JPY — Japanese Yen</option>
+                  <option value="AUD">AUD — Australian Dollar</option>
+                  <option value="CAD">CAD — Canadian Dollar</option>
+                  <option value="SGD">SGD — Singapore Dollar</option>
+                  <option value="AED">AED — UAE Dirham</option>
+                </select>
+              </div>
+              <div class="currency-preview">
+                <span class="muted small">Display preview</span>
+                <strong data-currency-preview>₹2,486</strong>
+              </div>
+              <p class="settings-note">Changes apply immediately and are saved on this device. This changes the currency symbol only; stored amounts are not converted.</p>
+              <p class="settings-message" data-settings-message role="status" aria-live="polite"></p>
             </div>
           </article>
 
@@ -103,57 +105,89 @@
               </div>
             </div>
             <div class="card-body">
-              <form class="theme-form stack" data-theme-form>
-                <div class="field">
-                  <label for="themeColor">Colour palette</label>
-                  <select id="themeColor" name="themeColor" data-theme-color>
-                    <option value="green">Sage green</option>
-                    <option value="blue">Blue</option>
-                    <option value="red">Red</option>
-                    <option value="yellow">Amber</option>
-                  </select>
+              <form class="theme-form" data-theme-form>
+                <fieldset class="theme-fieldset">
+                  <legend class="theme-legend">Colour palette</legend>
+                  <div class="theme-options">
+                    <label class="theme-option" data-palette="emerald">
+                      <input type="radio" name="themeColor" value="emerald" />
+                      <span class="theme-swatch" aria-hidden="true"><i></i><i></i><i></i></span>
+                      <span class="theme-option-name">Green</span>
+                    </label>
+                    <label class="theme-option" data-palette="blue">
+                      <input type="radio" name="themeColor" value="blue" />
+                      <span class="theme-swatch" aria-hidden="true"><i></i><i></i><i></i></span>
+                      <span class="theme-option-name">Blue</span>
+                    </label>
+                    <label class="theme-option" data-palette="red">
+                      <input type="radio" name="themeColor" value="red" />
+                      <span class="theme-swatch" aria-hidden="true"><i></i><i></i><i></i></span>
+                      <span class="theme-option-name">Red</span>
+                    </label>
+                    <label class="theme-option" data-palette="amber">
+                      <input type="radio" name="themeColor" value="amber" />
+                      <span class="theme-swatch" aria-hidden="true"><i></i><i></i><i></i></span>
+                      <span class="theme-option-name">Amber</span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <fieldset class="theme-fieldset">
+                  <legend class="theme-legend">Mode</legend>
+                  <div class="mode-options">
+                    <label class="mode-option">
+                      <input type="radio" name="themeMode" value="light" />
+                      <span>Light</span>
+                    </label>
+                    <label class="mode-option">
+                      <input type="radio" name="themeMode" value="dark" />
+                      <span>Dark</span>
+                    </label>
+                  </div>
+                </fieldset>
+
+                <div class="theme-preview" role="img" aria-label="Preview of the selected palette and mode">
+                  <div class="tp-side" aria-hidden="true">
+                    <span class="tp-nav-item active"><i></i>Dashboard</span>
+                    <span class="tp-nav-item"><i></i>Reports</span>
+                  </div>
+                  <div class="tp-body" aria-hidden="true">
+                    <div class="tp-row">
+                      <span class="tp-btn">Add expense</span>
+                      <span class="tp-pill">On track</span>
+                    </div>
+                    <div class="tp-row">
+                      <span class="tp-input">Category</span>
+                      <span class="tp-chart"><i></i><i></i><i></i><i></i></span>
+                    </div>
+                  </div>
                 </div>
-                <div class="field">
-                  <label for="themeMode">Mode</label>
-                  <select id="themeMode" name="themeMode" data-theme-mode>
-                    <option value="light">Light mode</option>
-                    <option value="dark">Dark mode</option>
-                  </select>
-                </div>
-                <div class="legend" aria-label="Theme colour options">
-                  <span class="legend-item"><span class="dot"></span> Green</span>
-                  <span class="legend-item"><span class="dot blue"></span> Blue</span>
-                  <span class="legend-item"><span class="dot rose"></span> Red</span>
-                  <span class="legend-item"><span class="dot amber"></span> Amber</span>
-                </div>
+
+                <p class="theme-note">Changes apply instantly and are saved on this device.</p>
               </form>
             </div>
           </article>
 
-          <article class="card">
+          <article class="card settings-wide">
             <div class="card-head">
               <div>
                 <h2 class="card-title">Security</h2>
-                <p class="card-sub">Login protection and password updates</p>
+                <p class="card-sub">What is and isn’t available for account protection</p>
               </div>
+              <span class="pill amber">Not available yet</span>
             </div>
             <div class="card-body">
-              <form class="security-form stack" data-security-form>
-                <label class="check-row"><input type="checkbox" checked /> Enable two-factor authentication</label>
-                <label class="check-row"><input type="checkbox" checked /> Email me about new login attempts</label>
-
-                <div class="field">
-                  <label for="currentPassword">Current password</label>
-                  <input id="currentPassword" name="currentPassword" type="password" placeholder="Current password" />
+              <div class="security-unavailable">
+                <span class="security-unavailable-ico" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+                </span>
+                <div>
+                  <strong>In-app security settings are not implemented</strong>
+                  <p>Two-factor authentication, login-alert emails, and password changes aren’t available in SpendSense yet. Nothing on this page can be toggled or saved, and password reset emails cannot be sent.</p>
+                  <p>If you need help with account access, read the <a class="link" href="../support/support.html">support options</a> or the <a class="link" href="../authentication/forgot-password.html">password-help page</a>.</p>
                 </div>
-                <div class="field">
-                  <label for="newPassword">New password</label>
-                  <input id="newPassword" name="newPassword" type="password" placeholder="New password" />
-                </div>
-
-                <button class="btn secondary" type="submit">Update security</button>
-                <p class="settings-message msg" data-security-message aria-live="polite"></p>
-              </form>
+              </div>
+              <p class="settings-message" data-security-message role="status" aria-live="polite"></p>
             </div>
           </article>
         </section>

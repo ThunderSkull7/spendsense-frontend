@@ -195,6 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const icon = document.createElement('span');
     icon.className = 'c-ico' + (category.type === 'income' ? ' income' : '');
+    icon.setAttribute('aria-hidden', 'true');
     icon.textContent = (category.name || '?').charAt(0).toUpperCase();
 
     const main = document.createElement('div');
@@ -296,7 +297,10 @@ document.addEventListener('DOMContentLoaded', () => {
       categories.forEach((category) => categoriesById.set(String(category.id), category));
 
       if (!categories.length) {
-        showState('empty', { message: 'No categories yet — add your first one.' });
+        showState('empty', {
+          message: 'No categories yet — add your first one.',
+          action: { href: '#category-form', label: 'Add a category' },
+        });
         return;
       }
 

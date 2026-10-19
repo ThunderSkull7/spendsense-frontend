@@ -239,6 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteBtn.dataset.deleteIncome = '';
     deleteBtn.dataset.id = item.id;
     deleteBtn.textContent = 'Delete';
+    deleteBtn.setAttribute('aria-label', `Delete income from ${item.source || 'income'} on ${UI.formatDate(item.income_date)}`);
     actions.appendChild(deleteBtn);
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
@@ -246,6 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
     editBtn.dataset.editIncome = '';
     editBtn.dataset.id = item.id;
     editBtn.textContent = 'Edit';
+    editBtn.setAttribute('aria-label', `Edit income from ${item.source || 'income'} on ${UI.formatDate(item.income_date)}`);
     actions.appendChild(editBtn);
     actionsCell.appendChild(actions);
 
@@ -282,7 +284,10 @@ document.addEventListener('DOMContentLoaded', () => {
           total = Math.max(0, total - 1);
           updateSummary();
           if (!rowsBody.querySelector('tr')) {
-            showState('empty', { message: 'No income logged yet. Add your first entry.' });
+            showState('empty', {
+              message: 'No income logged yet. Add your first entry.',
+              action: { href: '#add-income', label: 'Add income' },
+            });
           }
           UI.showToast('Income deleted', 'success');
         } else {
@@ -325,7 +330,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!append && !items.length) {
         updateSummary();
-        showState('empty', { message: 'No income logged yet. Add your first entry.' });
+        showState('empty', {
+          message: 'No income logged yet. Add your first entry.',
+          action: { href: '#add-income', label: 'Add income' },
+        });
         return;
       }
 
