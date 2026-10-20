@@ -29,6 +29,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
   const cancelEditBtn = document.querySelector('[data-cancel-edit]');
   let editingIncomeId = null;
+  let pendingIncomeKey = null;
+
+  if (form) {
+    form.addEventListener('input', () => { pendingIncomeKey = null; });
+    form.addEventListener('change', () => { pendingIncomeKey = null; });
+  }
 
   const setMessage = (text, type) => {
     if (!formMessage) return;
@@ -54,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const enterEditMode = (income) => {
     if (!form) return;
+    pendingIncomeKey = null;
     editingIncomeId = income.id;
 
     const sourceSelect = form.querySelector('#source');
@@ -88,13 +95,13 @@ document.addEventListener('DOMContentLoaded', () => {
     form.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
-  if (dateInput && !dateInput.value) dateInput.valueAsDate = new Date();
+  if (dateInput && !dateInput.value) dateInput.value = UI.todayInputValue();
 
   if (cancelEditBtn) {
     cancelEditBtn.addEventListener('click', () => {
       if (!form) return;
       form.reset();
-      if (dateInput) dateInput.valueAsDate = new Date();
+      if (dateInput) dateInput.value = UI.todayInputValue();
       exitEditMode();
       setMessage('');
     });
@@ -137,13 +144,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const { data, status } = editingIncomeId
           ? await api.put(`/incomes/${editingIncomeId}`, payload)
-          : await api.post('/incomes', payload);
+          : await api.post('/incomes', payload, {
+              'Idempotency-Key': (pendingIncomeKey ||= api.newIdempotencyKey()),
+            });
 
         if (editingIncomeId ? status === 200 : status === 201) {
+          pendingIncomeKey = null;
           setMessage(editingIncomeId ? 'Income updated.' : data.message || 'Income saved!', 'success');
           UI.showToast(editingIncomeId ? 'Income updated' : 'Income saved', 'success');
           form.reset();
-          if (dateInput) dateInput.valueAsDate = new Date();
+          if (dateInput) dateInput.value = UI.todayInputValue();
           exitEditMode();
           loadIncomes(false);
         } else {
@@ -167,11 +177,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const stateEl = document.querySelector('[data-income-state]');
   const summaryEl = document.querySelector('[data-income-summary]');
   const loadMoreBtn = document.querySelector('[data-income-load-more]');
+  const trashCard = document.querySelector('[data-income-trash-card]');
+  const trashRows = document.querySelector('[data-income-trash-rows]');
+  const trashMoreBtn = document.querySelector('[data-income-trash-more]');
 
   let nextPage = 1;
   let lastPage = 1;
   let total = 0;
   let loaded = 0;
+  let trashPage = 1;
   const incomeById = new Map();
 
   const updateSummary = () => {
@@ -255,6 +269,48 @@ document.addEventListener('DOMContentLoaded', () => {
     return row;
   };
 
+  const buildTrashRow = (item) => {
+    const row = document.createElement('tr');
+    row.dataset.incomeId = item.id;
+
+    const deletedCell = document.createElement('td');
+    deletedCell.className = 'col-tight';
+    deletedCell.dataset.label = 'Deleted';
+    deletedCell.textContent = UI.formatDate(item.deleted_at);
+
+    const dateCell = document.createElement('td');
+    dateCell.className = 'col-tight';
+    dateCell.dataset.label = 'Date';
+    dateCell.textContent = UI.formatDate(item.income_date);
+
+    const sourceCell = document.createElement('td');
+    sourceCell.className = 'cell-wrap';
+    sourceCell.dataset.label = 'Source';
+    sourceCell.textContent = item.source || 'Income';
+
+    const amountCell = document.createElement('td');
+    amountCell.className = 'num amount-pos col-tight';
+    amountCell.dataset.label = 'Amount';
+    amountCell.textContent = '+' + money(item.amount);
+
+    const actionsCell = document.createElement('td');
+    actionsCell.className = 'col-tight actions-cell';
+    const restoreBtn = document.createElement('button');
+    restoreBtn.type = 'button';
+    restoreBtn.className = 'row-btn secondary';
+    restoreBtn.dataset.restoreIncome = '';
+    restoreBtn.dataset.id = item.id;
+    restoreBtn.textContent = 'Restore';
+    restoreBtn.setAttribute(
+      'aria-label',
+      `Restore income from ${item.source || 'income'} on ${UI.formatDate(item.income_date)}`
+    );
+    actionsCell.appendChild(restoreBtn);
+
+    row.append(deletedCell, dateCell, sourceCell, amountCell, actionsCell);
+    return row;
+  };
+
   if (table) {
     table.addEventListener('click', async (event) => {
       const editButton = event.target.closest('[data-edit-income]');
@@ -271,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const button = event.target.closest('[data-delete-income]');
       if (!button) return;
 
-      if (!window.confirm('Delete this income entry? This cannot be undone.')) return;
+      if (!window.confirm('Move this income entry to Recently deleted? You can restore it later.')) return;
 
       button.disabled = true;
       try {
@@ -289,7 +345,8 @@ document.addEventListener('DOMContentLoaded', () => {
               action: { href: '#add-income', label: 'Add income' },
             });
           }
-          UI.showToast('Income deleted', 'success');
+          UI.showToast('Income moved to Recently deleted', 'success');
+          loadTrash();
         } else {
           button.disabled = false;
           UI.showToast((data && data.message) || 'Could not delete income.', 'error');
@@ -297,6 +354,76 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         button.disabled = false;
         UI.showToast('Error deleting income.', 'error');
+      }
+    });
+  }
+
+  async function loadTrash(append = false) {
+    if (!trashCard || !trashRows) return;
+
+    if (!append) {
+      trashPage = 1;
+      trashRows.replaceChildren();
+    }
+
+    try {
+      const { data, status } = await api.get(`/incomes/trash?page=${trashPage}`);
+      const paginator = status === 200 && data && data.data ? data.data : null;
+      const items = paginator ? paginator.data || [] : [];
+
+      if (!append) trashRows.replaceChildren();
+      items.forEach((item) => trashRows.appendChild(buildTrashRow(item)));
+
+      if (!trashRows.querySelector('tr')) {
+        trashCard.hidden = true;
+        if (trashMoreBtn) trashMoreBtn.hidden = true;
+        return;
+      }
+
+      trashCard.hidden = false;
+      const lastTrashPage = paginator ? paginator.last_page || 1 : 1;
+      if (trashMoreBtn) {
+        trashMoreBtn.hidden = trashPage >= lastTrashPage;
+        const footer = trashMoreBtn.closest('.card-footer');
+        if (footer) footer.hidden = trashMoreBtn.hidden;
+      }
+    } catch (err) {
+      if (append) {
+        trashPage -= 1;
+      } else {
+        // The main income list remains usable if the optional trash view fails.
+        trashCard.hidden = true;
+        if (trashMoreBtn) trashMoreBtn.hidden = true;
+      }
+    }
+  }
+
+  if (trashMoreBtn) {
+    trashMoreBtn.addEventListener('click', () => {
+      trashPage += 1;
+      loadTrash(true);
+    });
+  }
+
+  if (trashRows) {
+    trashRows.addEventListener('click', async (event) => {
+      const button = event.target.closest('[data-restore-income]');
+      if (!button) return;
+
+      button.disabled = true;
+      try {
+        const { data, status } = await api.post(`/incomes/${button.dataset.id}/restore`);
+        if (status === 200) {
+          UI.showToast('Income restored', 'success');
+          await loadTrash();
+          await loadIncomes(false);
+        } else {
+          button.disabled = false;
+          UI.showToast((data && data.message) || 'Could not restore income.', 'error');
+        }
+      } catch (err) {
+        button.disabled = false;
+        UI.showToast('Error restoring income.', 'error');
       }
     });
   }
@@ -315,7 +442,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const { data, status } = await api.get(`/incomes?page=${nextPage}`);
 
       if (status !== 200 || !data || !data.data) {
-        if (!append && summaryEl) summaryEl.textContent = '';
+        if (append) {
+          // Keep the rows already on screen; only the extra page failed.
+          nextPage -= 1;
+          if (loadMoreBtn) {
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.textContent = 'Load more';
+          }
+          UI.showToast((data && data.message) || 'Could not load more income entries.', 'error');
+          return;
+        }
+        if (summaryEl) summaryEl.textContent = '';
         showState('error', {
           message: (data && data.message) || 'Could not load income entries.',
           retry: () => loadIncomes(false),
@@ -356,11 +493,21 @@ document.addEventListener('DOMContentLoaded', () => {
         loadMoreBtn.textContent = 'Load more';
       }
     } catch (err) {
+      if (append) {
+        // Keep the rows already on screen; only the extra page failed.
+        nextPage -= 1;
+        if (loadMoreBtn) {
+          loadMoreBtn.disabled = false;
+          loadMoreBtn.textContent = 'Load more';
+        }
+        UI.showToast('Could not load more income entries. ' + (err.message || ''), 'error');
+        return;
+      }
       if (loadMoreBtn) {
         loadMoreBtn.disabled = false;
         loadMoreBtn.textContent = 'Load more';
       }
-      if (!append && summaryEl) summaryEl.textContent = '';
+      if (summaryEl) summaryEl.textContent = '';
       showState('error', {
         message: 'Could not reach the API. ' + (err.message || ''),
         retry: () => loadIncomes(false),
@@ -379,4 +526,5 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadIncomes(false);
+  loadTrash();
 });

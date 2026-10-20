@@ -9,6 +9,29 @@
     currency: "spendsenseCurrency",
   };
 
+  // localStorage can throw in hardened/private browser modes. Preferences are
+  // optional, so every access degrades to an in-memory fallback instead of
+  // aborting the whole shell (skip link, theme controls, navigation).
+  const memoryStore = new Map();
+  const storage = {
+    get(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch (e) {
+        return memoryStore.has(key) ? memoryStore.get(key) : null;
+      }
+    },
+    set(key, value) {
+      const text = String(value);
+      memoryStore.set(key, text);
+      try {
+        localStorage.setItem(key, text);
+      } catch (e) {
+        /* the in-memory copy keeps this page working */
+      }
+    },
+  };
+
   const currencySymbols = {
     INR: "\u20B9",
     USD: "$",
@@ -43,16 +66,16 @@
   const normalizeColor = (value) => COLOR_ALIASES[String(value || "").toLowerCase()] || "emerald";
   const normalizeMode = (value) => (String(value || "").toLowerCase() === "dark" ? "dark" : "light");
 
-  const savedColor = normalizeColor(localStorage.getItem(KEYS.color));
-  const savedMode = normalizeMode(localStorage.getItem(KEYS.mode));
-  const savedCurrency = localStorage.getItem(KEYS.currency) || "INR";
+  const savedColor = normalizeColor(storage.get(KEYS.color));
+  const savedMode = normalizeMode(storage.get(KEYS.mode));
+  const savedCurrency = storage.get(KEYS.currency) || "INR";
 
   const symbolFor = (code) => currencySymbols[code] || currencySymbols.INR;
 
   // Convert hard-coded currency amounts in static markup to the selected symbol.
   const applyMoneySymbols = () => {
     if (!document.body) return;
-    const symbol = symbolFor(localStorage.getItem(KEYS.currency) || "INR");
+    const symbol = symbolFor(storage.get(KEYS.currency) || "INR");
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
       acceptNode(node) {
         if (!node.parentElement || skipTags.has(node.parentElement.tagName)) {
@@ -83,16 +106,16 @@
     const nextMode = normalizeMode(mode);
     root.dataset.themeColor = nextColor;
     root.dataset.mode = nextMode;
-    localStorage.setItem(KEYS.color, nextColor);
-    localStorage.setItem(KEYS.mode, nextMode);
+    storage.set(KEYS.color, nextColor);
+    storage.set(KEYS.mode, nextMode);
     syncThemeToggleLabels();
     window.dispatchEvent(
       new CustomEvent("spendsense:theme-change", { detail: { color: nextColor, mode: nextMode } })
     );
   };
 
-  const themeColor = () => normalizeColor(root.dataset.themeColor || localStorage.getItem(KEYS.color));
-  const themeMode = () => normalizeMode(root.dataset.mode || localStorage.getItem(KEYS.mode));
+  const themeColor = () => normalizeColor(root.dataset.themeColor || storage.get(KEYS.color));
+  const themeMode = () => normalizeMode(root.dataset.mode || storage.get(KEYS.mode));
 
   // Keep every theme toggle's accessible state in sync, including when the
   // mode is changed from Settings rather than by the toggle itself.
@@ -157,7 +180,7 @@
   };
 
   const applyCurrency = (currency) => {
-    localStorage.setItem(KEYS.currency, currency);
+    storage.set(KEYS.currency, currency);
     window.SpendSenseSettings.currency = currency;
     window.SpendSenseSettings.symbol = symbolFor(currency);
     applyMoneySymbols();
@@ -178,18 +201,42 @@
       typeof options.decimals === "number" ? options.decimals : hasFraction ? 2 : 0;
     const symbol =
       (window.SpendSenseSettings && window.SpendSenseSettings.symbol) ||
-      symbolFor(localStorage.getItem(KEYS.currency) || "INR");
+      symbolFor(storage.get(KEYS.currency) || "INR");
     return `${sign}${symbol}${Math.abs(amount).toLocaleString("en-IN", {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     })}`;
   };
 
+  // Date-only values (YYYY-MM-DD, or Laravel's date-cast
+  // "YYYY-MM-DDT00:00:00.000000Z") describe a calendar date, not an instant.
+  // Parsing them with new Date() and formatting in local time shifts the day
+  // for users west of UTC, so the date parts are read directly instead.
+  const dateOnlyMatch = (value) => {
+    const match = /^(\d{4})-(\d{2})-(\d{2})(?:T00:00:00(?:\.\d+)?Z)?$/.exec(String(value).trim());
+    return match ? { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) } : null;
+  };
+
   const formatDate = (value) => {
     if (value === null || value === undefined || value === "") return "";
-    const date = value instanceof Date ? value : new Date(String(value).replace(" ", "T"));
+    const parts = dateOnlyMatch(value);
+    const date = parts
+      ? new Date(parts.year, parts.month - 1, parts.day)
+      : value instanceof Date
+        ? value
+        : new Date(String(value).replace(" ", "T"));
     if (Number.isNaN(date.getTime())) return String(value);
     return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  };
+
+  // Today's calendar date in the user's local timezone, as YYYY-MM-DD.
+  // <input type="date"> expects exactly this; valueAsDate converts through
+  // UTC and returns yesterday just after local midnight in positive offsets.
+  const todayInputValue = () => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+      now.getDate()
+    ).padStart(2, "0")}`;
   };
 
   // --- App shell behaviour (sidebar, theme toggle, session chip, logout) ---
@@ -197,7 +244,7 @@
   const updateShellUser = () => {
     const user = window.SpendSenseAPI && window.SpendSenseAPI.user;
     const name = user && user.name ? user.name : "Account";
-    const email = user && user.email ? user.email : "Signed-in session";
+    const email = user && user.email ? user.email : "Not signed in";
     document.querySelectorAll("[data-user-name], #user-name").forEach((el) => {
       el.textContent = name;
     });
@@ -207,6 +254,55 @@
     document.querySelectorAll("[data-user-avatar]").forEach((el) => {
       el.textContent = (name.trim().charAt(0) || "S").toUpperCase();
     });
+  };
+
+  // Protected pages declare data-requires-auth. Verify the Sanctum session
+  // once on load: hydrate the shell with the real user, or send a signed-out
+  // visitor to the login page instead of leaving placeholder identity and a
+  // grid of failed panels on screen.
+  let redirectingToLogin = false;
+  const loginHref = () => {
+    const body = document.body;
+    return (body && body.getAttribute("data-login-href")) || "authentication/login.html";
+  };
+  const redirectToLogin = (expired) => {
+    if (redirectingToLogin) return;
+    redirectingToLogin = true;
+    const here = window.location.pathname + window.location.search;
+    const separator = loginHref().includes("?") ? "&" : "?";
+    window.location.replace(
+      `${loginHref()}${separator}next=${encodeURIComponent(here)}${expired ? "&expired=1" : ""}`
+    );
+  };
+
+  const checkSession = async () => {
+    const body = document.body;
+    if (!body) return;
+    const protectedPage = body.hasAttribute("data-requires-auth");
+    // Public app-shell pages (e.g. Support) have the identity chip but must
+    // stay reachable; hydrate them without redirecting.
+    if (!protectedPage && !body.querySelector("[data-user-name], [data-user-email]")) return;
+    const meta = document.querySelector('meta[name="api-base-url"]');
+    const base = meta ? meta.content : "";
+    try {
+      const response = await fetch(`${base}/user`, {
+        credentials: "include",
+        headers: { Accept: "application/json" },
+      });
+      if (response.status === 401) {
+        if (protectedPage) redirectToLogin(false);
+        return;
+      }
+      if (response.ok) {
+        const user = await response.json();
+        if (window.SpendSenseAPI && typeof window.SpendSenseAPI.setUser === "function") {
+          window.SpendSenseAPI.setUser(user);
+        }
+        updateShellUser();
+      }
+    } catch (e) {
+      /* Offline or unreachable API: page-specific error states handle it. */
+    }
   };
 
   // Add a skip link before the shell is used. It is inserted rather than
@@ -286,14 +382,22 @@
 
     updateShellUser();
     window.addEventListener("spendsense:auth-change", updateShellUser);
+    window.addEventListener("spendsense:session-expired", () => {
+      if (!document.body || !document.body.hasAttribute("data-requires-auth")) return;
+      // Only call it an expired session if this page had actually loaded a
+      // user; a never-signed-in visitor should get the neutral login prompt.
+      const knownUser = window.SpendSenseAPI && window.SpendSenseAPI.user;
+      redirectToLogin(Boolean(knownUser));
+    });
     applyMoneySymbols();
+    checkSession();
   };
 
   root.dataset.themeColor = savedColor;
   root.dataset.mode = savedMode;
   // Persist normalised values so legacy "green"/"yellow" entries migrate.
-  localStorage.setItem(KEYS.color, savedColor);
-  localStorage.setItem(KEYS.mode, savedMode);
+  storage.set(KEYS.color, savedColor);
+  storage.set(KEYS.mode, savedMode);
 
   window.SpendSenseSettings = {
     currency: savedCurrency,
@@ -304,6 +408,7 @@
     applyMoneySymbols,
     formatMoney,
     formatDate,
+    todayInputValue,
     themeColor,
     themeMode,
     chartColors,

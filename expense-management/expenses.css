@@ -1,5 +1,10 @@
 /* Expenses pages — refinements on top of the shared design system. */
 
+/* Recoverable financial records */
+.trash-card {
+  margin-top: 18px;
+}
+
 [data-expense-state] {
   padding: 4px 0;
 }

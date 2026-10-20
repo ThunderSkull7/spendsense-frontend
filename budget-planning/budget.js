@@ -1,4 +1,44 @@
 // Budget management — API-backed (list with progress, create, delete).
+(function (root) {
+  const DEFAULT_THRESHOLDS = [50, 80, 100];
+
+  const parseThresholds = (value) => {
+    if (value === null || value === undefined || value === '') return DEFAULT_THRESHOLDS.slice();
+    const values = Array.isArray(value) ? value : String(value).split(',');
+    const parsed = values
+      .map((entry) => String(entry).trim())
+      .filter((entry) => entry !== '')
+      .map(Number);
+    if (parsed.length < 1 || parsed.length > 5) return null;
+    if (parsed.some((entry) => !Number.isInteger(entry) || entry < 1 || entry > 100)) return null;
+    if (new Set(parsed).size !== parsed.length) return null;
+    return parsed.sort((a, b) => a - b);
+  };
+
+  const highestCrossedThreshold = (percentage, thresholds) => {
+    const used = Number(percentage);
+    const values = Array.isArray(thresholds) ? thresholds : DEFAULT_THRESHOLDS;
+    return values.filter((threshold) => Number.isFinite(used) && used >= threshold)
+      .sort((a, b) => b - a)[0] || null;
+  };
+
+  const alertTone = (threshold, percentage) => {
+    if (Number(percentage) > 100 || Number(threshold) >= 100) return 'danger';
+    if (Number(threshold) >= 80) return 'amber';
+    return 'blue';
+  };
+
+  const formatThresholdList = (thresholds) => (Array.isArray(thresholds) ? thresholds.join('%, ') + '%' : '');
+
+  root.SpendSenseBudgetAlerts = {
+    DEFAULT_THRESHOLDS,
+    parseThresholds,
+    highestCrossedThreshold,
+    alertTone,
+    formatThresholdList,
+  };
+}(window));
+
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.SpendSenseAPI || !window.SpendSenseUI) return;
 
@@ -8,6 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const UI = window.SpendSenseUI;
   const api = window.SpendSenseAPI;
   const money = (value) => UI.formatMoney(value);
+  const alertHelpers = window.SpendSenseBudgetAlerts;
+  const DEFAULT_THRESHOLD_TEXT = '50, 80, 100';
 
   const form = document.querySelector('.budget-form');
   const formMessage = document.querySelector('.budget-message');
@@ -18,9 +60,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const monthInput = form ? form.querySelector('#month') : null;
   const categorySelect = form ? form.querySelector('#category') : null;
   const limitInput = form ? form.querySelector('#limit') : null;
+  const thresholdInput = form ? form.querySelector('#alert-thresholds') : null;
   const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
   const cancelEditBtn = document.querySelector('[data-cancel-edit]');
   let editingBudgetId = null;
+  let pendingBudgetKey = null;
+
+  if (form) {
+    form.addEventListener('input', () => { pendingBudgetKey = null; });
+    form.addEventListener('change', () => { pendingBudgetKey = null; });
+  }
 
   const setMessage = (text, type) => {
     if (!formMessage) return;
@@ -46,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const enterEditMode = (budget) => {
     if (!form) return;
+    pendingBudgetKey = null;
     editingBudgetId = budget.id;
 
     if (categorySelect) {
@@ -59,6 +109,11 @@ document.addEventListener('DOMContentLoaded', () => {
       categorySelect.value = categoryValue;
     }
     if (limitInput) limitInput.value = budget.limit_amount;
+    if (thresholdInput) {
+      thresholdInput.value = Array.isArray(budget.alert_thresholds)
+        ? budget.alert_thresholds.join(', ')
+        : DEFAULT_THRESHOLD_TEXT;
+    }
     if (monthInput) monthInput.value = String(budget.month_year || '').slice(0, 7);
     if (submitBtn) submitBtn.textContent = 'Update budget';
     if (cancelEditBtn) cancelEditBtn.hidden = false;
@@ -72,12 +127,14 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   if (monthInput && !monthInput.value) monthInput.value = currentMonthValue();
+  if (thresholdInput && !thresholdInput.value) thresholdInput.value = DEFAULT_THRESHOLD_TEXT;
 
   if (cancelEditBtn) {
     cancelEditBtn.addEventListener('click', () => {
       if (!form) return;
       form.reset();
       if (monthInput) monthInput.value = currentMonthValue();
+      if (thresholdInput) thresholdInput.value = DEFAULT_THRESHOLD_TEXT;
       exitEditMode();
       setMessage('');
     });
@@ -122,14 +179,30 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
 
+      // A double click (or a programmatic requestSubmit) must not create two
+      // budgets. The guard stays on until the request settles; the button is
+      // disabled as a visual cue and re-enabled in finally.
+      if (form.dataset.submitting === 'true') return;
+
       const categoryId = parseInt(categorySelect.value, 10);
       const limit = parseFloat(limitInput.value);
       const monthYear = monthInput.value; // "YYYY-MM" (backend month_year contract)
+      const thresholds = thresholdInput
+        ? alertHelpers.parseThresholds(thresholdInput.value)
+        : alertHelpers.DEFAULT_THRESHOLDS;
 
       if (isNaN(limit) || limit <= 0) return setMessage('Please enter a valid limit.', 'error');
+      if (!thresholds) {
+        return setMessage('Enter 1–5 unique alert thresholds between 1 and 100, separated by commas.', 'error');
+      }
       if (isNaN(categoryId)) return setMessage('Please select a category.', 'error');
       if (!monthYear) return setMessage('Please pick a month.', 'error');
 
+      form.dataset.submitting = 'true';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = editingBudgetId ? 'Updating…' : 'Saving…';
+      }
       setMessage(editingBudgetId ? 'Updating budget…' : 'Saving budget…');
 
       try {
@@ -137,17 +210,22 @@ document.addEventListener('DOMContentLoaded', () => {
           category_id: categoryId,
           limit_amount: limit,
           month_year: monthYear,
+          alert_thresholds: thresholds,
         };
 
         const { data, status } = editingBudgetId
           ? await api.put(`/budgets/${editingBudgetId}`, payload)
-          : await api.post('/budgets', payload);
+          : await api.post('/budgets', payload, {
+              'Idempotency-Key': (pendingBudgetKey ||= api.newIdempotencyKey()),
+            });
 
         if (editingBudgetId ? status === 200 : status === 201) {
+          pendingBudgetKey = null;
           setMessage(editingBudgetId ? 'Budget updated.' : data.message || 'Budget saved!', 'success');
           UI.showToast(editingBudgetId ? 'Budget updated' : 'Budget saved', 'success');
           form.reset();
           if (monthInput) monthInput.value = currentMonthValue();
+          if (thresholdInput) thresholdInput.value = DEFAULT_THRESHOLD_TEXT;
           exitEditMode();
           loadBudgets();
         } else {
@@ -155,6 +233,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (err) {
         setMessage('Error saving budget. ' + (err.message || ''), 'error');
+      } finally {
+        form.dataset.submitting = 'false';
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = editingBudgetId ? 'Update budget' : 'Save budget';
+        }
       }
     });
   }
@@ -179,8 +263,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const item = document.createElement('div');
     item.className = 'budget-item';
     item.dataset.budgetId = budget.id;
+    item.id = `budget-${budget.id}`;
     const categoryName = budget.category ? budget.category.name : budget.category_name || 'Budget';
     const periodLabel = budget.month_year || `${budget.month}/${budget.year}`;
+    const thresholds = alertHelpers.parseThresholds(budget.alert_thresholds) || alertHelpers.DEFAULT_THRESHOLDS;
+    const percentageUsed = progress ? Number(progress.percentage_used || 0) : 0;
+    const highestThreshold = progress
+      ? alertHelpers.highestCrossedThreshold(percentageUsed, thresholds)
+      : null;
 
     const meta = document.createElement('div');
     meta.className = 'b-meta';
@@ -198,13 +288,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (progress.is_overspent) {
         pill.className = 'pill danger';
         pill.textContent = 'Over limit';
-      } else if ((progress.percentage_used || 0) >= 80) {
-        pill.className = 'pill amber';
-        pill.textContent = 'Near limit';
+      } else if (highestThreshold) {
+        pill.className = `pill ${alertHelpers.alertTone(highestThreshold, percentageUsed)}`;
+        pill.textContent = `${highestThreshold}% alert`;
       } else {
         pill.className = 'pill green';
         pill.textContent = 'On track';
       }
+      pill.title = `Alert thresholds: ${alertHelpers.formatThresholdList(thresholds)}`;
       left.append(document.createTextNode(' '), pill);
     }
 
@@ -236,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (progress) {
       const percentage = Math.min(100, Math.max(0, progress.percentage_used || 0));
       const track = document.createElement('div');
-      track.className = 'progress' + (progress.is_overspent ? ' danger' : percentage >= 80 ? ' warn' : '');
+      track.className = 'progress' + (progress.is_overspent ? ' danger' : (highestThreshold || 0) >= 80 ? ' warn' : '');
       track.setAttribute('role', 'progressbar');
       track.setAttribute('aria-label', `${categoryName} budget used`);
       track.setAttribute('aria-valuemin', '0');
@@ -247,6 +338,13 @@ document.addEventListener('DOMContentLoaded', () => {
       fill.style.width = Math.max(3, percentage) + '%';
       track.appendChild(fill);
       item.appendChild(track);
+
+      const alertLine = document.createElement('p');
+      alertLine.className = 'budget-alert-line';
+      alertLine.textContent = highestThreshold
+        ? `${highestThreshold}% alert crossed · Alerts at ${alertHelpers.formatThresholdList(thresholds)}`
+        : `Alerts at ${alertHelpers.formatThresholdList(thresholds)}`;
+      item.appendChild(alertLine);
     }
 
     return item;
@@ -302,7 +400,6 @@ document.addEventListener('DOMContentLoaded', () => {
       api.get('/budgets'),
       api.get('/analytics/budget-status'),
     ]);
-
     const budgetsResponse = budgetsResult.status === 'fulfilled' ? budgetsResult.value : null;
     if (!budgetsResponse || budgetsResponse.status !== 200 || !budgetsResponse.data || !budgetsResponse.data.data) {
       if (summaryEl) summaryEl.textContent = '';
@@ -344,7 +441,17 @@ document.addEventListener('DOMContentLoaded', () => {
     budgets.forEach((budget) => list.appendChild(buildBudgetItem(budget, progressMap.get(String(budget.id)))));
     listEl.replaceChildren(list);
     showList();
+    focusLinkedBudget();
   }
+
+  const focusLinkedBudget = () => {
+    const hash = window.location.hash;
+    if (!hash || !hash.startsWith('#budget-')) return;
+    const target = document.getElementById(hash.slice(1));
+    if (!target) return;
+    target.classList.add('is-highlighted');
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
 
   if (reloadBtn) reloadBtn.addEventListener('click', loadBudgets);
 

@@ -3,13 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
     <meta name="api-base-url" content="http://127.0.0.1:8002" />
     <title>Income | SpendSense</title>
     <script src="../theme.js"></script>
     <link rel="stylesheet" href="../styles.css" />
     <link rel="stylesheet" href="income.css" />
   </head>
-  <body class="app-body">
+  <body class="app-body" data-requires-auth data-login-href="../authentication/login.html">
     <aside class="sidebar" data-sidebar>
       <a class="sidebar-brand" href="../dashboard/dashboard.html">
         <span class="brand-mark">S</span>
@@ -22,10 +23,24 @@
         <a class="sidebar-link" href="../expense-management/expenses.html" data-nav="expenses"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>Expenses</a>
         <a class="sidebar-link active" href="../income-management/income.html" data-nav="income"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income</a>
         <a class="sidebar-link" href="../budget-planning/budget.html" data-nav="budgets"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budgets</a>
+        <a class="sidebar-link" href="../recurring-expenses/recurring-expenses.html" data-nav="bills"><span class="nav-ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg></span>Bills</a>
+        <a class="sidebar-link" href="../savings-goals/savings-goals.html" data-nav="goals"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/></svg></span>Goals</a>
         <a class="sidebar-link" href="../categories-management/categories.html" data-nav="categories"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h6l10 10-8 8L3 11z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg></span>Categories</a>
-        <p class="sidebar-group">Insights</p>
+                        <p class="sidebar-group">Insights</p>
+        <a class="sidebar-link" href="../insights/overview.html" data-nav="insights-overview"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/><path d="M17 5l4 4"/></svg></span>Insights overview</a>
+        <a class="sidebar-link" href="../insights/trends.html" data-nav="insights-trends"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Spending trends</a>
+        <a class="sidebar-link" href="../insights/income.html" data-nav="insights-income"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income analysis</a>
+        <a class="sidebar-link" href="../insights/budgets.html" data-nav="insights-budgets"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budget performance</a>
+        <a class="sidebar-link" href="../insights/savings.html" data-nav="insights-savings"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/></svg></span>Savings progress</a>
+        <a class="sidebar-link" href="../insights/commitments.html" data-nav="insights-commitments"><span class="nav-ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span>Recurring commitments</a>
+        <a class="sidebar-link" href="../insights/data-quality.html" data-nav="insights-quality"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v5c0 4.4-3 8.4-7 9-4-.6-7-4.6-7-9V7z"/><path d="M9 12l2 2 4-4"/></svg></span>Data quality</a>
+        <p class="sidebar-group">Reports & more</p>
         <a class="sidebar-link" href="../reports-analytics/reports.html" data-nav="reports"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg></span>Reports</a>
-        <p class="sidebar-group">Account</p>
+        <a class="sidebar-link" href="../financial-intelligence/insights.html" data-nav="insights"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/><path d="M17 5l4 4"/></svg></span>Spending insights</a>
+        <a class="sidebar-link" href="../financial-intelligence/forecast.html" data-nav="forecast"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Cash-flow forecast</a>
+        <a class="sidebar-link" href="../financial-intelligence/net-worth.html" data-nav="net-worth"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M7 7V4h10v3"/><path d="M4 11h16"/><path d="M15 15h2"/></svg></span>Net worth</a>
+        <a class="sidebar-link" href="../financial-intelligence/subscriptions.html" data-nav="subscriptions"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M20 7h-9a4 4 0 0 0-4 4v1"/><path d="M17 4l3 3-3 3"/><path d="M4 17h9a4 4 0 0 0 4-4v-1"/><path d="M7 20l-3-3 3-3"/></svg></span>Subscriptions</a>
+<p class="sidebar-group">Account</p>
         <a class="sidebar-link" href="../notifications/notifications.html" data-nav="notifications"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>Notifications</a>
         <a class="sidebar-link" href="../settings/settings.html" data-nav="settings"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</a>
         <a class="sidebar-link" href="../support/support.html" data-nav="support"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 1 1 3.8 2.6c-.8.3-1 .9-1 1.6v.4"/><path d="M12 17.2v.01"/></svg></span>Support</a>
@@ -140,10 +155,151 @@
             </div>
           </aside>
         </div>
+
+        <section class="card trash-card" data-income-trash-card hidden>
+          <div class="card-head">
+            <div>
+              <h2 class="card-title">Recently deleted</h2>
+              <p class="card-sub">Deleted income entries stay recoverable here. Restore an entry to add it back to your history.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="table" aria-label="Recently deleted income">
+              <thead>
+                <tr>
+                  <th class="col-tight">Deleted</th>
+                  <th class="col-tight">Date</th>
+                  <th class="cell-wrap">Source</th>
+                  <th class="num col-tight">Amount</th>
+                  <th class="col-tight actions-heading"><span class="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody data-income-trash-rows></tbody>
+            </table>
+          </div>
+          <div class="card-footer center">
+            <button class="btn secondary sm" type="button" data-income-trash-more hidden>Load more deleted</button>
+          </div>
+        </section>
+
+        <section class="recurring" id="recurring-income" aria-labelledby="recurring-heading">
+          <div class="section-heading">
+            <div>
+              <h2 class="section-title" id="recurring-heading">Recurring income</h2>
+              <p class="section-sub">
+                Plan expected payments. A planned date never counts as actual income until you mark it received.
+              </p>
+            </div>
+            <a class="btn secondary sm compact" href="#recurring-form" data-recurring-new>New schedule</a>
+          </div>
+
+          <div class="grid grid-4 recurring-summary" aria-live="polite">
+            <article class="stat-card">
+              <div class="stat-top"><span class="stat-label">Expected (planned)</span></div>
+              <strong class="stat-value text-value" data-recurring-summary="expected_total">&mdash;</strong>
+              <span class="stat-foot">Expected amounts, separate from actual income</span>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span class="stat-label">Received</span></div>
+              <strong class="stat-value text-value pos" data-recurring-summary="received_total">&mdash;</strong>
+              <span class="stat-foot">Linked actual income records</span>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span class="stat-label">Overdue</span></div>
+              <strong class="stat-value text-value" data-recurring-summary="overdue_total">&mdash;</strong>
+              <span class="stat-foot" data-recurring-summary="overdue_count">No overdue dates</span>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span class="stat-label">Active schedules</span></div>
+              <strong class="stat-value text-value" data-recurring-summary="active_count">&mdash;</strong>
+              <span class="stat-foot" data-recurring-summary="status_breakdown">Active schedules</span>
+            </article>
+          </div>
+
+          <div class="grid grid-main-side recurring-grid">
+            <article class="card">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title">Your schedules</h3>
+                  <p class="card-sub">Expand a schedule to see planned and received dates.</p>
+                </div>
+              </div>
+
+              <div data-recurring-list-state>
+                <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading recurring income&mdash;</p></div>
+              </div>
+              <div class="schedule-list" data-recurring-list hidden></div>
+            </article>
+
+            <aside class="card" id="recurring-form">
+              <div class="card-head">
+                <div>
+                  <h3 class="card-title" data-recurring-form-title>New schedule</h3>
+                  <p class="card-sub" data-recurring-form-sub>Preview the expected dates before saving.</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <form class="recurring-form" novalidate>
+                  <div class="field">
+                    <label for="recurring-name">Name or source</label>
+                    <input id="recurring-name" name="name" type="text" maxlength="255" placeholder="e.g. Tutoring" required />
+                  </div>
+                  <div class="field">
+                    <label for="recurring-amount">Expected amount per occurrence</label>
+                    <input id="recurring-amount" name="amount" type="number" step="0.01" min="0.01" max="99999999.99" placeholder="0.00" required />
+                  </div>
+                  <div class="field">
+                    <label for="recurring-frequency">Frequency</label>
+                    <select id="recurring-frequency" name="frequency" required>
+                      <option value="weekly">Weekly</option>
+                      <option value="biweekly">Biweekly (every 2 weeks)</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly (every 3 months)</option>
+                      <option value="half-yearly">Half-yearly (every 6 months)</option>
+                      <option value="yearly">Yearly</option>
+                      <option value="daily">Daily</option>
+                    </select>
+                  </div>
+                  <div class="field-pair">
+                    <div class="field">
+                      <label for="recurring-start">Start date</label>
+                      <input id="recurring-start" name="start_date" type="date" required />
+                    </div>
+                    <div class="field">
+                      <label for="recurring-end">End date</label>
+                      <input id="recurring-end" name="end_date" type="date" required />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="recurring-notes">Notes <span class="muted small">(optional)</span></label>
+                    <textarea id="recurring-notes" name="notes" rows="2" maxlength="1000" placeholder="e.g. Weekend sessions"></textarea>
+                  </div>
+
+                  <div class="recurring-preview" data-recurring-preview hidden aria-live="polite">
+                    <div class="recurring-preview-head">
+                      <strong data-recurring-preview-count>No dates</strong>
+                      <span data-recurring-preview-total></span>
+                    </div>
+                    <p class="field-hint">Preview only. Nothing is added to actual income until you mark a date received.</p>
+                    <ul class="recurring-date-list" data-recurring-preview-dates></ul>
+                  </div>
+
+                  <div class="recurring-form-actions">
+                    <button class="btn secondary block" type="button" data-recurring-preview-button>Preview dates</button>
+                    <button class="btn primary block" type="submit" data-recurring-submit>Create schedule</button>
+                  </div>
+                  <button class="btn ghost block" type="button" data-recurring-cancel hidden>Cancel edit</button>
+                  <p class="recurring-message" data-recurring-message role="status" aria-live="polite"></p>
+                </form>
+              </div>
+            </aside>
+          </div>
+        </section>
       </main>
     </div>
 
     <script src="../script.js"></script>
     <script src="income.js"></script>
+    <script src="recurring-income.js"></script>
   </body>
 </html>

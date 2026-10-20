@@ -5,6 +5,28 @@
 const authForm = document.querySelector("[data-auth-form]");
 const authMessage = document.querySelector("[data-auth-message]");
 
+// A protected page that redirected here appends ?next=<path>. Only same-site
+// relative paths are honoured, so the parameter cannot send users off-site.
+const authParams = new URLSearchParams(window.location.search);
+const rawNext = authParams.get("next") || "";
+const nextPath = /^\/?[A-Za-z0-9._~!$&'()*+,;=:@%/-]+$/.test(rawNext) && !rawNext.startsWith("//")
+  ? rawNext
+  : "";
+const dashboardHref = "../dashboard/dashboard.html";
+const successHref = nextPath
+  ? nextPath.startsWith("/")
+    ? nextPath
+    : "../" + nextPath
+  : dashboardHref;
+
+if (authMessage && authParams.get("expired") === "1" && !authMessage.textContent) {
+  authMessage.textContent = "Your session ended. Please log in again.";
+  authMessage.classList.add("error");
+} else if (authMessage && nextPath && !authMessage.textContent) {
+  authMessage.textContent = "Please log in to continue.";
+  authMessage.classList.add("error");
+}
+
 // Detect if form has a name field (registration form) or just email/password (login form).
 // If a name field exists, treat as registration; otherwise login.
 const isRegistrationForm = authForm && authForm.querySelector('input[name="name"]');
@@ -22,7 +44,7 @@ if (authForm) {
     authMessage.classList.remove("error", "success");
 
     const emailInput = authForm.querySelector('input[type="email"]');
-    const passwordInput = authForm.querySelector('input[type="password"]');
+    const passwordInput = authForm.querySelector('input[name="password"]');
     const nameInput = isRegistrationForm ? authForm.querySelector('input[name="name"]') : null;
 
     // Pages without a password field (e.g. forgot-password) only validate the
@@ -91,7 +113,7 @@ if (authForm) {
           // Registration establishes the session server-side, so continue to
           // the dashboard like a successful login.
           setTimeout(() => {
-            window.location.href = "../dashboard/dashboard.html";
+            window.location.href = successHref;
           }, 1000);
         } else {
           authMessage.textContent =
@@ -110,7 +132,7 @@ if (authForm) {
           if (window.refreshStats) window.refreshStats();
 
           setTimeout(() => {
-            window.location.href = "../dashboard/dashboard.html";
+            window.location.href = successHref;
           }, 800);
         } else {
           authMessage.textContent = result.message || "Invalid email or password.";

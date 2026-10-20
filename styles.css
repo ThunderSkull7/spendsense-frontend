@@ -146,7 +146,7 @@
   --ink: #F3F6F3;
   --ink-2: #A6B2A7;
   --muted: #8A948B;
-  --faint: #7E897F;
+  --faint: #8A958B;
 
   /* Accent steps on dark surfaces: lighter tints read better as text. */
   --primary-600: #34D399;
@@ -260,6 +260,9 @@ p { margin: 0; }
 a { color: inherit; text-decoration: none; }
 a.link { color: var(--primary-700); font-weight: 600; }
 a.link:hover { text-decoration: underline; }
+/* Text links keep a 24px minimum hit area without changing their look. */
+a.link,
+.auth-switch a { display: inline-flex; align-items: center; min-height: 24px; }
 
 img, svg { display: block; }
 [hidden] { display: none !important; }
@@ -887,6 +890,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
   backdrop-filter: blur(3px);
 }
 #auth-modal[aria-hidden="true"] { display: none; }
+body.modal-open { overflow: hidden; }
 
 .modal {
   position: relative;
@@ -947,6 +951,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .landing-nav .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1rem; }
 .landing-nav .l-links { display: flex; align-items: center; gap: 22px; font-size: 0.88rem; font-weight: 600; color: var(--muted); margin-left: auto; }
 .landing-nav .l-links a:hover { color: var(--ink); }
+.landing-nav .nav-toggle { display: none; }
 .landing-nav .l-actions { display: flex; align-items: center; gap: 8px; }
 
 .hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 54px; align-items: center; padding-block: 64px 46px; }
@@ -1165,6 +1170,26 @@ a.tx-row:focus-visible { outline-offset: 0; }
   table.table { font-size: 0.85rem; }
   .table .pill { max-width: 140px; }
   .landing-nav .l-links { display: none; }
+  .landing-nav .nav-toggle { display: inline-grid; }
+  /* When opened on a phone, the links become a full-width row under the bar. */
+  .landing-nav .l-links.open {
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin: 0;
+    padding: 8px 16px 12px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+  .landing-nav .l-links.open a { padding: 11px 4px; min-height: 44px; display: flex; align-items: center; }
+  .landing-nav { position: sticky; }
+  .landing-nav .l-bar { position: relative; }
   .landing-nav .l-container { padding-inline: 16px; }
   .landing-nav .l-bar { gap: 12px; }
   .landing-nav .l-actions { gap: 6px; margin-left: auto; }

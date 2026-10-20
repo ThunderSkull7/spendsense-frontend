@@ -7,6 +7,16 @@ const settingsMessage = document.querySelector('[data-settings-message]');
 
 const settings = window.SpendSenseSettings;
 
+// localStorage may be unavailable (hardened/private mode). Reading the saved
+// currency must not abort the rest of the settings page.
+const savedCurrency = (() => {
+  try {
+    return localStorage.getItem("spendsenseCurrency") || "INR";
+  } catch (e) {
+    return settings && settings.currency ? settings.currency : "INR";
+  }
+})();
+
 const renderCurrencyPreview = () => {
   if (!currencySelect || !currencyPreview) return;
   const symbol = settings.currencySymbols[currencySelect.value] || "₹";
@@ -14,7 +24,7 @@ const renderCurrencyPreview = () => {
 };
 
 if (currencySelect) {
-  currencySelect.value = localStorage.getItem("spendsenseCurrency") || "INR";
+  currencySelect.value = savedCurrency;
   renderCurrencyPreview();
 
   currencySelect.addEventListener("change", () => {

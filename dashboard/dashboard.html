@@ -3,13 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
     <meta name="api-base-url" content="http://127.0.0.1:8002" />
     <title>Dashboard | SpendSense</title>
     <script src="../theme.js"></script>
     <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="../insights/insights.css" />
     <link rel="stylesheet" href="dashboard.css" />
   </head>
-  <body class="app-body">
+  <body class="app-body" data-requires-auth data-login-href="../authentication/login.html">
     <aside class="sidebar" data-sidebar>
       <a class="sidebar-brand" href="../dashboard/dashboard.html">
         <span class="brand-mark">S</span>
@@ -22,12 +24,26 @@
         <a class="sidebar-link" href="../expense-management/expenses.html" data-nav="expenses"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>Expenses</a>
         <a class="sidebar-link" href="../income-management/income.html" data-nav="income"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income</a>
         <a class="sidebar-link" href="../budget-planning/budget.html" data-nav="budgets"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budgets</a>
+        <a class="sidebar-link" href="../recurring-expenses/recurring-expenses.html" data-nav="bills"><span class="nav-ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg></span>Bills</a>
+        <a class="sidebar-link" href="../savings-goals/savings-goals.html" data-nav="goals"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/></svg></span>Goals</a>
         <a class="sidebar-link" href="../categories-management/categories.html" data-nav="categories"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h6l10 10-8 8L3 11z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg></span>Categories</a>
         <p class="sidebar-group">Insights</p>
+        <a class="sidebar-link" href="../insights/overview.html" data-nav="insights-overview"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/><path d="M17 5l4 4"/></svg></span>Insights overview</a>
+        <a class="sidebar-link" href="../insights/trends.html" data-nav="insights-trends"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Spending trends</a>
+        <a class="sidebar-link" href="../insights/income.html" data-nav="insights-income"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income analysis</a>
+        <a class="sidebar-link" href="../insights/budgets.html" data-nav="insights-budgets"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budget performance</a>
+        <a class="sidebar-link" href="../insights/savings.html" data-nav="insights-savings"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/></svg></span>Savings goals progress</a>
+        <a class="sidebar-link" href="../insights/commitments.html" data-nav="insights-commitments"><span class="nav-ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span>Recurring commitments</a>
+        <a class="sidebar-link" href="../insights/data-quality.html" data-nav="insights-quality"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v5c0 4.4-3 8.4-7 9-4-.6-7-4.6-7-9V7z"/><path d="M9 12l2 2 4-4"/></svg></span>Data quality</a>
+        <p class="sidebar-group">Reports &amp; more</p>
         <a class="sidebar-link" href="../reports-analytics/reports.html" data-nav="reports"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg></span>Reports</a>
+        <a class="sidebar-link" href="../financial-intelligence/insights.html" data-nav="insights"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/><path d="M17 5l4 4"/></svg></span>Spending insights</a>
+        <a class="sidebar-link" href="../financial-intelligence/forecast.html" data-nav="forecast"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Cash-flow forecast</a>
+        <a class="sidebar-link" href="../financial-intelligence/net-worth.html" data-nav="net-worth"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M7 7V4h10v3"/><path d="M4 11h16"/><path d="M15 15h2"/></svg></span>Net worth</a>
+        <a class="sidebar-link" href="../financial-intelligence/subscriptions.html" data-nav="subscriptions"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M20 7h-9a4 4 0 0 0-4 4v1"/><path d="M17 4l3 3-3 3"/><path d="M4 17h9a4 4 0 0 0 4-4v-1"/><path d="M7 20l-3-3 3-3"/></svg></span>Subscriptions</a>
         <p class="sidebar-group">Account</p>
         <a class="sidebar-link" href="../notifications/notifications.html" data-nav="notifications"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>Notifications</a>
-        <a class="sidebar-link" href="../settings/settings.html" data-nav="settings"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</a>
+        <a class="sidebar-link" href="../settings/settings.html" data-nav="settings"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</a>
         <a class="sidebar-link" href="../support/support.html" data-nav="support"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 1 1 3.8 2.6c-.8.3-1 .9-1 1.6v.4"/><path d="M12 17.2v.01"/></svg></span>Support</a>
       </nav>
       <div class="sidebar-footer">
@@ -50,101 +66,254 @@
         <div class="topbar-actions dashboard-actions">
           <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
           <button class="btn secondary sm" type="button" data-refresh>Refresh</button>
+          <button class="btn ghost sm" type="button" data-dashboard-customize aria-haspopup="dialog">Customize</button>
+          <button class="btn primary sm" type="button" data-quick-add-trigger aria-haspopup="dialog">Quick add</button>
           <a class="btn secondary sm compact quick-action" href="../income-management/income.html" aria-label="Add income"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg><span class="btn-label"><span class="label-prefix">Add </span>income</span></a>
           <a class="btn primary sm compact quick-action" href="../expense-management/add-expense.html" aria-label="Add expense"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg><span class="btn-label"><span class="label-prefix">Add </span>expense</span></a>
         </div>
       </header>
 
       <main class="content">
-        <section class="grid grid-4" aria-label="Monthly summary">
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Income this month</span>
-              <span class="stat-icon"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
-            </div>
-            <div data-stat="income"><div class="skeleton line" style="width: 58%"></div></div>
-          </article>
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Expenses this month</span>
-              <span class="stat-icon tone-amber"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>
-            </div>
-            <div data-stat="expenses"><div class="skeleton line" style="width: 58%"></div></div>
-          </article>
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Net cash flow</span>
-              <span class="stat-icon tone-teal"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M15.5 9.5c-.6-.9-1.8-1.5-3.5-1.5-2 0-3.5 1-3.5 2.4 0 1.3 1.1 2 3.5 2.4 2.4.4 3.5 1.1 3.5 2.4 0 1.4-1.5 2.4-3.5 2.4-1.7 0-2.9-.6-3.5-1.5"/></svg></span>
-            </div>
-            <div data-stat="net"><div class="skeleton line" style="width: 58%"></div></div>
-          </article>
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Budget remaining</span>
-              <span class="stat-icon tone-blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>
-            </div>
-            <div data-stat="budget"><div class="skeleton line" style="width: 58%"></div></div>
-          </article>
-        </section>
-
-        <section class="grid grid-main-side section-gap">
-          <div class="grid">
-            <article class="card">
-              <div class="card-head">
-                <div>
-                  <h2 class="card-title">Spending by category</h2>
-                  <p class="card-sub" data-month-label>Loading…</p>
-                </div>
+        <div class="dashboard-widgets" data-widget-region>
+          <section class="grid grid-4 dashboard-widget" data-widget="summary" aria-label="Monthly summary">
+            <article class="card stat-card">
+              <div class="stat-top">
+                <span class="stat-label">Income this month</span>
+                <span class="stat-icon"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
               </div>
-              <div class="card-body" data-breakdown>
-                <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading spending…</p></div>
-              </div>
+              <div data-stat="income"><div class="skeleton line" style="width: 58%"></div></div>
             </article>
-
-            <article class="card">
-              <div class="card-head">
-                <div>
-                  <h2 class="card-title">Cash flow</h2>
-                  <p class="card-sub">This month compared with last month</p>
-                </div>
+            <article class="card stat-card">
+              <div class="stat-top">
+                <span class="stat-label">Expenses this month</span>
+                <span class="stat-icon tone-amber"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>
               </div>
-              <div class="card-body" data-comparison>
-                <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading cash flow…</p></div>
-              </div>
+              <div data-stat="expenses"><div class="skeleton line" style="width: 58%"></div></div>
             </article>
-          </div>
-
-          <div class="grid">
-            <article class="card">
-              <div class="card-head">
-                <div>
-                  <h2 class="card-title">Budget progress</h2>
-                  <p class="card-sub" data-month-label>Loading…</p>
-                </div>
-                <a class="link small" href="../budget-planning/budget.html">Manage</a>
+            <article class="card stat-card">
+              <div class="stat-top">
+                <span class="stat-label">Net cash flow</span>
+                <span class="stat-icon tone-teal"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M15.5 9.5c-.6-.9-1.8-1.5-3.5-1.5-2 0-3.5 1-3.5 2.4 0 1.3 1.1 2 3.5 2.4 2.4.4 3.5 1.1 3.5 2.4 0 1.4-1.5 2.4-3.5 2.4-1.7 0-2.9-.6-3.5-1.5"/></svg></span>
               </div>
-              <div class="card-body" data-budgets>
-                <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading budgets…</p></div>
-              </div>
+              <div data-stat="net"><div class="skeleton line" style="width: 58%"></div></div>
             </article>
-
-            <article class="card">
-              <div class="card-head">
-                <div>
-                  <h2 class="card-title">Recent transactions</h2>
-                  <p class="card-sub">Latest logged expenses</p>
-                </div>
-                <a class="link small" href="../expense-management/expenses.html">View all</a>
+            <article class="card stat-card">
+              <div class="stat-top">
+                <span class="stat-label">Budget remaining</span>
+                <span class="stat-icon tone-blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>
               </div>
-              <div class="card-body tight" data-transactions>
-                <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading transactions…</p></div>
-              </div>
+              <div data-stat="budget"><div class="skeleton line" style="width: 58%"></div></div>
             </article>
-          </div>
-        </section>
+          </section>
+
+          <article class="card dashboard-widget" data-widget="spending_categories">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Spending by category</h2>
+                <p class="card-sub" data-month-label>Loading…</p>
+              </div>
+              <a class="link small" href="../insights/trends.html">Details</a>
+            </div>
+            <div class="card-body" data-breakdown>
+              <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading spending…</p></div>
+            </div>
+          </article>
+
+          <article class="card dashboard-widget" data-widget="cash_flow">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Cash flow</h2>
+                <p class="card-sub">This month compared with last month</p>
+              </div>
+            </div>
+            <div class="card-body" data-comparison>
+              <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading cash flow…</p></div>
+            </div>
+          </article>
+
+          <article class="card dashboard-widget" data-widget="budgets">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Budget progress</h2>
+                <p class="card-sub" data-month-label>Loading…</p>
+              </div>
+              <a class="link small" href="../budget-planning/budget.html">Manage</a>
+            </div>
+            <div class="card-body" data-budgets>
+              <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading budgets…</p></div>
+            </div>
+          </article>
+
+          <article class="card dashboard-widget" data-widget="recent_transactions">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Recent transactions</h2>
+                <p class="card-sub">Latest logged expenses</p>
+              </div>
+              <a class="link small" href="../expense-management/expenses.html">View all</a>
+            </div>
+            <div class="card-body tight" data-transactions>
+              <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading transactions…</p></div>
+            </div>
+          </article>
+
+          <article class="card dashboard-widget" data-widget="savings_goals">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Savings goals</h2>
+                <p class="card-sub">Internal tracking, not an expense</p>
+              </div>
+              <a class="link small" href="../insights/savings.html">Details</a>
+            </div>
+            <div class="card-body" data-widget-body="savings_goals">
+              <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading goals…</p></div>
+            </div>
+          </article>
+
+          <article class="card dashboard-widget" data-widget="upcoming_bills">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Upcoming bills</h2>
+                <p class="card-sub">Expected obligations, not paid expenses</p>
+              </div>
+              <a class="link small" href="../insights/commitments.html">Details</a>
+            </div>
+            <div class="card-body" data-widget-body="upcoming_bills">
+              <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading bills…</p></div>
+            </div>
+          </article>
+
+          <article class="card dashboard-widget" data-widget="spending_insights">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Spending insights</h2>
+                <p class="card-sub">Actual spending and review signals</p>
+              </div>
+              <a class="link small" href="../financial-intelligence/insights.html">Details</a>
+            </div>
+            <div class="card-body" data-widget-body="spending_insights">
+              <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading insights…</p></div>
+            </div>
+          </article>
+
+          <article class="card dashboard-widget" data-widget="cash_flow_forecast">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">30-day forecast</h2>
+                <p class="card-sub">Schedule-based expectations only</p>
+              </div>
+              <a class="link small" href="../financial-intelligence/forecast.html">Details</a>
+            </div>
+            <div class="card-body" data-widget-body="cash_flow_forecast">
+              <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading forecast…</p></div>
+            </div>
+          </article>
+
+          <article class="card dashboard-widget" data-widget="net_worth" hidden>
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Net worth</h2>
+                <p class="card-sub">Manual valuations, not available cash</p>
+              </div>
+              <a class="link small" href="../financial-intelligence/net-worth.html">Details</a>
+            </div>
+            <div class="card-body" data-widget-body="net_worth">
+              <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading net worth…</p></div>
+            </div>
+          </article>
+
+          <article class="card dashboard-widget" data-widget="subscription_renewals" hidden>
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Subscription renewals</h2>
+                <p class="card-sub">Estimates, kept separate from spending</p>
+              </div>
+              <a class="link small" href="../financial-intelligence/subscriptions.html">Details</a>
+            </div>
+            <div class="card-body" data-widget-body="subscription_renewals">
+              <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading subscriptions…</p></div>
+            </div>
+          </article>
+        </div>
       </main>
     </div>
 
+
+    <!-- Customize dashboard: show, hide and reorder the widgets. -->
+    <dialog id="dashboard-customize-dialog" class="ss-dialog" aria-labelledby="dashboard-customize-title">
+      <div class="ss-dialog-head">
+        <h2 id="dashboard-customize-title">Customize dashboard</h2>
+        <button class="btn ghost sm" type="button" data-customize-close>Close</button>
+      </div>
+      <div class="ss-dialog-body">
+        <p class="ss-dialog-note">
+          Show, hide and reorder the widgets on this dashboard. The layout is saved to your account only.
+        </p>
+        <ul class="widget-list" data-widget-list></ul>
+        <p class="ss-message" data-customize-message role="status" aria-live="polite"></p>
+      </div>
+      <div class="ss-dialog-foot">
+        <button class="btn primary sm" type="button" data-customize-apply>Save layout</button>
+        <button class="btn secondary sm" type="button" data-customize-reset>Reset to defaults</button>
+      </div>
+    </dialog>
+
+    <!-- Quick add: keyboard accessible transaction entry. -->
+    <dialog id="quick-add-dialog" class="ss-dialog" aria-labelledby="quick-add-title">
+      <div class="ss-dialog-head">
+        <h2 id="quick-add-title">Quick add transaction</h2>
+        <button class="btn ghost sm" type="button" data-quick-add-close>Close</button>
+      </div>
+      <form class="ss-dialog-body quick-add-form" data-quick-add-form novalidate>
+        <div class="field">
+          <label id="quick-add-type-label">Type</label>
+          <div class="segmented" role="group" aria-labelledby="quick-add-type-label" data-quick-add-type>
+            <button type="button" data-quick-add-type-option="expense" aria-pressed="true">Expense</button>
+            <button type="button" data-quick-add-type-option="income" aria-pressed="false">Income</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="quick-add-amount">Amount</label>
+          <input id="quick-add-amount" name="amount" type="number" step="0.01" min="0.01" inputmode="decimal" required />
+        </div>
+        <div class="field">
+          <label for="quick-add-date">Date</label>
+          <input id="quick-add-date" name="date" type="date" required />
+        </div>
+        <div class="field" data-quick-add-expense-only>
+          <label for="quick-add-description">Description</label>
+          <input id="quick-add-description" name="description" type="text" maxlength="255" placeholder="Optional note about this expense" />
+        </div>
+        <div class="field" data-quick-add-expense-only>
+          <label for="quick-add-category">Category</label>
+          <select id="quick-add-category" name="category_id" required>
+            <option value="">Choose category</option>
+          </select>
+        </div>
+        <div class="field" data-quick-add-income-only hidden>
+          <label for="quick-add-source">Source</label>
+          <input id="quick-add-source" name="source" type="text" maxlength="120" list="quick-add-source-options" required />
+          <datalist id="quick-add-source-options">
+            <option value="Salary"></option>
+            <option value="Freelance"></option>
+            <option value="Business"></option>
+            <option value="Investments"></option>
+            <option value="Rental"></option>
+            <option value="Other"></option>
+          </datalist>
+        </div>
+        <p class="ss-dialog-note">
+          Saving sends an idempotency key, so a retried submission cannot record the same transaction twice.
+        </p>
+        <p class="ss-message" data-quick-add-message role="status" aria-live="polite"></p>
+      </form>
+      <div class="ss-dialog-foot">
+        <button class="btn primary sm" type="button" data-quick-add-submit>Save transaction</button>
+        <button class="btn ghost sm" type="button" data-quick-add-close>Cancel</button>
+      </div>
+    </dialog>
+
+  <script src="../stage5/stage5-common.js"></script>
     <script src="../script.js"></script>
     <script src="dashboard.js"></script>
   </body>
