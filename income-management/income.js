@@ -9,19 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const api = window.SpendSenseAPI;
   const money = (value) => UI.formatMoney(value);
 
-  // Frequency slugs stored by the API → human labels for the history list.
-  const FREQUENCY_LABELS = {
-    'one-time': 'One-time',
-    daily: 'Daily',
-    weekly: 'Weekly',
-    biweekly: 'Biweekly',
-    monthly: 'Monthly',
-    quarterly: 'Quarterly',
-    'half-yearly': 'Half-yearly',
-    yearly: 'Yearly',
-  };
-  const DEFAULT_FREQUENCY = 'one-time';
-
   // ---------- Income form (create + edit) ----------
   const form = document.querySelector('.income-form');
   const formMessage = document.querySelector('.income-message');
@@ -29,12 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
   const cancelEditBtn = document.querySelector('[data-cancel-edit]');
   let editingIncomeId = null;
-  let pendingIncomeKey = null;
-
-  if (form) {
-    form.addEventListener('input', () => { pendingIncomeKey = null; });
-    form.addEventListener('change', () => { pendingIncomeKey = null; });
-  }
 
   const setMessage = (text, type) => {
     if (!formMessage) return;
@@ -60,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const enterEditMode = (income) => {
     if (!form) return;
-    pendingIncomeKey = null;
     editingIncomeId = income.id;
 
     const sourceSelect = form.querySelector('#source');
@@ -82,12 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (amountInput) amountInput.value = income.amount;
     if (dateInput) dateInput.value = String(income.income_date || '').slice(0, 10);
 
-    if (frequencySelect) {
-      const frequency = income.frequency ? String(income.frequency) : DEFAULT_FREQUENCY;
-      const option = Array.from(frequencySelect.options).find((item) => item.value === frequency);
-      frequencySelect.value = option ? frequency : DEFAULT_FREQUENCY;
-    }
-    if (notesInput) notesInput.value = income.notes || '';
+    // Frequency and notes are not part of the API contract (the backend does
+    // not store them), so they cannot be restored for an existing entry.
+    if (frequencySelect) frequencySelect.selectedIndex = 0;
+    if (notesInput) notesInput.value = '';
 
     if (submitBtn) submitBtn.textContent = 'Update income';
     if (cancelEditBtn) cancelEditBtn.hidden = false;
@@ -95,13 +73,13 @@ document.addEventListener('DOMContentLoaded', () => {
     form.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
-  if (dateInput && !dateInput.value) dateInput.value = UI.todayInputValue();
+  if (dateInput && !dateInput.value) dateInput.valueAsDate = new Date();
 
   if (cancelEditBtn) {
     cancelEditBtn.addEventListener('click', () => {
       if (!form) return;
       form.reset();
-      if (dateInput) dateInput.value = UI.todayInputValue();
+      if (dateInput) dateInput.valueAsDate = new Date();
       exitEditMode();
       setMessage('');
     });
@@ -110,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (form) {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
-      if (form.dataset.submitting === 'true') return; // block double submits
 
       const sourceSelect = form.querySelector('#source');
       const amountInput = form.querySelector('#amount');
@@ -122,7 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
         : '';
       const amount = parseFloat(amountInput.value);
       const incomeDate = dateInput.value; // YYYY-MM-DD (backend income_date)
-      const frequency = frequencySelect ? frequencySelect.value || DEFAULT_FREQUENCY : DEFAULT_FREQUENCY;
+      const frequency = frequencySelect
+        ? frequencySelect.options[frequencySelect.selectedIndex].text || ''
+        : '';
       const notes = notesInput ? notesInput.value.trim() || null : null;
 
       if (!source || source === 'Choose source') return setMessage('Please select an income source.', 'error');
@@ -130,8 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!incomeDate) return setMessage('Please pick a date.', 'error');
 
       setMessage(editingIncomeId ? 'Updating income…' : 'Saving income…');
-      form.dataset.submitting = 'true';
-      if (submitBtn) submitBtn.disabled = true;
 
       try {
         const payload = {
@@ -144,16 +121,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const { data, status } = editingIncomeId
           ? await api.put(`/incomes/${editingIncomeId}`, payload)
-          : await api.post('/incomes', payload, {
-              'Idempotency-Key': (pendingIncomeKey ||= api.newIdempotencyKey()),
-            });
+          : await api.post('/incomes', payload);
 
         if (editingIncomeId ? status === 200 : status === 201) {
-          pendingIncomeKey = null;
           setMessage(editingIncomeId ? 'Income updated.' : data.message || 'Income saved!', 'success');
           UI.showToast(editingIncomeId ? 'Income updated' : 'Income saved', 'success');
           form.reset();
-          if (dateInput) dateInput.value = UI.todayInputValue();
+          if (dateInput) dateInput.valueAsDate = new Date();
           exitEditMode();
           loadIncomes(false);
         } else {
@@ -161,9 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (err) {
         setMessage('Error saving income. ' + (err.message || ''), 'error');
-      } finally {
-        form.dataset.submitting = 'false';
-        if (submitBtn) submitBtn.disabled = false;
       }
     });
   }
@@ -177,15 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const stateEl = document.querySelector('[data-income-state]');
   const summaryEl = document.querySelector('[data-income-summary]');
   const loadMoreBtn = document.querySelector('[data-income-load-more]');
-  const trashCard = document.querySelector('[data-income-trash-card]');
-  const trashRows = document.querySelector('[data-income-trash-rows]');
-  const trashMoreBtn = document.querySelector('[data-income-trash-more]');
 
   let nextPage = 1;
   let lastPage = 1;
   let total = 0;
   let loaded = 0;
-  let trashPage = 1;
   const incomeById = new Map();
 
   const updateSummary = () => {
@@ -217,34 +184,19 @@ document.addEventListener('DOMContentLoaded', () => {
     row.dataset.incomeId = item.id;
 
     const dateCell = document.createElement('td');
-    dateCell.className = 'col-tight';
-    dateCell.dataset.label = 'Date';
     dateCell.textContent = UI.formatDate(item.income_date);
 
     const sourceCell = document.createElement('td');
-    sourceCell.className = 'cell-wrap';
-    sourceCell.dataset.label = 'Source';
     const sourceMain = document.createElement('div');
     sourceMain.className = 'cell-main';
     sourceMain.textContent = item.source || 'Income';
     sourceCell.appendChild(sourceMain);
 
-    // The frequency is stored with the entry; show it under the source.
-    const sourceSub = document.createElement('div');
-    sourceSub.className = 'cell-sub';
-    sourceSub.textContent = item.frequency
-      ? FREQUENCY_LABELS[item.frequency] || String(item.frequency)
-      : FREQUENCY_LABELS[DEFAULT_FREQUENCY];
-    sourceCell.appendChild(sourceSub);
-    if (item.notes) sourceMain.title = item.notes;
-
     const amountCell = document.createElement('td');
-    amountCell.className = 'num amount-pos col-tight';
-    amountCell.dataset.label = 'Amount';
+    amountCell.className = 'num amount-pos';
     amountCell.textContent = '+' + money(item.amount);
 
     const actionsCell = document.createElement('td');
-    actionsCell.className = 'col-tight actions-cell';
     const actions = document.createElement('div');
     actions.className = 'row-actions';
     const deleteBtn = document.createElement('button');
@@ -253,7 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
     deleteBtn.dataset.deleteIncome = '';
     deleteBtn.dataset.id = item.id;
     deleteBtn.textContent = 'Delete';
-    deleteBtn.setAttribute('aria-label', `Delete income from ${item.source || 'income'} on ${UI.formatDate(item.income_date)}`);
     actions.appendChild(deleteBtn);
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
@@ -261,53 +212,10 @@ document.addEventListener('DOMContentLoaded', () => {
     editBtn.dataset.editIncome = '';
     editBtn.dataset.id = item.id;
     editBtn.textContent = 'Edit';
-    editBtn.setAttribute('aria-label', `Edit income from ${item.source || 'income'} on ${UI.formatDate(item.income_date)}`);
     actions.appendChild(editBtn);
     actionsCell.appendChild(actions);
 
     row.append(dateCell, sourceCell, amountCell, actionsCell);
-    return row;
-  };
-
-  const buildTrashRow = (item) => {
-    const row = document.createElement('tr');
-    row.dataset.incomeId = item.id;
-
-    const deletedCell = document.createElement('td');
-    deletedCell.className = 'col-tight';
-    deletedCell.dataset.label = 'Deleted';
-    deletedCell.textContent = UI.formatDate(item.deleted_at);
-
-    const dateCell = document.createElement('td');
-    dateCell.className = 'col-tight';
-    dateCell.dataset.label = 'Date';
-    dateCell.textContent = UI.formatDate(item.income_date);
-
-    const sourceCell = document.createElement('td');
-    sourceCell.className = 'cell-wrap';
-    sourceCell.dataset.label = 'Source';
-    sourceCell.textContent = item.source || 'Income';
-
-    const amountCell = document.createElement('td');
-    amountCell.className = 'num amount-pos col-tight';
-    amountCell.dataset.label = 'Amount';
-    amountCell.textContent = '+' + money(item.amount);
-
-    const actionsCell = document.createElement('td');
-    actionsCell.className = 'col-tight actions-cell';
-    const restoreBtn = document.createElement('button');
-    restoreBtn.type = 'button';
-    restoreBtn.className = 'row-btn secondary';
-    restoreBtn.dataset.restoreIncome = '';
-    restoreBtn.dataset.id = item.id;
-    restoreBtn.textContent = 'Restore';
-    restoreBtn.setAttribute(
-      'aria-label',
-      `Restore income from ${item.source || 'income'} on ${UI.formatDate(item.income_date)}`
-    );
-    actionsCell.appendChild(restoreBtn);
-
-    row.append(deletedCell, dateCell, sourceCell, amountCell, actionsCell);
     return row;
   };
 
@@ -327,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const button = event.target.closest('[data-delete-income]');
       if (!button) return;
 
-      if (!window.confirm('Move this income entry to Recently deleted? You can restore it later.')) return;
+      if (!window.confirm('Delete this income entry? This cannot be undone.')) return;
 
       button.disabled = true;
       try {
@@ -340,13 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
           total = Math.max(0, total - 1);
           updateSummary();
           if (!rowsBody.querySelector('tr')) {
-            showState('empty', {
-              message: 'No income logged yet. Add your first entry.',
-              action: { href: '#add-income', label: 'Add income' },
-            });
+            showState('empty', { message: 'No income logged yet. Add your first entry.' });
           }
-          UI.showToast('Income moved to Recently deleted', 'success');
-          loadTrash();
+          UI.showToast('Income deleted', 'success');
         } else {
           button.disabled = false;
           UI.showToast((data && data.message) || 'Could not delete income.', 'error');
@@ -354,76 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         button.disabled = false;
         UI.showToast('Error deleting income.', 'error');
-      }
-    });
-  }
-
-  async function loadTrash(append = false) {
-    if (!trashCard || !trashRows) return;
-
-    if (!append) {
-      trashPage = 1;
-      trashRows.replaceChildren();
-    }
-
-    try {
-      const { data, status } = await api.get(`/incomes/trash?page=${trashPage}`);
-      const paginator = status === 200 && data && data.data ? data.data : null;
-      const items = paginator ? paginator.data || [] : [];
-
-      if (!append) trashRows.replaceChildren();
-      items.forEach((item) => trashRows.appendChild(buildTrashRow(item)));
-
-      if (!trashRows.querySelector('tr')) {
-        trashCard.hidden = true;
-        if (trashMoreBtn) trashMoreBtn.hidden = true;
-        return;
-      }
-
-      trashCard.hidden = false;
-      const lastTrashPage = paginator ? paginator.last_page || 1 : 1;
-      if (trashMoreBtn) {
-        trashMoreBtn.hidden = trashPage >= lastTrashPage;
-        const footer = trashMoreBtn.closest('.card-footer');
-        if (footer) footer.hidden = trashMoreBtn.hidden;
-      }
-    } catch (err) {
-      if (append) {
-        trashPage -= 1;
-      } else {
-        // The main income list remains usable if the optional trash view fails.
-        trashCard.hidden = true;
-        if (trashMoreBtn) trashMoreBtn.hidden = true;
-      }
-    }
-  }
-
-  if (trashMoreBtn) {
-    trashMoreBtn.addEventListener('click', () => {
-      trashPage += 1;
-      loadTrash(true);
-    });
-  }
-
-  if (trashRows) {
-    trashRows.addEventListener('click', async (event) => {
-      const button = event.target.closest('[data-restore-income]');
-      if (!button) return;
-
-      button.disabled = true;
-      try {
-        const { data, status } = await api.post(`/incomes/${button.dataset.id}/restore`);
-        if (status === 200) {
-          UI.showToast('Income restored', 'success');
-          await loadTrash();
-          await loadIncomes(false);
-        } else {
-          button.disabled = false;
-          UI.showToast((data && data.message) || 'Could not restore income.', 'error');
-        }
-      } catch (err) {
-        button.disabled = false;
-        UI.showToast('Error restoring income.', 'error');
       }
     });
   }
@@ -442,17 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const { data, status } = await api.get(`/incomes?page=${nextPage}`);
 
       if (status !== 200 || !data || !data.data) {
-        if (append) {
-          // Keep the rows already on screen; only the extra page failed.
-          nextPage -= 1;
-          if (loadMoreBtn) {
-            loadMoreBtn.disabled = false;
-            loadMoreBtn.textContent = 'Load more';
-          }
-          UI.showToast((data && data.message) || 'Could not load more income entries.', 'error');
-          return;
-        }
-        if (summaryEl) summaryEl.textContent = '';
+        if (!append && summaryEl) summaryEl.textContent = '';
         showState('error', {
           message: (data && data.message) || 'Could not load income entries.',
           retry: () => loadIncomes(false),
@@ -467,10 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!append && !items.length) {
         updateSummary();
-        showState('empty', {
-          message: 'No income logged yet. Add your first entry.',
-          action: { href: '#add-income', label: 'Add income' },
-        });
+        showState('empty', { message: 'No income logged yet. Add your first entry.' });
         return;
       }
 
@@ -493,21 +314,11 @@ document.addEventListener('DOMContentLoaded', () => {
         loadMoreBtn.textContent = 'Load more';
       }
     } catch (err) {
-      if (append) {
-        // Keep the rows already on screen; only the extra page failed.
-        nextPage -= 1;
-        if (loadMoreBtn) {
-          loadMoreBtn.disabled = false;
-          loadMoreBtn.textContent = 'Load more';
-        }
-        UI.showToast('Could not load more income entries. ' + (err.message || ''), 'error');
-        return;
-      }
       if (loadMoreBtn) {
         loadMoreBtn.disabled = false;
         loadMoreBtn.textContent = 'Load more';
       }
-      if (summaryEl) summaryEl.textContent = '';
+      if (!append && summaryEl) summaryEl.textContent = '';
       showState('error', {
         message: 'Could not reach the API. ' + (err.message || ''),
         retry: () => loadIncomes(false),
@@ -526,5 +337,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadIncomes(false);
-  loadTrash();
 });

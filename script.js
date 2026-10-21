@@ -10,39 +10,28 @@ const API = {
 
   // Core fetch helper: sends JSON with credentials (Sanctum cookie-based auth)
   // Automatically fetches and sends XSRF-TOKEN for state-changing requests.
-  // `retried` bounds the 419 recovery to a single token refresh + retry so a
-  // server that keeps rejecting the token cannot trigger an infinite loop.
-  async api(method, endpoint, body = null, csrfToken = null, retried = false, extraHeaders = null) {
+  async api(method, endpoint, body = null, csrfToken = null) {
     const url = `${API_BASE_URL}/api${endpoint}`;
-    // FormData must keep the browser-generated multipart boundary, so do not
-    // force a JSON Content-Type or serialize it. All other bodies remain JSON.
-    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
     const options = {
       method,
       credentials: 'include', // send Sanctum session cookie
-      headers: { 'Accept': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
     };
-    if (!isFormData) {
-      options.headers['Content-Type'] = 'application/json';
-    }
     // Add XSRF-TOKEN header if provided (required for POST/PUT/DELETE on stateful routes)
     if (csrfToken !== null) {
       options.headers['X-XSRF-TOKEN'] = csrfToken;
     }
-    if (extraHeaders && typeof extraHeaders === 'object') {
-      Object.assign(options.headers, extraHeaders);
-    }
     if (body !== null) {
-      options.body = isFormData ? body : JSON.stringify(body);
+      options.body = JSON.stringify(body);
     }
     const response = await fetch(url, options);
 
     // A stale XSRF-TOKEN (e.g. after the session rotates on login) returns 419.
     // Refresh the token once and retry the request before surfacing the error.
-    if (response.status === 419 && csrfToken !== null && !retried) {
+    if (response.status === 419 && csrfToken !== null) {
       const freshToken = await fetchXSRFToken();
-      if (freshToken) {
-        return this.api(method, endpoint, body, freshToken, true, extraHeaders);
+      if (freshToken && freshToken !== csrfToken) {
+        return this.api(method, endpoint, body, freshToken);
       }
     }
 
@@ -58,9 +47,6 @@ const API = {
     }
     if (response.status === 401 && data.message === 'Unauthenticated.') {
       data = { message: 'Session expired. Please log in again.', expired: true };
-      // Let the shared shell react once (e.g. redirect a protected page) and
-      // leave the page-specific handler to show its own message.
-      window.dispatchEvent(new CustomEvent('spendsense:session-expired'));
     }
     return { response, data, status: response.status };
   },
@@ -68,21 +54,10 @@ const API = {
   // Shortcuts for common operations.
   // State-changing requests automatically include the current XSRF-TOKEN so
   // Sanctum's CSRF protection accepts them on stateful routes.
-  async post(endpoint, body, extraHeaders = null) {
-    return this.api('POST', endpoint, body, await this.ensureCsrfToken(), false, extraHeaders);
-  },
+  async post(endpoint, body) { return this.api('POST', endpoint, body, await this.ensureCsrfToken()); },
   get(endpoint) { return this.api('GET', endpoint); },
   async put(endpoint, body) { return this.api('PUT', endpoint, body, await this.ensureCsrfToken()); },
   async delete(endpoint) { return this.api('DELETE', endpoint, null, await this.ensureCsrfToken()); },
-
-  // Generate a key for one logical create request. The same key survives the
-  // 419 token-refresh retry above, so a retried submission cannot create twice.
-  newIdempotencyKey() {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-      return crypto.randomUUID();
-    }
-    return `ss-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
-  },
 
   // Read the current XSRF-TOKEN cookie value (set by Laravel on stateful responses).
   getCsrfToken() {
@@ -195,21 +170,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const navToggle = document.querySelector('.nav-toggle');
   const navLinks = document.querySelector('[data-nav-links]');
   if (navToggle && navLinks) {
-    const setNavOpen = (open) => {
-      navLinks.classList.toggle('open', open);
-      navToggle.setAttribute('aria-expanded', String(open));
-      navToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
-    };
     navToggle.addEventListener('click', () => {
-      setNavOpen(!navLinks.classList.contains('open'));
+      const isOpen = navLinks.classList.toggle('open');
+      navToggle.setAttribute('aria-expanded', String(isOpen));
     });
     navLinks.addEventListener('click', (event) => {
-      if (event.target.tagName === 'A') setNavOpen(false);
-    });
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && navLinks.classList.contains('open')) {
-        setNavOpen(false);
-        navToggle.focus();
+      if (event.target.tagName === 'A') {
+        navLinks.classList.remove('open');
+        navToggle.setAttribute('aria-expanded', 'false');
       }
     });
   }
@@ -219,7 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const authBackdrop = document.querySelector('.modal-backdrop');
   const authClose = document.querySelector('[data-auth-close]');
   const authTabs = document.querySelector('.auth-tabs');
-  let authModalTrigger = null;
 
   // Toggle between the login and register sections
   function switchAuthMode(isRegister) {
@@ -230,67 +197,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!loginSection || !registerSection) return;
     loginSection.style.display = isRegister ? 'none' : 'block';
     registerSection.style.display = isRegister ? 'block' : 'none';
-    loginSection.hidden = isRegister;
-    registerSection.hidden = !isRegister;
-    if (loginTab) {
-      loginTab.setAttribute('aria-selected', String(!isRegister));
-      loginTab.tabIndex = isRegister ? -1 : 0;
-    }
-    if (registerTab) {
-      registerTab.setAttribute('aria-selected', String(isRegister));
-      registerTab.tabIndex = isRegister ? 0 : -1;
-    }
+    if (loginTab) loginTab.setAttribute('aria-selected', String(!isRegister));
+    if (registerTab) registerTab.setAttribute('aria-selected', String(isRegister));
   }
-
-  const modalFocusable = () => {
-    if (!authModal) return [];
-    return Array.from(
-      authModal.querySelectorAll(
-        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      )
-    ).filter((el) => el.getClientRects().length > 0 && el.getAttribute('aria-hidden') !== 'true');
-  };
-
-  // The page behind the dialog must not be reachable by keyboard or screen
-  // readers while the modal is open. The dialog itself is the only body child
-  // left interactive.
-  const setBackgroundInert = (inert) => {
-    if (!authModal) return;
-    Array.from(document.body.children).forEach((el) => {
-      if (el === authModal || el.classList.contains('toast-stack')) return;
-      if (inert) el.setAttribute('inert', '');
-      else el.removeAttribute('inert');
-    });
-  };
 
   // Show/hide auth modal
   function toggleAuthModal(show) {
     if (!authModal) return;
-    const isOpen = authModal.getAttribute('aria-hidden') !== 'true';
     if (show) {
-      if (isOpen) return;
-      const active = document.activeElement;
-      authModalTrigger = active && active !== document.body ? active : null;
       authModal.removeAttribute('aria-hidden');
-      document.body.classList.add('modal-open');
-      setBackgroundInert(true);
-      const panel = authModal.querySelector('[data-login-section]:not([hidden]), [data-register-section]:not([hidden])');
-      const focusTarget =
-        (panel && panel.querySelector('input:not([disabled])')) ||
-        authModal.querySelector('.modal-close');
+      const focusTarget = authModal.querySelector('input');
       if (focusTarget) focusTarget.focus();
     } else {
-      if (!isOpen) return;
-      const restoreTo = authModalTrigger;
-      authModalTrigger = null;
-      setBackgroundInert(false);
-      // Move focus out before hiding the dialog so aria-hidden is never applied
-      // to an element that still contains the focused control.
-      if (restoreTo && restoreTo.isConnected && typeof restoreTo.focus === 'function') {
-        restoreTo.focus();
-      }
       authModal.setAttribute('aria-hidden', 'true');
-      document.body.classList.remove('modal-open');
     }
   }
 
@@ -301,10 +220,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const target = trigger.dataset.authToggle;
       if (target === 'register') {
         switchAuthMode(true);
+        toggleAuthModal(true);
       } else if (target === 'login') {
         switchAuthMode(false);
+        toggleAuthModal(true);
+      } else {
+        toggleAuthModal(true);
       }
-      toggleAuthModal(true);
     });
   });
 
@@ -320,60 +242,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
   // Tab switching
   if (authTabs) {
     authTabs.addEventListener('click', (event) => {
       const tab = event.target.dataset ? event.target.dataset.authTab : null;
       if (tab) switchAuthMode(tab === 'register');
     });
-
-    // Roving tabindex + arrow-key navigation, as expected of a tablist.
-    authTabs.addEventListener('keydown', (event) => {
-      const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
-      if (!keys.includes(event.key)) return;
-      const tabs = Array.from(authTabs.querySelectorAll('[role="tab"]'));
-      if (!tabs.length) return;
-      event.preventDefault();
-      const current = tabs.findIndex((tab) => tab.getAttribute('aria-selected') === 'true');
-      let next = current;
-      if (event.key === 'ArrowLeft') next = (current - 1 + tabs.length) % tabs.length;
-      if (event.key === 'ArrowRight') next = (current + 1) % tabs.length;
-      if (event.key === 'Home') next = 0;
-      if (event.key === 'End') next = tabs.length - 1;
-      const tab = tabs[next];
-      switchAuthMode(tab.dataset.authTab === 'register');
-      tab.focus();
-    });
   }
 
-  // Keyboard: Escape closes, Tab is trapped inside the open dialog.
+  // Keyboard Escape to close modal
   document.addEventListener('keydown', (event) => {
-    if (!authModal || authModal.getAttribute('aria-hidden') === 'true') return;
-    if (event.key === 'Escape') {
-      event.preventDefault();
+    if (event.key === 'Escape' && authModal) {
       toggleAuthModal(false);
-      return;
-    }
-    if (event.key !== 'Tab') return;
-    const focusable = modalFocusable();
-    if (!focusable.length) {
-      event.preventDefault();
-      const modal = authModal.querySelector('.modal');
-      if (modal) modal.focus();
-      return;
-    }
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    const active = document.activeElement;
-    if (!authModal.contains(active)) {
-      event.preventDefault();
-      first.focus();
-    } else if (event.shiftKey && active === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && active === last) {
-      event.preventDefault();
-      first.focus();
     }
   });
 
@@ -394,7 +275,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isRegistration = form.querySelector('input[name="name"]') !== null;
       const nameInput = isRegistration ? form.querySelector('input[name="name"]') : null;
       const emailInput = form.querySelector('input[type="email"]');
-      const passwordInput = form.querySelector('input[name="password"]');
+      const passwordInput = form.querySelector('input[type="password"]');
       const name = nameInput ? nameInput.value.trim() : undefined;
       const email = emailInput ? emailInput.value : '';
       const password = passwordInput ? passwordInput.value : '';
@@ -469,7 +350,6 @@ document.addEventListener('DOMContentLoaded', () => {
       input.type = isHidden ? 'text' : 'password';
       toggle.textContent = isHidden ? 'Hide' : 'Show';
       toggle.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
-      toggle.setAttribute('aria-pressed', String(isHidden));
     });
   });
 
@@ -534,19 +414,11 @@ window.SpendSenseUI = {
     return window.SpendSenseSettings.formatDate(value);
   },
 
-  todayInputValue() {
-    return window.SpendSenseSettings.todayInputValue();
-  },
-
-  // renderState(container, 'loading' | 'empty' | 'error', {
-  //   message, retry, action: { href, label }, secondaryAction: { href, label }
-  // })
+  // renderState(container, 'loading' | 'empty' | 'error', { message, retry })
   renderState(container, type, options = {}) {
     if (!container) return;
     const state = document.createElement('div');
     state.className = `state ${type}`;
-    state.setAttribute('role', type === 'error' ? 'alert' : 'status');
-    if (type === 'loading') state.setAttribute('aria-busy', 'true');
 
     const icons = {
       loading: '<span class="spinner" aria-hidden="true"></span>',
@@ -563,29 +435,15 @@ window.SpendSenseUI = {
       (type === 'loading' ? 'Loading…' : type === 'error' ? 'Could not load data.' : 'Nothing here yet.');
     state.appendChild(text);
 
-    const actions = document.createElement('div');
-    actions.className = 'state-actions';
-    const addAction = (action, style) => {
-      if (!action || !action.label) return;
-      const link = document.createElement('a');
-      link.className = `btn ${style} sm`;
-      link.href = action.href || '#';
-      link.textContent = action.label;
-      actions.appendChild(link);
-    };
-    addAction(options.action, 'primary');
-    addAction(options.secondaryAction, 'secondary');
-
     if (type === 'error' && typeof options.retry === 'function') {
       const retryBtn = document.createElement('button');
       retryBtn.type = 'button';
       retryBtn.className = 'btn secondary sm';
       retryBtn.textContent = 'Try again';
       retryBtn.addEventListener('click', options.retry);
-      actions.appendChild(retryBtn);
+      state.appendChild(retryBtn);
     }
 
-    if (actions.childElementCount) state.appendChild(actions);
     container.replaceChildren(state);
     return state;
   },
@@ -595,8 +453,6 @@ window.SpendSenseUI = {
     if (!stack) {
       stack = document.createElement('div');
       stack.className = 'toast-stack';
-      stack.setAttribute('role', 'status');
-      stack.setAttribute('aria-live', 'polite');
       document.body.appendChild(stack);
     }
     const toast = document.createElement('div');

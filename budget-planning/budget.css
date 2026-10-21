@@ -13,16 +13,3 @@
   font-size: 0.78rem;
   color: var(--muted);
 }
-
-.budget-alert-line {
-  margin: 7px 0 0;
-  color: var(--muted);
-  font-size: 0.75rem;
-  line-height: 1.4;
-}
-
-.budget-item.is-highlighted {
-  outline: 2px solid color-mix(in srgb, var(--blue) 60%, transparent);
-  outline-offset: 4px;
-  border-radius: 10px;
-}

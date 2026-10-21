@@ -1,21 +1,14 @@
-﻿// Settings — local display preferences. Theme and currency persist on this device.
+﻿// Settings — profile preferences. Theme and currency persist locally.
+const settingsForm = document.querySelector('[data-settings-form]');
+const securityForm = document.querySelector('[data-security-form]');
 const currencySelect = document.querySelector('[data-currency-select]');
 const currencyPreview = document.querySelector('[data-currency-preview]');
-const paletteInputs = Array.from(document.querySelectorAll('input[name="themeColor"]'));
-const modeInputs = Array.from(document.querySelectorAll('input[name="themeMode"]'));
+const themeColorSelect = document.querySelector('[data-theme-color]');
+const themeModeSelect = document.querySelector('[data-theme-mode]');
 const settingsMessage = document.querySelector('[data-settings-message]');
+const securityMessage = document.querySelector('[data-security-message]');
 
 const settings = window.SpendSenseSettings;
-
-// localStorage may be unavailable (hardened/private mode). Reading the saved
-// currency must not abort the rest of the settings page.
-const savedCurrency = (() => {
-  try {
-    return localStorage.getItem("spendsenseCurrency") || "INR";
-  } catch (e) {
-    return settings && settings.currency ? settings.currency : "INR";
-  }
-})();
 
 const renderCurrencyPreview = () => {
   if (!currencySelect || !currencyPreview) return;
@@ -24,44 +17,50 @@ const renderCurrencyPreview = () => {
 };
 
 if (currencySelect) {
-  currencySelect.value = savedCurrency;
+  currencySelect.value = localStorage.getItem("spendsenseCurrency") || "INR";
   renderCurrencyPreview();
 
   currencySelect.addEventListener("change", () => {
     settings.applyCurrency(currencySelect.value);
     renderCurrencyPreview();
-    if (settingsMessage) {
-      settingsMessage.textContent = "Display currency updated and saved on this device.";
-    }
   });
 }
 
-// ---------- Appearance: palette + mode ----------
-// theme.js is the single source of truth; these controls only reflect and
-// update it. A theme change applies instantly and persists on this device.
-const syncThemeControls = () => {
-  const color = settings.themeColor ? settings.themeColor() : "emerald";
-  const mode = settings.themeMode ? settings.themeMode() : "light";
-  paletteInputs.forEach((input) => {
-    input.checked = input.value === color;
+if (themeColorSelect) {
+  themeColorSelect.value = localStorage.getItem("spendsenseThemeColor") || "green";
+  themeColorSelect.addEventListener("change", () => {
+    settings.applyTheme(themeColorSelect.value, themeModeSelect ? themeModeSelect.value : "light");
   });
-  modeInputs.forEach((input) => {
-    input.checked = input.value === mode;
-  });
-};
+}
 
-paletteInputs.forEach((input) => {
-  input.addEventListener("change", () => {
-    if (input.checked) settings.applyTheme(input.value, settings.themeMode());
+if (themeModeSelect) {
+  themeModeSelect.value = localStorage.getItem("spendsenseThemeMode") || "light";
+  themeModeSelect.addEventListener("change", () => {
+    settings.applyTheme(themeColorSelect ? themeColorSelect.value : "green", themeModeSelect.value);
   });
-});
+}
 
-modeInputs.forEach((input) => {
-  input.addEventListener("change", () => {
-    if (input.checked) settings.applyTheme(settings.themeColor(), input.value);
+if (settingsForm) {
+  settingsForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (currencySelect) {
+      settings.applyCurrency(currencySelect.value);
+      renderCurrencyPreview();
+    }
+    if (settingsMessage)
+      settingsMessage.textContent =
+        "Profile settings can't be saved yet — nothing was saved. Currency and theme preferences are stored on this device only.";
+    if (window.SpendSenseUI)
+      window.SpendSenseUI.showToast("Profile settings aren't saved yet — nothing was saved", "warning");
   });
-});
+}
 
-// Keep these controls in sync when the topbar toggle changes the mode.
-window.addEventListener("spendsense:theme-change", syncThemeControls);
-syncThemeControls();
+if (securityForm) {
+  securityForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    // SECURITY SETTINGS ARE NOT YET SUPPORTED
+    if (window.SpendSenseUI) {
+      window.SpendSenseUI.showToast("Security settings are not yet supported", "warning");
+    }
+  });
+}

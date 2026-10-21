@@ -1,10 +1,5 @@
 /* Expenses pages — refinements on top of the shared design system. */
 
-/* Recoverable financial records */
-.trash-card {
-  margin-top: 18px;
-}
-
 [data-expense-state] {
   padding: 4px 0;
 }
@@ -30,106 +25,20 @@
   }
 }
 
-/* Custom "Other" category row in the expense form. */
-.custom-category-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.custom-category-row input {
-  flex: 1 1 220px;
-  min-width: 0;
-}
-
-.custom-category-row .btn {
-  flex: 0 0 auto;
-}
-
-@media (max-width: 760px) {
-  .custom-category-row input {
-    flex: 1 1 100%;
-  }
-
-  .custom-category-row .btn {
-    flex: 1 1 auto;
-  }
-}
-
 /* Primary button styling for consistency */
 .btn.primary {
-  background: var(--primary-action);
-  color: var(--on-primary);
-  border-color: var(--primary-action);
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
   box-shadow: 0 1px 2px var(--primary-ring);
 }
 
 .btn.primary:hover {
-  background: var(--primary-action-hover);
-  border-color: var(--primary-action-hover);
+  background: var(--primary-600);
+  border-color: var(--primary-600);
 }
 
 .btn.primary:focus-visible {
-  outline: 2px solid var(--primary-700);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
-}
-
-/* Quick-pick category suggestions in the expense form. */
-.field-label {
-  margin: 0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--ink-2);
-}
-
-.suggestion-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 2px 2px 2px 0;
-}
-
-.suggestion-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-}
-
-.suggestion-chip .chip-mark {
-  width: 10px;
-  text-align: center;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--muted);
-}
-
-.suggestion-chip.is-new {
-  border-style: dashed;
-}
-.suggestion-chip.is-new:hover { border-style: solid; }
-.suggestion-chip.exists .chip-mark { color: var(--success); }
-.suggestion-chip.blocked {
-  border-style: dashed;
-  background: var(--surface-2);
-  color: var(--muted);
-  cursor: help;
-}
-.suggestion-chip.blocked .chip-mark { color: var(--warn); }
-.suggestion-chip.blocked:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-2);
-  color: var(--muted);
-}
-.suggestion-chip:disabled { opacity: 0.55; cursor: wait; }
-
-.suggestion-chip span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (max-width: 760px) {
-  .suggestion-chip { flex: 0 1 auto; }
 }

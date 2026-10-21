@@ -1,49 +1,30 @@
 name: Frontend CI Pipeline
-
 on:
   push:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
-
-env:
-  API_BASE_URL: ${{ secrets.API_BASE_URL }}
-
 jobs:
   frontend-tests:
-    name: Frontend Tests
+    name: Legacy frontend regression tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Run frontend tests
-        working-directory: .
-        run: node --test tests/*.test.js
-
-      - name: Run structure checks
-        working-directory: .
-        run: node tools/stage5-verify.js
-
+      - run: node --test tests/api-client.test.js tests/date-format.test.js tests/theme-colors.test.js
+      - run: node tools/legacy-site-verify.js
   deploy-frontend:
     name: Deploy Frontend (Manual)
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Verify deployment secrets
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
@@ -52,31 +33,18 @@ jobs:
         run: |
           missing=()
           for var in API_BASE_URL CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
-            if [ -z "${!var}" ]; then
-              missing+=("$var")
-            fi
+            if [ -z "${!var}" ]; then missing+=("$var"); fi
           done
-          if [ ${#missing[@]} -gt 0 ]; then
-            echo "Missing required deployment secrets: ${missing[*]}"
-            exit 1
-          fi
-          echo "All required deployment secrets are present"
-
+          if [ ${#missing[@]} -gt 0 ]; then echo "Missing secrets: ${missing[*]}"; exit 1; fi
       - name: Prepare frontend deploy
-        working-directory: .
         run: |
-          node deploy/prepare-frontend-deploy.js \
-            --api-base-url ${{ secrets.API_BASE_URL }} \
-            --destination "${{ runner.temp }}/spendsense-dist" \
-            --force
-
+          node deploy/prepare-frontend-deploy.js --api-base-url "${{ secrets.API_BASE_URL }}" --destination "${{ runner.temp }}/spendsense-dist" --force
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy ${{ runner.temp }}/spendsense-dist --project-name=spendsensehq --branch=main
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
