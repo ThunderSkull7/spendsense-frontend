@@ -7,7 +7,7 @@
  * API base URL rewritten for the target environment.
  *
  * Usage:
- *   node deploy/prepare-frontend-deploy.js --api-base-url https://api.example.com --destination ./dist
+ *   node deploy/prepare-frontend-deploy.js --api-base-url https://spendsensehq.pages.dev --destination ./dist
  *
  * The source frontend directory is never modified. The destination folder
  * is what gets published (e.g. uploaded to Cloudflare Pages).
@@ -15,6 +15,12 @@
 
 const fs = require('fs');
 const path = require('path');
+
+// The browser must only talk to the Pages origin. The generated worker is the
+// same-origin bridge to the Render API, so accepting any other API base URL
+// would break cookies/CSRF or bypass that bridge.
+const PRODUCTION_ORIGIN = 'https://spendsensehq.pages.dev';
+const API_ORIGIN = 'https://spendsense-api-t0up.onrender.com';
 
 // Never publish repository metadata, CI configuration, tests, or build tools.
 const EXCLUDED_ROOT_ENTRIES = new Set(['.git', '.github', 'deploy', 'tests', 'tools']);
@@ -55,27 +61,14 @@ function parseArgs() {
   return options;
 }
 
-const options = parseArgs();
-
-function fail(message) {
-  console.error(`prepare-frontend-deploy: ${message}`);
-  process.exit(1);
-}
-
 function validateApiBaseUrl(api) {
-  const apiUrl = api.trim().replace(/\/+$/, '');
-  if (!/^https:\/\/[A-Za-z0-9][A-Za-z0-9.-]*$/.test(apiUrl)) {
-    fail('ApiBaseUrl must be an HTTPS origin, host only (example: https://api.example.com)');
+  const value = String(api ?? '').trim();
+  if (value !== PRODUCTION_ORIGIN) {
+    throw new Error(
+      `ApiBaseUrl must be exactly ${PRODUCTION_ORIGIN} (HTTPS origin, no path, query, credentials, port, or trailing slash)`
+    );
   }
-  if (/localhost|127\.|\.local$/i.test(apiUrl)) {
-    fail('ApiBaseUrl must not point at a local address');
-  }
-  return apiUrl;
-}
-
-function fail(message) {
-  console.error(`prepare-frontend-deploy: ${message}`);
-  process.exit(1);
+  return value;
 }
 
 function resolvePath(p, base = process.cwd()) {
@@ -83,35 +76,36 @@ function resolvePath(p, base = process.cwd()) {
 }
 
 function main() {
+  const options = parseArgs();
   const source = resolvePath(options.source);
   const destination = resolvePath(options.destination);
   const replaceThis = options.replace;
   const apiBaseUrl = validateApiBaseUrl(options.apiBaseUrl);
 
   if (!fs.existsSync(source)) {
-    fail(`Source directory not found: ${source}`);
+    throw new Error(`Source directory not found: ${source}`);
   }
   if (!fs.existsSync(path.join(source, 'index.html'))) {
-    fail(`Source does not look like the SpendSense frontend (missing index.html): ${source}`);
+    throw new Error(`Source does not look like the SpendSense frontend (missing index.html): ${source}`);
   }
 
   if (destination === process.cwd()) {
-    fail('Destination must not be the current directory');
+    throw new Error('Destination must not be the current directory');
   }
   if (destination === source) {
-    fail('Destination must differ from the source');
+    throw new Error('Destination must differ from the source');
   }
   if (destination.startsWith(source + path.sep)) {
-    fail('Destination must not be inside the source tree');
+    throw new Error('Destination must not be inside the source tree');
   }
   if (source.startsWith(destination + path.sep)) {
-    fail('Source must not be inside the destination directory');
+    throw new Error('Source must not be inside the destination directory');
   }
 
   // Create clean destination
   if (fs.existsSync(destination)) {
     if (!options.force) {
-      fail(`Destination already exists: ${destination} (use --force to replace)`);
+      throw new Error(`Destination already exists: ${destination} (use --force to replace)`);
     }
     fs.rmSync(destination, { recursive: true, force: true });
   }
@@ -124,7 +118,7 @@ function main() {
   // Copy source to destination, excluding non-public repository files
   copyRecursiveSync(source, destination, true);
 
-  // Create Cloudflare Pages _worker.js for API proxy
+  // Create Cloudflare Pages _worker.js for the same-origin API proxy
   createWorkerProxy(destination);
 
   // Rewrite the copy only
@@ -193,55 +187,77 @@ function main() {
   console.log('OK - deployable copy ready.');
 }
 
-function createWorkerProxy(destDir) {
-  const workerCode = `/**
+function buildWorkerCode() {
+  return `/**
  * Cloudflare Pages Worker for SpendSense API Proxy
- * Proxies /api/* requests to the backend API
- * Target: https://spendsense-api-t0up.onrender.com
+ * Proxies /api/* and the exact /user session-hydration endpoint to the
+ * backend API. All other paths are served by the static asset binding.
+ * Target: ${API_ORIGIN}
+ * Browser-facing origin: ${PRODUCTION_ORIGIN}
  */
+
+const PAGES_ORIGIN = '${PRODUCTION_ORIGIN}';
+const BACKEND_HOST = '${new URL(API_ORIGIN).hostname}';
+
+function isProxyPath(pathname) {
+  // Only the API namespace and the one session-hydration route may reach the
+  // backend. Never proxy arbitrary paths from this worker.
+  return pathname === '/user' || pathname.startsWith('/api/');
+}
+
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': PAGES_ORIGIN,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Accept, Content-Type, Authorization, X-XSRF-TOKEN, X-Requested-With, Idempotency-Key',
+    'Access-Control-Allow-Credentials': 'true',
+    'Vary': 'Origin'
+  };
+}
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
     // Advanced mode assumes control of every request; serve the static site
-    // for non-API paths instead of returning a 404.
-    if (!url.pathname.startsWith('/api/')) {
+    // for every path except the explicit proxy allowlist.
+    if (!isProxyPath(url.pathname)) {
       return env.ASSETS.fetch(request);
     }
 
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': url.origin,
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-XSRF-TOKEN, X-Requested-With',
-      'Access-Control-Allow-Credentials': 'true'
-    };
-
     // Handle preflight without forwarding it to the backend.
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders });
+      return new Response(null, { status: 204, headers: corsHeaders() });
     }
 
-    // Build the target URL
+    // Preserve the request path and query string while changing only the
+    // upstream origin. Cookies, Origin, Referer and other headers are copied.
     const targetUrl = new URL(request.url);
-    targetUrl.hostname = 'spendsense-api-t0up.onrender.com';
     targetUrl.protocol = 'https:';
+    targetUrl.hostname = BACKEND_HOST;
     targetUrl.port = '';
 
-    // Forward the request to the backend with the target host header.
     const proxyHeaders = new Headers(request.headers);
     proxyHeaders.delete('host');
-    const proxyRequest = new Request(targetUrl.toString(), {
+
+    const proxyInit = {
       method: request.method,
       headers: proxyHeaders,
-      body: request.body,
       redirect: 'follow'
-    });
+    };
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      proxyInit.body = request.body;
+      // Required by the standard Request constructor when a stream body is
+      // supplied; Cloudflare's runtime accepts the same option.
+      proxyInit.duplex = 'half';
+    }
 
-    const response = await fetch(proxyRequest);
+    const response = await fetch(new Request(targetUrl.toString(), proxyInit));
 
+    // Preserve backend response headers, including Set-Cookie, and add the
+    // same-origin CORS headers used by the browser-facing Pages host.
     const responseHeaders = new Headers(response.headers);
-    for (const [name, value] of Object.entries(corsHeaders)) {
+    for (const [name, value] of Object.entries(corsHeaders())) {
       responseHeaders.set(name, value);
     }
 
@@ -253,9 +269,11 @@ export default {
   }
 };
 `;
+}
 
+function createWorkerProxy(destDir) {
   const workerPath = path.join(destDir, '_worker.js');
-  fs.writeFileSync(workerPath, workerCode, 'utf8');
+  fs.writeFileSync(workerPath, buildWorkerCode(), 'utf8');
   console.log(`Created Cloudflare worker: ${path.relative(process.cwd(), workerPath)}`);
 }
 
@@ -290,4 +308,21 @@ function getHtmlFiles(dir) {
   return results;
 }
 
-main();
+if (require.main === module) {
+  try {
+    main();
+  } catch (error) {
+    console.error(`prepare-frontend-deploy: ${error.message}`);
+    process.exitCode = 1;
+  }
+}
+
+module.exports = {
+  PRODUCTION_ORIGIN,
+  API_ORIGIN,
+  parseArgs,
+  validateApiBaseUrl,
+  buildWorkerCode,
+  createWorkerProxy,
+  main
+};

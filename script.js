@@ -14,11 +14,17 @@ const API = {
   // server that keeps rejecting the token cannot trigger an infinite loop.
   async api(method, endpoint, body = null, csrfToken = null, retried = false, extraHeaders = null) {
     const url = `${API_BASE_URL}/api${endpoint}`;
+    // FormData must keep the browser-generated multipart boundary, so do not
+    // force a JSON Content-Type or serialize it. All other bodies remain JSON.
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
     const options = {
       method,
       credentials: 'include', // send Sanctum session cookie
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Accept': 'application/json' },
     };
+    if (!isFormData) {
+      options.headers['Content-Type'] = 'application/json';
+    }
     // Add XSRF-TOKEN header if provided (required for POST/PUT/DELETE on stateful routes)
     if (csrfToken !== null) {
       options.headers['X-XSRF-TOKEN'] = csrfToken;
@@ -27,7 +33,7 @@ const API = {
       Object.assign(options.headers, extraHeaders);
     }
     if (body !== null) {
-      options.body = JSON.stringify(body);
+      options.body = isFormData ? body : JSON.stringify(body);
     }
     const response = await fetch(url, options);
 

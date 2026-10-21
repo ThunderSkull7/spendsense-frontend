@@ -147,9 +147,9 @@ test('unified notification center renders bill reminders and budget alerts', () 
   assert.ok(html.includes('Mark all read'));
 
   for (const endpoint of [
-    "API.get(`/api/notifications?",
-    "API.post(`/api/notifications/",
-    "API.post('/api/notifications/read-all",
+    "API.get(`/notifications?",
+    "API.post(`/notifications/",
+    "API.post('/notifications/read-all",
   ]) {
     assert.ok(script.includes(endpoint), `notification script missing ${endpoint}`);
   }

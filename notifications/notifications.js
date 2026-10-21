@@ -1,6 +1,6 @@
 /*
  * Unified notification centre — bill reminders and budget alerts in one feed.
- * Fetches from /api/notifications with filter, pagination, and mark-read actions.
+ * Fetches from /notifications with filter, pagination, and mark-read actions.
  */
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.SpendSenseAPI || !window.SpendSenseUI) return;
@@ -32,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
     readCount: document.querySelector('[data-read-count]'),
     markAllRead: document.getElementById('mark-all-read'),
     markAllReadFiltered: document.getElementById('mark-all-read-filtered'),
-    filterTabs: document.querySelectorAll('[data-filter]'),
     list: document.querySelector('[data-notification-list]'),
     state: document.getElementById('notifications-state'),
     content: document.getElementById('notifications-content'),
@@ -51,13 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const setText = (node, value) => {
     if (node) node.textContent = value === null || value === undefined ? '—' : String(value);
-  };
-
-  const setMessage = (text, type = '') => {
-    if (!dom.message) return;
-    dom.message.textContent = text || '';
-    dom.message.classList.remove('error', 'success');
-    if (type) dom.message.classList.add(type);
   };
 
   const formatMoney = (value) => UI.formatMoney(value === null || value === undefined ? 0 : value);
@@ -178,15 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
     link.setAttribute('aria-label', `Open ${notification.category || 'details'}`);
     actions.appendChild(link);
 
-    main.append(actions);
-
-    const item = document.createElement('li');
-    item.className = `notification-item${notification.is_read ? '' : ' is-unread'}`;
-    item.dataset.id = notification.id;
-    item.dataset.type = notification.type;
-
-    const icon = notificationIcon(notification.type);
-
     item.append(icon, main, actions);
 
     return item;
@@ -220,6 +203,9 @@ document.addEventListener('DOMContentLoaded', () => {
     state.notifications = notifications;
     state.hasMore = pagination?.has_more ?? false;
     state.offset = state.offset + notifications.length;
+    state.total = summary.total;
+    state.unread = summary.unread;
+    state.read = summary.read;
 
     // Update summary counts
     const totalCountEl = document.querySelector('[data-total-count]');
@@ -280,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (state.month) params.set('month', state.month);
 
     try {
-      const result = await API.get(`/api/notifications?${params.toString()}`);
+      const result = await API.get(`/notifications?${params.toString()}`);
       if (result.status !== 200) throw new Error('Could not load notifications.');
       state.loading = false;
       setLoading(false);
@@ -298,7 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadMore = async () => {
     if (state.loading || !state.hasMore) return;
     state.loading = true;
-    state.offset += 100;
 
     const params = new URLSearchParams({
       filter: state.filter,
@@ -308,15 +293,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (state.month) params.set('month', state.month);
 
     try {
-      const result = await API.get(`/api/notifications?${params.toString()}`);
+      const result = await API.get(`/notifications?${params.toString()}`);
       if (result.status !== 200) throw new Error('Could not load more notifications.');
       state.loading = false;
-      if (result.status === 200 && result.data && result.data.data) {
+      if (result.data && result.data.data) {
         render(result.data.data);
       }
     } catch (error) {
       state.loading = false;
-      state.offset = Math.max(0, state.offset - 100);
     }
   };
 
@@ -326,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
     button.textContent = 'Marking…';
 
     try {
-      const result = await API.post(`/api/notifications/${type}/${id}/read`);
+      const result = await API.post(`/notifications/${type}/${id}/read`);
       if (result.status !== 200) throw new Error(result.data?.message ?? 'Could not mark read.');
 
       // Update local state
@@ -339,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const readBtn = actions.querySelector('[data-mark-read]');
           if (readBtn) {
             actions.replaceChildren();
-            actions.append(document.createElement('span', 'pill neutral', 'Read'));
+            actions.append(el('span', 'pill neutral', 'Read'));
             const link = document.createElement('a');
             link.className = 'btn ghost sm';
             link.href = item.querySelector('a[href^="../"]')?.href || '#';
@@ -364,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.textContent = 'Marking…';
 
     try {
-      const result = await API.post('/api/notifications/read-all');
+      const result = await API.post('/notifications/read-all');
       if (result.status !== 200) throw new Error('Could not mark all read.');
       UI.showToast(`Marked ${result.data.updated} notifications as read`, 'success');
       load();
@@ -383,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.textContent = 'Marking…';
 
     try {
-      const result = await API.post('/api/notifications/read-all', {
+      const result = await API.post('/notifications/read-all', {
         filter: state.filter,
         month: state.month,
       });
@@ -413,20 +397,6 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const init = () => {
-    const cacheDom = () => {
-      return {
-        list: document.querySelector('[data-notification-list]'),
-        state: document.getElementById('notifications-state'),
-        content: document.getElementById('notifications-content'),
-        empty: document.querySelector('[data-empty]'),
-        loadMore: document.getElementById('load-more'),
-        pagination: document.querySelector('[data-pagination]'),
-        periodLabel: document.querySelector('[data-period-label]'),
-      };
-    };
-
-    dom = cacheDom();
-
     // Filter tabs
     document.querySelectorAll('[data-filter]').forEach(tab => {
       tab.addEventListener('click', () => setFilter(tab.dataset.filter));
@@ -457,11 +427,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Load more button
-    if (dom.loadMore) {
-      dom.loadMore.addEventListener('click', loadMore);
-    }
-
     // Initial load
     load();
   };
@@ -471,4 +436,4 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     init();
   }
-})();
+});

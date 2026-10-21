@@ -172,9 +172,9 @@ test('bills and notification scripts reference the intended owner-scoped APIs', 
   }
 
   for (const endpoint of [
-    "API.get(`\/api\/notifications?",
-    "API.post(`\/api\/notifications\/",
-    "API.post('/api\/notifications\/read-all",
+    "API.get(`/notifications?",
+    "API.post(`/notifications/",
+    "API.post('/notifications/read-all",
   ]) {
     assert.ok(notifications.includes(endpoint), `notification script missing ${endpoint}`);
   }

@@ -1,6 +1,8 @@
 /*
  * Import transactions — CSV upload, preview, and import.
- * Uses the Stage 5 /api/import/preview and /api/import endpoints.
+ * Uses the shared API client for /import/preview and /import, so cookies,
+ * XSRF handling, and the one-shot 419 recovery stay consistent with the rest
+ * of the frontend.
  */
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.SpendSenseAPI || !window.SpendSenseUI) return;
@@ -33,45 +35,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const noDuplicatesEl = document.getElementById('no-duplicates');
   const duplicatesDetails = document.getElementById('duplicates-details');
 
-  const importForm = document.getElementById('import-form');
-  const importPreview = document.getElementById('import-preview');
-  const importResult = document.getElementById('import-result');
-  const importSubmit = document.getElementById('import-submit');
-  const importBack = document.getElementById('import-back');
-
   const resultImported = document.getElementById('result-imported');
   const resultSkipped = document.getElementById('result-skipped');
   const resultValid = document.getElementById('result-valid');
   const resultDuplicates = document.getElementById('result-duplicates');
 
-  const errorsTableBody = document.getElementById('errors-table-body');
-  const errorsTableWrap = document.getElementById('errors-table-wrap');
-  const noErrorsEl = document.getElementById('no-errors');
-
-  const duplicatesTableBody = document.getElementById('duplicates-table-body');
-  const duplicatesTableWrap = document.getElementById('duplicates-table-wrap');
-  const noDuplicatesEl = document.getElementById('no-duplicates');
-  const duplicatesDetails = document.getElementById('duplicates-details');
-
-  const totalRowsEl = document.getElementById('total-rows');
-  const validRowsEl = document.getElementById('valid-rows');
-  const errorRowsEl = document.getElementById('error-rows');
-  const duplicateRowsEl = document.getElementById('duplicate-rows');
-
-  const messageEl = document.getElementById('import-message');
-  const submitBtn = document.getElementById('import-submit');
-  const backBtn = document.getElementById('import-back');
-
-  let previewData = null;
-
-  const setMessage = function(text, type) {
+  const setMessage = (text, type = '') => {
     if (!messageEl) return;
     messageEl.textContent = text || '';
     messageEl.classList.remove('error', 'success');
     if (type) messageEl.classList.add(type);
   };
 
-  const renderErrors = function(errors) {
+  const setLoading = (loading) => {
+    if (!submitBtn) return;
+    submitBtn.disabled = loading;
+    submitBtn.textContent = loading ? 'Importing...' : 'Import transactions';
+  };
+
+  const renderErrors = (errors) => {
     if (!errorsTableBody) return;
     errorsTableBody.replaceChildren();
 
@@ -84,14 +66,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (errorsTableWrap) errorsTableWrap.hidden = false;
     if (noErrorsEl) noErrorsEl.hidden = true;
 
-    errors.forEach(function(err) {
-      var tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + err.row + '</td><td>' + err.field + '</td><td>' + err.message + '</td>';
+    errors.forEach((err) => {
+      const tr = document.createElement('tr');
+      [err.row, err.field, err.message].forEach((value) => {
+        const td = document.createElement('td');
+        td.textContent = value === null || value === undefined ? '' : String(value);
+        tr.appendChild(td);
+      });
       errorsTableBody.appendChild(tr);
     });
   };
 
-  const renderDuplicates = function(duplicates) {
+  const renderDuplicates = (duplicates) => {
     if (!duplicatesTableBody) return;
     duplicatesTableBody.replaceChildren();
 
@@ -106,217 +92,136 @@ document.addEventListener('DOMContentLoaded', () => {
     if (noDuplicatesEl) noDuplicatesEl.hidden = true;
     if (duplicatesDetails) duplicatesDetails.hidden = false;
 
-    duplicates.forEach(function(dup) {
-      var tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + dup.row + '</td><td>' + dup.type + '</td><td class="num">' + window.SpendSenseUI.formatMoney(dup.amount) + '</td><td>' + dup.date + '</td><td>' + dup.message + '</td>';
+    duplicates.forEach((dup) => {
+      const tr = document.createElement('tr');
+      [dup.row, dup.type, UI.formatMoney(dup.amount), dup.date, dup.message].forEach((value, index) => {
+        const td = document.createElement('td');
+        if (index === 2) td.className = 'num';
+        td.textContent = value === null || value === undefined ? '' : String(value);
+        tr.appendChild(td);
+      });
       duplicatesTableBody.appendChild(tr);
     });
   };
 
-  var showPreview = function(data) {
-    previewData = data;
-
-    var total = data.summary?.total_rows ?? 0;
-    var valid = data.summary?.valid_rows ?? 0;
-    var errors = data.summary?.error_rows ?? 0;
-    var duplicates = data.summary?.duplicate_rows ?? 0;
-
-    var totalRowsEl = document.getElementById('total-rows');
-    var validRowsEl = document.getElementById('valid-rows');
-    var errorRowsEl = document.getElementById('error-rows');
-    var duplicateRowsEl = document.getElementById('duplicate-rows');
+  const showPreview = (data) => {
+    const summary = data?.summary || {};
+    const total = summary.total_rows ?? 0;
+    const valid = summary.valid_rows ?? 0;
+    const errors = summary.error_rows ?? 0;
+    const duplicates = summary.duplicate_rows ?? 0;
 
     if (totalRowsEl) totalRowsEl.textContent = total.toLocaleString();
     if (validRowsEl) validRowsEl.textContent = valid.toLocaleString();
     if (errorRowsEl) errorRowsEl.textContent = errors.toLocaleString();
     if (duplicateRowsEl) duplicateRowsEl.textContent = duplicates.toLocaleString();
 
-    renderErrors(data.errors);
-    renderDuplicates(data.duplicates);
+    renderErrors(data?.errors);
+    renderDuplicates(data?.duplicates);
 
-    var importPreview = document.getElementById('import-preview');
-    var importForm = document.getElementById('import-form');
-    var submitBtn = document.getElementById('import-submit');
-
-    if (importPreview) importPreview.hidden = false;
-    if (importForm) importForm.hidden = false;
+    if (previewSection) previewSection.hidden = false;
+    if (resultSection) resultSection.hidden = true;
+    if (form) form.hidden = false;
     if (submitBtn) submitBtn.disabled = valid === 0;
   };
 
-  var showResult = function(data) {
-    var importPreview = document.getElementById('import-preview');
-    var importForm = document.getElementById('import-form');
-    var importResult = document.getElementById('import-result');
+  const showResult = (data) => {
+    if (previewSection) previewSection.hidden = true;
+    if (form) form.hidden = true;
+    if (resultSection) resultSection.hidden = false;
 
-    if (importPreview) importPreview.hidden = true;
-    if (importForm) importForm.hidden = true;
-    if (importResult) importResult.hidden = false;
-
-    var resultImported = document.getElementById('result-imported');
-    var resultSkipped = document.getElementById('result-skipped');
-    var resultValid = document.getElementById('result-valid');
-    var resultDuplicates = document.getElementById('result-duplicates');
-
-    if (resultImported) resultImported.textContent = (data.imported ?? 0).toLocaleString();
-    if (resultSkipped) resultSkipped.textContent = (data.skipped ?? 0).toLocaleString();
-    if (resultValid) resultValid.textContent = (data.total_valid ?? 0).toLocaleString();
-    if (resultDuplicates) resultDuplicates.textContent = (data.duplicates_skipped ?? 0).toLocaleString();
+    if (resultImported) resultImported.textContent = (data?.imported ?? 0).toLocaleString();
+    if (resultSkipped) resultSkipped.textContent = (data?.skipped ?? 0).toLocaleString();
+    if (resultValid) resultValid.textContent = (data?.total_valid ?? 0).toLocaleString();
+    if (resultDuplicates) resultDuplicates.textContent = (data?.duplicates_skipped ?? 0).toLocaleString();
   };
 
-  var setMessage = function(text, type) {
-    if (!messageEl) return;
-    messageEl.textContent = text || '';
-    messageEl.classList.remove('error', 'success');
-    if (type) messageEl.classList.add(type);
-  };
+  const responseMessage = (result, fallback) =>
+    result?.data?.data?.message || result?.data?.message || fallback;
 
-  var setLoading = function(loading) {
-    var submitBtn = document.getElementById('import-submit');
-    if (submitBtn) {
-      submitBtn.disabled = loading;
-      submitBtn.textContent = loading ? 'Importing...' : 'Import transactions';
-    }
-  };
+  const handlePreview = async (file) => {
+    if (!file) return;
 
-  var handlePreview = async function(file) {
-    var formData = new FormData();
+    setMessage('');
+    const formData = new FormData();
     formData.append('file', file);
     formData.append('confirm', 'true');
 
-    var csrfToken = await API.ensureCsrfToken();
-    var response = await fetch(API.API_BASE_URL + '/api/import/preview', {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'X-XSRF-TOKEN': csrfToken,
-        'Accept': 'application/json',
-      },
-      body: formData,
-    });
-
-    var result = await response.json();
-    if (response.ok && result.success) {
-      showPreview(result.data);
-    } else {
-      setMessage(result?.data?.message ?? 'Failed to preview import', 'error');
+    try {
+      const result = await API.post('/import/preview', formData);
+      if (result.status === 200 && result.data?.success) {
+        showPreview(result.data.data);
+      } else {
+        setMessage(responseMessage(result, 'Failed to preview import'), 'error');
+      }
+    } catch (error) {
+      setMessage(`Failed to preview import: ${error?.message || 'Unknown error'}`, 'error');
     }
   };
 
-  var handleImport = async function() {
-    var file = fileInput?.files?.[0];
-    if (!file) return;
+  const handleImport = async () => {
+    const file = fileInput?.files?.[0];
+    if (!file) {
+      setMessage('Please select a CSV file to import.', 'error');
+      return;
+    }
 
     setMessage('');
     setLoading(true);
 
-    var formData = new FormData();
+    const formData = new FormData();
     formData.append('file', file);
     formData.append('confirm', 'true');
 
-    var csrfToken = await API.ensureCsrfToken();
     try {
-      var response = await fetch(API.API_BASE_URL + '/api/import', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'X-XSRF-TOKEN': csrfToken,
-          'Accept': 'application/json',
-        },
-        body: formData,
-      });
-
-      var result = await response.json();
-
-      if (response.ok && result.success) {
-        showResult(result.data);
-        setMessage('Successfully imported ' + result.data.imported + ' transactions', 'success');
+      const result = await API.post('/import', formData);
+      if (result.status === 200 && result.data?.success) {
+        const data = result.data.data;
+        showResult(data);
+        setMessage(`Successfully imported ${data?.imported ?? 0} transactions`, 'success');
       } else {
-        setMessage(result?.data?.message ?? 'Import failed', 'error');
+        setMessage(responseMessage(result, 'Import failed'), 'error');
       }
-    } catch (err) {
-      setMessage('Import failed: ' + (err?.message ?? 'Unknown error'), 'error');
+    } catch (error) {
+      setMessage(`Import failed: ${error?.message || 'Unknown error'}`, 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  var setMessage = function(text, type) {
-    if (!messageEl) return;
-    messageEl.textContent = text || '';
-    messageEl.classList.remove('error', 'success');
-    if (type) messageEl.classList.add(type);
-  };
+  if (fileInput) {
+    fileInput.addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-  var setLoading = function(loading) {
-    var submitBtn = document.getElementById('import-submit');
-    if (submitBtn) {
-      submitBtn.disabled = loading;
-      submitBtn.textContent = loading ? 'Importing...' : 'Import transactions';
-    }
-  };
-
-  document.addEventListener('DOMContentLoaded', function() {
-    var API = window.SpendSenseAPI;
-    var UI = window.SpendSenseUI;
-
-    var metaBase = document.querySelector('meta[name="api-base-url"]');
-    if (metaBase) API.init(metaBase.content);
-
-    var fileInput = document.getElementById('csv-file');
-    var importForm = document.getElementById('import-form');
-    var submitBtn = document.getElementById('import-submit');
-    var backBtn = document.getElementById('import-back');
-
-    if (fileInput) {
-      fileInput.addEventListener('change', async function(e) {
-        var file = e.target.files?.[0];
-        if (!file) return;
-
-        setMessage('');
-        var importPreview = document.getElementById('import-preview');
-        var resultSection = document.getElementById('import-result');
-        var importForm = document.getElementById('import-form');
-        var submitBtn = document.getElementById('import-submit');
-
-        importPreview.hidden = true;
-        resultSection.hidden = true;
-        importForm.hidden = false;
+      setMessage('');
+      if (previewSection) previewSection.hidden = true;
+      if (resultSection) resultSection.hidden = true;
+      if (form) form.hidden = false;
+      if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Import transactions';
+      }
 
-        await handlePreview(fileInput.files[0]);
-      });
-    }
+      await handlePreview(file);
+    });
 
-    if (importForm) {
-      importForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        handleImport();
-      });
-    }
+    fileInput.addEventListener('click', () => setMessage(''));
+  }
 
-    if (backBtn) {
-      backBtn.addEventListener('click', function() {
-        var resultSection = document.getElementById('import-result');
-        var importPreview = document.getElementById('import-preview');
-        var importForm = document.getElementById('import-form');
-        resultSection.hidden = true;
-        importPreview.hidden = false;
-        importForm.hidden = false;
-        submitBtn.textContent = 'Import transactions';
-      });
-    }
+  if (form) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      await handleImport();
+    });
+  }
 
-    var submitBtn = document.getElementById('import-submit');
-    if (submitBtn) submitBtn.addEventListener('click', handleImport);
-
-    if (fileInput) {
-      fileInput.addEventListener('click', function() {
-        var messageEl = document.getElementById('import-message');
-        if (messageEl) {
-          messageEl.textContent = '';
-          messageEl.classList.remove('error', 'success');
-        }
-      });
-    }
-  });
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      if (resultSection) resultSection.hidden = true;
+      if (previewSection) previewSection.hidden = false;
+      if (form) form.hidden = false;
+      if (submitBtn) submitBtn.textContent = 'Import transactions';
+    });
+  }
+});
