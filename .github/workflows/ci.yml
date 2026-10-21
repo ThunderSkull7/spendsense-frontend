@@ -44,22 +44,38 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Verify deployment secrets
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          missing=()
+          for var in API_BASE_URL CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID; do
+            if [ -z "${!var}" ]; then
+              missing+=("$var")
+            fi
+          done
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "Missing required deployment secrets: ${missing[*]}"
+            exit 1
+          fi
+          echo "All required deployment secrets are present"
+
       - name: Prepare frontend deploy
         working-directory: .
         run: |
           node deploy/prepare-frontend-deploy.js \
             --api-base-url ${{ secrets.API_BASE_URL }} \
-            --destination ./dist \
+            --destination "${{ runner.temp }}/spendsense-dist" \
             --force
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: spendsensehq
-          directory: ./dist
-          branch: main
+          command: pages deploy ${{ runner.temp }}/spendsense-dist --project-name=spendsensehq --branch=main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

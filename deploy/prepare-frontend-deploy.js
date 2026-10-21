@@ -16,6 +16,9 @@
 const fs = require('fs');
 const path = require('path');
 
+// Never publish repository metadata, CI configuration, tests, or build tools.
+const EXCLUDED_ROOT_ENTRIES = new Set(['.git', '.github', 'deploy', 'tests', 'tools']);
+
 // Simple argument parsing without external dependencies
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -118,8 +121,8 @@ function main() {
   console.log(`Destination : ${destination}`);
   console.log(`API base    : ${apiBaseUrl}`);
 
-  // Copy source to destination (including hidden files)
-  copyRecursiveSync(source, destination);
+  // Copy source to destination, excluding non-public repository files
+  copyRecursiveSync(source, destination, true);
 
   // Create Cloudflare Pages _worker.js for API proxy
   createWorkerProxy(destination);
@@ -198,12 +201,25 @@ function createWorkerProxy(destDir) {
  */
 
 export default {
-  async fetch(request, env, ctx) {
+  async fetch(request, env) {
     const url = new URL(request.url);
-    
-    // Only proxy /api/* requests
+
+    // Advanced mode assumes control of every request; serve the static site
+    // for non-API paths instead of returning a 404.
     if (!url.pathname.startsWith('/api/')) {
-      return new Response('Not found', { status: 404 });
+      return env.ASSETS.fetch(request);
+    }
+
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': url.origin,
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-XSRF-TOKEN, X-Requested-With',
+      'Access-Control-Allow-Credentials': 'true'
+    };
+
+    // Handle preflight without forwarding it to the backend.
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: corsHeaders });
     }
 
     // Build the target URL
@@ -212,30 +228,21 @@ export default {
     targetUrl.protocol = 'https:';
     targetUrl.port = '';
 
-    // Create new request to backend
+    // Forward the request to the backend with the target host header.
+    const proxyHeaders = new Headers(request.headers);
+    proxyHeaders.delete('host');
     const proxyRequest = new Request(targetUrl.toString(), {
       method: request.method,
-      headers: request.headers,
+      headers: proxyHeaders,
       body: request.body,
       redirect: 'follow'
     });
 
-    // Forward the request to the backend
     const response = await fetch(proxyRequest);
 
-    // Return response with CORS headers
     const responseHeaders = new Headers(response.headers);
-    responseHeaders.set('Access-Control-Allow-Origin', '*');
-    responseHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-XSRF-TOKEN, X-Requested-With');
-    responseHeaders.set('Access-Control-Allow-Credentials', 'true');
-
-    // Handle preflight
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: responseHeaders
-      });
+    for (const [name, value] of Object.entries(corsHeaders)) {
+      responseHeaders.set(name, value);
     }
 
     return new Response(response.body, {
@@ -252,14 +259,17 @@ export default {
   console.log(`Created Cloudflare worker: ${path.relative(process.cwd(), workerPath)}`);
 }
 
-function copyRecursiveSync(src, dest) {
+function copyRecursiveSync(src, dest, isRoot = false) {
   const entries = fs.readdirSync(src, { withFileTypes: true });
   for (const entry of entries) {
+    if (isRoot && EXCLUDED_ROOT_ENTRIES.has(entry.name)) {
+      continue;
+    }
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
     if (entry.isDirectory()) {
       fs.mkdirSync(destPath, { recursive: true });
-      copyRecursiveSync(srcPath, destPath);
+      copyRecursiveSync(srcPath, destPath, false);
     } else {
       fs.copyFileSync(srcPath, destPath);
     }
