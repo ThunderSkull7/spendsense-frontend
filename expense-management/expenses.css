@@ -38,6 +38,21 @@
   flex-wrap: wrap;
 }
 
+/* ---------- Inline add-expense card (Expenses page) ---------- */
+/* The history table and the creation form sit side by side, like on Income. */
+.grid-main-side > aside.card { align-self: start; }
+
+@media (min-width: 761px) {
+  .grid-main-side > aside.card .form-grid { grid-template-columns: 1fr; }
+}
+
+.custom-category-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+
 .custom-category-row input {
   flex: 1 1 220px;
   min-width: 0;

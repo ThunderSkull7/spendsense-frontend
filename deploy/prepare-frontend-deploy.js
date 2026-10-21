@@ -115,6 +115,14 @@ function main() {
   console.log(`Destination : ${destination}`);
   console.log(`API base    : ${apiBaseUrl}`);
 
+  // Pages carrying the dev URL before the run. Copying and rewriting must only
+  // ever touch the destination, so this exact set has to survive the run.
+  // Some pages legitimately have no API tag (e.g. redirect stubs for retired
+  // pages), so absence is not a problem - only gains/losses are.
+  const sourceDevUrlPages = getHtmlFiles(source).filter((file) =>
+    fs.readFileSync(file, 'utf8').includes(replaceThis)
+  );
+
   // Copy source to destination, excluding non-public repository files
   copyRecursiveSync(source, destination, true);
 
@@ -159,17 +167,17 @@ function main() {
     throw new Error('The local API base URL is still present in the destination copy');
   }
 
-  // Verify the source was NOT touched
+  // Verify the source was NOT touched: the exact set of pages that carried
+  // the dev URL before the run must still carry it afterwards. Counting all
+  // HTML files instead would false-positive on pages without an API tag
+  // (e.g. the redirect stubs for retired pages).
   const sourceHtmlFiles = getHtmlFiles(source);
-  let sourceMatchesAfter = 0;
-  for (const file of sourceHtmlFiles) {
-    const text = fs.readFileSync(file, 'utf8');
-    if (text.includes(replaceThis)) {
-      sourceMatchesAfter++;
-    }
-  }
-  if (sourceMatchesAfter !== sourceHtmlFiles.length) {
-    throw new Error(`Source frontend changed during the run (expected ${sourceHtmlFiles.length} source pages still containing the dev URL, found ${sourceMatchesAfter})`);
+  const sourceAfter = new Set(
+    sourceHtmlFiles.filter((file) => fs.readFileSync(file, 'utf8').includes(replaceThis))
+  );
+  const changedSourcePages = sourceDevUrlPages.filter((file) => !sourceAfter.has(file));
+  if (sourceAfter.size !== sourceDevUrlPages.length || changedSourcePages.length > 0) {
+    throw new Error(`Source frontend changed during the run (expected ${sourceDevUrlPages.length} source pages still containing the dev URL, found ${sourceAfter.size})`);
   }
 
   // Report
@@ -180,10 +188,10 @@ function main() {
   for (const s of skipped) {
     console.log(`  - ${s}`);
   }
-  if (replaced !== 28) {
-    console.warn(`Warning: expected 28 SpendSense pages to carry the API meta tag, rewrote ${replaced} - verify the page set before deploying.`);
+  if (replaced !== 24) {
+    console.warn(`Warning: expected 24 SpendSense pages to carry the API meta tag, rewrote ${replaced} - verify the page set before deploying.`);
   }
-  console.log(`Source untouched    : ${sourceMatchesAfter} source pages still contain ${replaceThis}`);
+  console.log(`Source untouched    : ${sourceAfter.size} source pages still contain ${replaceThis}`);
   console.log('OK - deployable copy ready.');
 }
 

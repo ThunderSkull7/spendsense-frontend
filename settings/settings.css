@@ -194,9 +194,9 @@
 .theme-swatch i:nth-child(3) { background: var(--opt-100); }
 
 .theme-option[data-palette="emerald"] { --opt-primary: #10B981; --opt-600: #059669; --opt-100: rgba(16, 185, 129, 0.24); }
-.theme-option[data-palette="blue"] { --opt-primary: #3B82F6; --opt-600: #2563EB; --opt-100: rgba(59, 130, 246, 0.24); }
-.theme-option[data-palette="red"] { --opt-primary: #E11D48; --opt-600: #BE123C; --opt-100: rgba(225, 29, 72, 0.24); }
-.theme-option[data-palette="amber"] { --opt-primary: #D97706; --opt-600: #B45309; --opt-100: rgba(217, 119, 6, 0.26); }
+.theme-option[data-palette="blue"] { --opt-primary: #2563EB; --opt-600: #1D4ED8; --opt-100: rgba(37, 99, 235, 0.24); }
+.theme-option[data-palette="red"] { --opt-primary: #DC2648; --opt-600: #B81D3C; --opt-100: rgba(188, 29, 60, 0.24); }
+.theme-option[data-palette="amber"] { --opt-primary: #F59E0B; --opt-600: #B45309; --opt-100: rgba(180, 83, 9, 0.26); }
 
 .theme-option-name {
   min-width: 0;

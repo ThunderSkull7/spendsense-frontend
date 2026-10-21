@@ -43,9 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
     comparison: document.querySelector('[data-insight-comparison]'),
     comparisonNote: document.querySelector('[data-insight-comparison-note]'),
     monthRows: document.querySelector('[data-insight-month-rows]'),
-    monthBars: document.querySelector('[data-insight-month-bars]'),
-    monthsEmpty: document.querySelector('[data-insight-months-empty]'),
-    monthDetailRows: document.querySelector('[data-insight-month-detail-rows]'),
     anomalyPill: document.querySelector('[data-insight-anomaly-pill]'),
     anomalyRule: document.querySelector('[data-insight-anomaly-rule]'),
     anomalyRows: document.querySelector('[data-insight-anomaly-rows]'),
@@ -240,30 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
     ]), 4);
   };
 
-  const renderMonths = (data) => {
-    const months = Array.isArray(data.months) ? data.months : [];
-    dom.monthBars.replaceChildren();
-    const max = months.reduce((highest, month) => Math.max(highest, Number(month.income) || 0, Number(month.expenses) || 0), 0) || 1;
-    const hasAny = months.some((month) => Number(month.income) !== 0 || Number(month.expenses) !== 0);
-    dom.monthsEmpty.hidden = hasAny;
-
-    months.forEach((month) => {
-      const wrapper = el('div', 'intel-stack');
-      wrapper.style.gap = '7px';
-      wrapper.appendChild(barRow(`${H.monthLabel(month.month)} income`, month.income, ((Number(month.income) || 0) / max) * 100, 'income'));
-      wrapper.appendChild(barRow(`${H.monthLabel(month.month)} expenses`, month.expenses, ((Number(month.expenses) || 0) / max) * 100, 'expense'));
-      dom.monthBars.appendChild(wrapper);
-    });
-
-    tbodyRows(dom.monthDetailRows, months.map((month) => [
-      H.monthLabel(month.month),
-      money(month.income),
-      money(month.expenses),
-      signedMoney(month.net),
-      month.is_in_progress ? 'Current month' : 'Complete month',
-    ]), 5);
-  };
-
   const renderAnomalies = (data) => {
     const anomalies = data.anomalies || {};
     const transactions = Array.isArray(anomalies.transactions) ? anomalies.transactions : [];
@@ -344,7 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderSummary(data);
     renderCategories(data);
     renderComparison(data);
-    renderMonths(data);
     renderAnomalies(data);
     renderLargest(data);
     renderBudgets(data);

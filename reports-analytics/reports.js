@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     state: document.querySelector('[data-report-state]'),
     content: document.querySelector('[data-report-content]'),
     period: document.querySelector('[data-report-period]'),
-    refresh: document.querySelector('[data-report-refresh]'),
     exportCsv: document.querySelector('[data-export-csv]'),
     exportJson: document.querySelector('[data-export-json]'),
     print: document.querySelector('[data-report-print]'),
@@ -597,17 +596,6 @@ document.addEventListener('DOMContentLoaded', () => {
       load();
     });
   });
-
-  if (dom.refresh) {
-    dom.refresh.addEventListener('click', async () => {
-      dom.refresh.disabled = true;
-      const original = dom.refresh.textContent;
-      dom.refresh.textContent = 'Refreshing…';
-      await load();
-      dom.refresh.disabled = false;
-      dom.refresh.textContent = original;
-    });
-  }
 
   if (dom.exportCsv) dom.exportCsv.addEventListener('click', exportCsv);
   if (dom.exportJson) dom.exportJson.addEventListener('click', exportJson);

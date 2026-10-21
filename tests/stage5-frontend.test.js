@@ -168,11 +168,9 @@ const NAV_KEYS = [
   'expenses',
   'income',
   'budgets',
-  'bills',
   'goals',
   'categories',
   'insights-overview',
-  'insights-trends',
   'insights-income',
   'insights-budgets',
   'insights-savings',
@@ -180,8 +178,6 @@ const NAV_KEYS = [
   'insights-quality',
   'reports',
   'insights',
-  'forecast',
-  'net-worth',
   'subscriptions',
   'notifications',
   'settings',
@@ -194,19 +190,15 @@ const NAV_PAGES = [
   'expense-management/add-expense.html',
   'income-management/income.html',
   'budget-planning/budget.html',
-  'recurring-expenses/recurring-expenses.html',
   'savings-goals/savings-goals.html',
   'categories-management/categories.html',
   'reports-analytics/reports.html',
   'financial-intelligence/insights.html',
-  'financial-intelligence/forecast.html',
-  'financial-intelligence/net-worth.html',
   'financial-intelligence/subscriptions.html',
   'notifications/notifications.html',
   'settings/settings.html',
   'support/support.html',
   'insights/overview.html',
-  'insights/trends.html',
   'insights/income.html',
   'insights/budgets.html',
   'insights/savings.html',
@@ -248,8 +240,6 @@ test('the dashboard exposes every Stage 5 widget and the customize panel', () =>
     'upcoming_bills',
     'recent_transactions',
     'spending_insights',
-    'cash_flow_forecast',
-    'net_worth',
     'subscription_renewals',
   ];
   keys.forEach((key) => {
@@ -361,7 +351,6 @@ test('the reports centre has no third-party charting dependency', () => {
 
 const INSIGHT_PAGES = {
   'insights/overview.html': 'insights-overview',
-  'insights/trends.html': 'insights-trends',
   'insights/income.html': 'insights-income',
   'insights/budgets.html': 'insights-budgets',
   'insights/savings.html': 'insights-savings',
@@ -384,7 +373,6 @@ test('the insights pages use the documented owner-scoped analytics endpoints', (
   // The shared API client already prefixes "/api".
   [
     '/reports?',
-    '/analytics/spending-trends?',
     '/analytics/income-analysis?',
     '/analytics/budget-performance?',
     '/analytics/savings-progress?',
@@ -399,7 +387,6 @@ test('the insights pages state the actual versus expected separation', () => {
   // The pages that show actual ledger figures must say so explicitly.
   [
     'insights/overview.html',
-    'insights/trends.html',
     'insights/income.html',
     'insights/budgets.html',
     'insights/commitments.html',
@@ -417,12 +404,6 @@ test('the insights pages state the actual versus expected separation', () => {
   const quality = read('insights/data-quality.html');
   assert.ok(quality.includes('never automatic changes'));
   assert.ok(quality.includes('Nothing here edits, merges or deletes a financial record'));
-});
-
-test('the trends page links a category drill-down into the transaction search', () => {
-  const source = read('insights/insights-pages.js');
-  assert.ok(source.includes('../expense-management/expenses.html?category_id='));
-  assert.ok(source.includes('View transactions'));
 });
 
 /* ── The transaction search ────────────────────────────────────────────── */

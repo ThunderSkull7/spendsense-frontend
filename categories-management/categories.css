@@ -8,8 +8,18 @@
   margin-bottom: 6px;
 }
 
+/* The create/edit form keeps the same vertical rhythm as other page forms. */
+.category-form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+
 .choice-chips {
-  margin-bottom: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 [data-category-state] {
@@ -60,8 +70,10 @@
 }
 
 .category-tile .c-ico.income {
-  background: var(--primary-100);
-  color: var(--primary-700);
+  /* Income tiles get a distinct, calmer tone so the two types read apart. */
+  background: var(--success-100);
+  color: var(--success);
+  box-shadow: none;
 }
 
 .category-tile .c-main {

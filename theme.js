@@ -324,13 +324,38 @@
     document.body.insertBefore(link, document.body.firstChild);
   };
 
+  // The sidebar markup is copied into every page, so the highlighted entry is
+  // not trusted: it is recomputed here from the current URL, and stale hardcoded
+  // "active" classes (pages that copied an older shell) are cleared. This keeps
+  // highlighting correct everywhere — e.g. Notifications highlights
+  // Notifications, never Reports.
+  const highlightCurrentNav = () => {
+    const current = decodeURIComponent(window.location.pathname)
+      .replace(/\\/g, "/")
+      .toLowerCase();
+    document.querySelectorAll("[data-nav]").forEach((link) => {
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("#")) return;
+      let linkPath;
+      try {
+        linkPath = decodeURIComponent(new URL(href, window.location.href).pathname)
+          .replace(/\\/g, "/")
+          .toLowerCase();
+      } catch (e) {
+        return;
+      }
+      if (linkPath.endsWith("/")) linkPath += "index.html";
+      const isActive = linkPath === current;
+      link.classList.toggle("active", isActive);
+      if (isActive) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+  };
+
   const initShell = () => {
     const body = document.body;
     ensureSkipLink();
-
-    document.querySelectorAll("[data-nav]").forEach((link) => {
-      if (link.classList.contains("active")) link.setAttribute("aria-current", "page");
-    });
+    highlightCurrentNav();
 
     const sidebarToggle = document.querySelector("[data-sidebar-toggle]");
     const overlay = document.querySelector("[data-sidebar-overlay]");
