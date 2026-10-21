@@ -17,15 +17,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (type) messageDiv.classList.add(type);
   };
 
-  // Shared: expense-type categories for selects and filters.
-  async function fetchExpenseCategories() {
+  // Shared: every category the API returns (income + expense).
+  async function fetchCategories() {
     try {
       const { data, status } = await api.get('/categories');
       if (status !== 200 || !data || !data.data) return [];
-      return data.data.filter((category) => category.type === 'expense');
+      return data.data;
     } catch (e) {
       return [];
     }
+  }
+
+  // Expense-type categories for selects and filters.
+  async function fetchExpenseCategories() {
+    const categories = await fetchCategories();
+    return categories.filter((category) => category.type === 'expense');
   }
 
   // ---------- Add / edit expense form (add-expense.html) ----------
@@ -36,8 +42,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const descInput = addForm.querySelector('#description');
     const dateInput = addForm.querySelector('#date');
     const submitBtn = addForm.querySelector('button[type="submit"]');
+    const customField = addForm.querySelector('[data-custom-category]');
+    const customInput = addForm.querySelector('#custom-category');
+    const createCategoryBtn = addForm.querySelector('[data-create-category]');
+    const cancelCategoryBtn = addForm.querySelector('[data-cancel-category]');
+    const customMessage = addForm.querySelector('[data-custom-category-message]');
     const editId = new URLSearchParams(window.location.search).get('edit');
+
+    // Sentinel value for the "Other (add new)…" option; never sent to the API.
+    const CUSTOM_CATEGORY = '__other__';
     let editingExpenseId = null;
+    let allCategories = [];       // both types, used for duplicate detection
+    let lastCategoryValue = '';   // last real selection, restored when cancelling
+    let creatingCategory = false; // blocks duplicate category creation
 
     if (dateInput && !dateInput.value) dateInput.valueAsDate = new Date();
 
@@ -48,6 +65,96 @@ document.addEventListener('DOMContentLoaded', () => {
         if (Array.isArray(first) && first.length) return first[0];
       }
       return (data && data.message) || fallback;
+    };
+
+    const setCustomMessage = (text, type) => {
+      if (!customMessage) return;
+      customMessage.textContent = text || '';
+      customMessage.classList.remove('error', 'success');
+      if (type) customMessage.classList.add(type);
+    };
+
+    // Explicit custom-category mode: only active while "Other (add new)…"
+    // is selected; leaving the mode always clears any stale name/message.
+    const setCustomMode = (active) => {
+      if (!customField) return;
+      customField.hidden = !active;
+      if (customInput) {
+        customInput.required = active;
+        if (active) {
+          customInput.setAttribute('pattern', '[^\\s].*');
+        } else {
+          customInput.removeAttribute('pattern');
+        }
+      }
+      if (active) {
+        if (customInput) customInput.focus();
+      } else {
+        if (customInput) customInput.value = '';
+        setCustomMessage('');
+      }
+    };
+
+    const findExistingCategory = (name) => {
+      const normalized = name.trim().toLowerCase();
+      return allCategories.find((category) => String(category.name).trim().toLowerCase() === normalized) || null;
+    };
+
+    const selectCategory = (category) => {
+      if (!categorySelect) return;
+      const value = String(category.id);
+      if (!categorySelect.querySelector(`option[value="${value}"]`)) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = category.name;
+        categorySelect.appendChild(option);
+      }
+      categorySelect.value = value;
+      lastCategoryValue = value;
+      setCustomMode(false);
+    };
+
+    // Creates an expense category through the existing category API and
+    // selects it. Resolves with a user-facing error string, or null on success.
+    const createCustomCategory = async () => {
+      if (!customInput) return 'Please enter a category name.';
+      const name = customInput.value.trim();
+      if (!name) return 'Please enter a category name.';
+      if (creatingCategory) return null;
+
+      // Reuse an existing category instead of creating a duplicate.
+      const existing = findExistingCategory(name);
+      if (existing) {
+        if (existing.type === 'expense') {
+          selectCategory(existing);
+          setMessage(`"${existing.name}" already exists — it is now selected.`, 'success');
+          return null;
+        }
+        return `A category named "${existing.name}" already exists under income categories.`;
+      }
+
+      creatingCategory = true;
+      if (createCategoryBtn) createCategoryBtn.disabled = true;
+      setCustomMessage('Creating category…');
+
+      try {
+        const { data, status } = await api.post('/categories', { name, type: 'expense' });
+        if (status === 201 && data && data.data) {
+          const created = data.data;
+          allCategories.push(created);
+          selectCategory(created);
+          setMessage(`Category "${created.name}" added and selected.`, 'success');
+          UI.showToast('Category added', 'success');
+          return null;
+        }
+        if (status === 401) return 'Your session may have expired. Please sign in again.';
+        return errorDetail(data, 'Could not create that category. Please try again.');
+      } catch (err) {
+        return 'Could not reach the API to create that category.';
+      } finally {
+        creatingCategory = false;
+        if (createCategoryBtn) createCategoryBtn.disabled = false;
+      }
     };
 
     const enterEditMode = (expense) => {
@@ -64,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
           categorySelect.appendChild(option);
         }
         categorySelect.value = categoryValue;
+        lastCategoryValue = categoryValue;
       }
       if (submitBtn) submitBtn.textContent = 'Update expense';
       const topbarTitle = document.querySelector('.topbar-title');
@@ -74,19 +182,28 @@ document.addEventListener('DOMContentLoaded', () => {
       setMessage('Editing this expense — save to update it.');
     };
 
-    fetchExpenseCategories().then(async (categories) => {
+    fetchCategories().then(async (categories) => {
+      allCategories = categories;
+      const expenseCategories = categories.filter((category) => category.type === 'expense');
       if (categorySelect) {
         categorySelect.replaceChildren();
         const placeholder = document.createElement('option');
         placeholder.value = '';
-        placeholder.textContent = categories.length ? 'Choose category' : 'No expense categories available';
+        placeholder.textContent = 'Choose category';
         categorySelect.appendChild(placeholder);
-        categories.forEach((category) => {
+        expenseCategories.forEach((category) => {
           const option = document.createElement('option');
           option.value = String(category.id);
           option.textContent = category.name;
           categorySelect.appendChild(option);
         });
+        // "Other" is a creation shortcut, not a stored category: the typed
+        // name is saved as a real category before the expense is posted.
+        const otherOption = document.createElement('option');
+        otherOption.value = CUSTOM_CATEGORY;
+        otherOption.textContent = 'Other (add new)…';
+        categorySelect.appendChild(otherOption);
+        lastCategoryValue = categorySelect.value;
       }
 
       // Edit mode: ?edit=<id> loads the record into this form (verified show route).
@@ -103,21 +220,86 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    if (categorySelect) {
+      categorySelect.addEventListener('change', () => {
+        if (categorySelect.value === CUSTOM_CATEGORY) {
+          setCustomMode(true);
+        } else {
+          lastCategoryValue = categorySelect.value;
+          setCustomMode(false);
+        }
+      });
+    }
+
+    if (customInput) {
+      customInput.addEventListener('input', () => setCustomMessage(''));
+      customInput.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        // Enter creates the category instead of submitting the expense.
+        event.preventDefault();
+        if (createCategoryBtn) createCategoryBtn.click();
+      });
+    }
+
+    if (createCategoryBtn) {
+      createCategoryBtn.addEventListener('click', async () => {
+        if (customInput) customInput.value = customInput.value.trim();
+        const error = await createCustomCategory();
+        if (error) {
+          setCustomMessage(error, 'error');
+          if (customInput) customInput.focus();
+        }
+      });
+    }
+
+    if (cancelCategoryBtn) {
+      cancelCategoryBtn.addEventListener('click', () => {
+        setCustomMode(false);
+        if (categorySelect) categorySelect.value = lastCategoryValue;
+        setMessage('');
+      });
+    }
+
     addForm.addEventListener('submit', async (event) => {
       event.preventDefault();
-
-      const amount = parseFloat(amountInput.value);
-      const categoryId = parseInt(categorySelect.value, 10);
-      const description = descInput && descInput.value.trim() ? descInput.value.trim() : null;
-      const expenseDate = dateInput.value; // YYYY-MM-DD (backend expense_date)
-
-      if (isNaN(amount) || amount <= 0) return setMessage('Please enter a valid amount.', 'error');
-      if (isNaN(categoryId)) return setMessage('Please select a category.', 'error');
-      if (!expenseDate) return setMessage('Please pick a date.', 'error');
-
-      setMessage(editingExpenseId ? 'Updating expense…' : 'Logging expense…');
+      if (addForm.dataset.submitting === 'true') return; // block double submits
+      addForm.dataset.submitting = 'true';
+      if (submitBtn) submitBtn.disabled = true;
 
       try {
+        const amount = parseFloat(amountInput.value);
+        const description = descInput && descInput.value.trim() ? descInput.value.trim() : null;
+        const expenseDate = dateInput.value; // YYYY-MM-DD (backend expense_date)
+
+        if (isNaN(amount) || amount <= 0) {
+          setMessage('Please enter a valid amount.', 'error');
+          return;
+        }
+        if (!expenseDate) {
+          setMessage('Please pick a date.', 'error');
+          return;
+        }
+
+        // A pending custom name is created (and selected) before the expense
+        // is sent, so the API always receives a real integer category id.
+        if (categorySelect && categorySelect.value === CUSTOM_CATEGORY) {
+          if (customInput) customInput.value = customInput.value.trim();
+          const error = await createCustomCategory();
+          if (error) {
+            setCustomMessage(error, 'error');
+            if (customInput) customInput.focus();
+            return;
+          }
+        }
+
+        const categoryId = parseInt(categorySelect.value, 10);
+        if (isNaN(categoryId)) {
+          setMessage('Please select a category.', 'error');
+          return;
+        }
+
+        setMessage(editingExpenseId ? 'Updating expense…' : 'Logging expense…');
+
         const payload = {
           amount,
           category_id: categoryId,
@@ -141,11 +323,15 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           addForm.reset();
           if (dateInput) dateInput.valueAsDate = new Date();
+          if (categorySelect) lastCategoryValue = categorySelect.value;
         } else {
           setMessage(errorDetail(data, editingExpenseId ? 'Failed to update expense.' : 'Failed to log expense.'), 'error');
         }
       } catch (err) {
         setMessage('Error saving expense. ' + (err.message || ''), 'error');
+      } finally {
+        addForm.dataset.submitting = 'false';
+        if (submitBtn) submitBtn.disabled = false;
       }
     });
   }
@@ -199,26 +385,34 @@ document.addEventListener('DOMContentLoaded', () => {
     row.dataset.expenseId = item.id;
 
     const dateCell = document.createElement('td');
+    dateCell.className = 'col-tight';
+    dateCell.dataset.label = 'Date';
     dateCell.textContent = UI.formatDate(item.expense_date);
 
     const descCell = document.createElement('td');
+    descCell.className = 'cell-wrap';
+    descCell.dataset.label = 'Description';
     const descMain = document.createElement('div');
     descMain.className = 'cell-main';
     descMain.textContent = item.description || (item.category ? item.category.name : 'Expense');
     descCell.appendChild(descMain);
 
     const catCell = document.createElement('td');
-    catCell.className = 'hide-sm';
+    catCell.className = 'col-tight';
+    catCell.dataset.label = 'Category';
     const pill = document.createElement('span');
     pill.className = 'pill neutral';
     pill.textContent = item.category ? item.category.name : '—';
+    if (item.category && item.category.name) pill.title = item.category.name;
     catCell.appendChild(pill);
 
     const amountCell = document.createElement('td');
-    amountCell.className = 'num amount-neg';
+    amountCell.className = 'num amount-neg col-tight';
+    amountCell.dataset.label = 'Amount';
     amountCell.textContent = '-' + money(item.amount);
 
     const actionsCell = document.createElement('td');
+    actionsCell.className = 'col-tight actions-cell';
     const actions = document.createElement('div');
     actions.className = 'row-actions';
     const deleteBtn = document.createElement('button');

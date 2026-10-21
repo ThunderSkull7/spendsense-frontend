@@ -9,6 +9,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const api = window.SpendSenseAPI;
   const money = (value) => UI.formatMoney(value);
 
+  // Frequency slugs stored by the API → human labels for the history list.
+  const FREQUENCY_LABELS = {
+    'one-time': 'One-time',
+    daily: 'Daily',
+    weekly: 'Weekly',
+    biweekly: 'Biweekly',
+    monthly: 'Monthly',
+    quarterly: 'Quarterly',
+    'half-yearly': 'Half-yearly',
+    yearly: 'Yearly',
+  };
+  const DEFAULT_FREQUENCY = 'one-time';
+
   // ---------- Income form (create + edit) ----------
   const form = document.querySelector('.income-form');
   const formMessage = document.querySelector('.income-message');
@@ -62,10 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (amountInput) amountInput.value = income.amount;
     if (dateInput) dateInput.value = String(income.income_date || '').slice(0, 10);
 
-    // Frequency and notes are not part of the API contract (the backend does
-    // not store them), so they cannot be restored for an existing entry.
-    if (frequencySelect) frequencySelect.selectedIndex = 0;
-    if (notesInput) notesInput.value = '';
+    if (frequencySelect) {
+      const frequency = income.frequency ? String(income.frequency) : DEFAULT_FREQUENCY;
+      const option = Array.from(frequencySelect.options).find((item) => item.value === frequency);
+      frequencySelect.value = option ? frequency : DEFAULT_FREQUENCY;
+    }
+    if (notesInput) notesInput.value = income.notes || '';
 
     if (submitBtn) submitBtn.textContent = 'Update income';
     if (cancelEditBtn) cancelEditBtn.hidden = false;
@@ -88,6 +103,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (form) {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
+      if (form.dataset.submitting === 'true') return; // block double submits
 
       const sourceSelect = form.querySelector('#source');
       const amountInput = form.querySelector('#amount');
@@ -99,9 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         : '';
       const amount = parseFloat(amountInput.value);
       const incomeDate = dateInput.value; // YYYY-MM-DD (backend income_date)
-      const frequency = frequencySelect
-        ? frequencySelect.options[frequencySelect.selectedIndex].text || ''
-        : '';
+      const frequency = frequencySelect ? frequencySelect.value || DEFAULT_FREQUENCY : DEFAULT_FREQUENCY;
       const notes = notesInput ? notesInput.value.trim() || null : null;
 
       if (!source || source === 'Choose source') return setMessage('Please select an income source.', 'error');
@@ -109,6 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!incomeDate) return setMessage('Please pick a date.', 'error');
 
       setMessage(editingIncomeId ? 'Updating income…' : 'Saving income…');
+      form.dataset.submitting = 'true';
+      if (submitBtn) submitBtn.disabled = true;
 
       try {
         const payload = {
@@ -135,6 +151,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (err) {
         setMessage('Error saving income. ' + (err.message || ''), 'error');
+      } finally {
+        form.dataset.submitting = 'false';
+        if (submitBtn) submitBtn.disabled = false;
       }
     });
   }
@@ -184,19 +203,34 @@ document.addEventListener('DOMContentLoaded', () => {
     row.dataset.incomeId = item.id;
 
     const dateCell = document.createElement('td');
+    dateCell.className = 'col-tight';
+    dateCell.dataset.label = 'Date';
     dateCell.textContent = UI.formatDate(item.income_date);
 
     const sourceCell = document.createElement('td');
+    sourceCell.className = 'cell-wrap';
+    sourceCell.dataset.label = 'Source';
     const sourceMain = document.createElement('div');
     sourceMain.className = 'cell-main';
     sourceMain.textContent = item.source || 'Income';
     sourceCell.appendChild(sourceMain);
 
+    // The frequency is stored with the entry; show it under the source.
+    const sourceSub = document.createElement('div');
+    sourceSub.className = 'cell-sub';
+    sourceSub.textContent = item.frequency
+      ? FREQUENCY_LABELS[item.frequency] || String(item.frequency)
+      : FREQUENCY_LABELS[DEFAULT_FREQUENCY];
+    sourceCell.appendChild(sourceSub);
+    if (item.notes) sourceMain.title = item.notes;
+
     const amountCell = document.createElement('td');
-    amountCell.className = 'num amount-pos';
+    amountCell.className = 'num amount-pos col-tight';
+    amountCell.dataset.label = 'Amount';
     amountCell.textContent = '+' + money(item.amount);
 
     const actionsCell = document.createElement('td');
+    actionsCell.className = 'col-tight actions-cell';
     const actions = document.createElement('div');
     actions.className = 'row-actions';
     const deleteBtn = document.createElement('button');

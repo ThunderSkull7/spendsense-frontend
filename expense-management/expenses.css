@@ -25,6 +25,33 @@
   }
 }
 
+/* Custom "Other" category row in the expense form. */
+.custom-category-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.custom-category-row input {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.custom-category-row .btn {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  .custom-category-row input {
+    flex: 1 1 100%;
+  }
+
+  .custom-category-row .btn {
+    flex: 1 1 auto;
+  }
+}
+
 /* Primary button styling for consistency */
 .btn.primary {
   background: var(--primary);
