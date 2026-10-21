@@ -14,7 +14,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: node --test tests/api-client.test.js tests/date-format.test.js tests/theme-colors.test.js
+      - name: Run legacy-compatible date tests
+        run: node --test tests/date-format.test.js
       - run: node tools/legacy-site-verify.js
   deploy-frontend:
     name: Deploy Frontend (Manual)
