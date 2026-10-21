@@ -5,6 +5,7 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  workflow_dispatch:
 
 env:
   API_BASE_URL: ${{ secrets.API_BASE_URL }}
@@ -56,7 +57,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: spendsense-frontend
+          projectName: spendsensehq
           directory: ./dist
           branch: main
 

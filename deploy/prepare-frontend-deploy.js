@@ -20,7 +20,7 @@ const path = require('path');
 function parseArgs() {
   const args = process.argv.slice(2);
   const options = {
-    source: path.resolve(__dirname, '..', 'frontend'),
+    source: path.resolve(__dirname, '..'), // frontend root (parent of deploy/)
     replace: 'http://127.0.0.1:8002',
     force: false
   };
@@ -121,6 +121,9 @@ function main() {
   // Copy source to destination (including hidden files)
   copyRecursiveSync(source, destination);
 
+  // Create Cloudflare Pages _worker.js for API proxy
+  createWorkerProxy(destination);
+
   // Rewrite the copy only
   const htmlFiles = getHtmlFiles(destination);
   let replaced = 0;
@@ -180,11 +183,73 @@ function main() {
   for (const s of skipped) {
     console.log(`  - ${s}`);
   }
-  if (replaced !== 14) {
-    console.warn(`Warning: expected 14 SpendSense pages to carry the API meta tag, rewrote ${replaced} - verify the page set before deploying.`);
+  if (replaced !== 28) {
+    console.warn(`Warning: expected 28 SpendSense pages to carry the API meta tag, rewrote ${replaced} - verify the page set before deploying.`);
   }
   console.log(`Source untouched    : ${sourceMatchesAfter} source pages still contain ${replaceThis}`);
   console.log('OK - deployable copy ready.');
+}
+
+function createWorkerProxy(destDir) {
+  const workerCode = `/**
+ * Cloudflare Pages Worker for SpendSense API Proxy
+ * Proxies /api/* requests to the backend API
+ * Target: https://spendsense-api-t0up.onrender.com
+ */
+
+export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    
+    // Only proxy /api/* requests
+    if (!url.pathname.startsWith('/api/')) {
+      return new Response('Not found', { status: 404 });
+    }
+
+    // Build the target URL
+    const targetUrl = new URL(request.url);
+    targetUrl.hostname = 'spendsense-api-t0up.onrender.com';
+    targetUrl.protocol = 'https:';
+    targetUrl.port = '';
+
+    // Create new request to backend
+    const proxyRequest = new Request(targetUrl.toString(), {
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+      redirect: 'follow'
+    });
+
+    // Forward the request to the backend
+    const response = await fetch(proxyRequest);
+
+    // Return response with CORS headers
+    const responseHeaders = new Headers(response.headers);
+    responseHeaders.set('Access-Control-Allow-Origin', '*');
+    responseHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    responseHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-XSRF-TOKEN, X-Requested-With');
+    responseHeaders.set('Access-Control-Allow-Credentials', 'true');
+
+    // Handle preflight
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: responseHeaders
+      });
+    }
+
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: responseHeaders
+    });
+  }
+};
+`;
+
+  const workerPath = path.join(destDir, '_worker.js');
+  fs.writeFileSync(workerPath, workerCode, 'utf8');
+  console.log(`Created Cloudflare worker: ${path.relative(process.cwd(), workerPath)}`);
 }
 
 function copyRecursiveSync(src, dest) {
