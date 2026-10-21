@@ -1,0 +1,65 @@
+name: Frontend CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  API_BASE_URL: ${{ secrets.API_BASE_URL }}
+
+jobs:
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run frontend tests
+        working-directory: .
+        run: node --test "tests/*.test.js"
+
+      - name: Run structure checks
+        working-directory: .
+        run: node tools/stage5-verify.js
+
+  deploy-frontend:
+    name: Deploy Frontend (Manual)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Prepare frontend deploy
+        working-directory: .
+        run: |
+          node deploy/prepare-frontend-deploy.js \
+            --api-base-url ${{ secrets.API_BASE_URL }} \
+            --destination ./dist \
+            --force
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: spendsense-frontend
+          directory: ./dist
+          branch: main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
