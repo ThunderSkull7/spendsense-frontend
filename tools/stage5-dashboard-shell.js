@@ -74,7 +74,7 @@ const extraWidgets = `
                   <h2 class="card-title">Spending insights</h2>
                   <p class="card-sub">Trend and review signals for the selected period</p>
                 </div>
-                <a class="link small" href="../insights/overview.html">Details</a>
+                <a class="link small" href="../financial-intelligence/insights.html">Details</a>
               </div>
               <div class="card-body" data-widget-body="spending_insights">
                 <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading insights…</p></div>

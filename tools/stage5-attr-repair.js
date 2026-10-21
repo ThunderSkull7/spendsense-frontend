@@ -18,6 +18,8 @@ const FILES = [
   'dashboard/dashboard.html',
   'reports-analytics/reports.html',
   'insights/overview.html',
+  'insights/trends.html',
+  'insights/income.html',
   'insights/budgets.html',
   'insights/savings.html',
   'insights/commitments.html',

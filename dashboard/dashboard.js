@@ -44,14 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
     { key: 'upcoming_bills', label: 'Upcoming bills' },
     { key: 'recent_transactions', label: 'Recent expenses' },
     { key: 'spending_insights', label: 'Spending insights' },
+    { key: 'cash_flow_forecast', label: '30-day forecast' },
+    { key: 'net_worth', label: 'Net worth' },
     { key: 'subscription_renewals', label: 'Subscription renewals' },
   ];
 
   const WIDGET_KEYS = WIDGETS.map((widget) => widget.key);
 
-  // Subscription renewals depends on optional manual records, so it starts
-  // hidden. This mirrors the backend default layout.
-  const DEFAULT_HIDDEN = ['subscription_renewals'];
+  // Net worth and subscriptions depend on optional manual records, so they
+  // start hidden. This mirrors the backend default layout.
+  const DEFAULT_HIDDEN = ['net_worth', 'subscription_renewals'];
 
   const defaultLayout = () => S5.defaultWidgetLayout(WIDGET_KEYS, DEFAULT_HIDDEN);
 
@@ -68,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const transactionsEl = document.querySelector('[data-transactions]');
   const monthLabels = document.querySelectorAll('[data-month-label]');
   const region = document.querySelector('[data-widget-region]');
+  const refreshButton = document.querySelector('[data-refresh]');
 
   const monthName = (month, year) =>
     new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
@@ -528,6 +531,55 @@ document.addEventListener('DOMContentLoaded', () => {
       metricMini('Largest expense', money(summary.largest_expense || 0))
     );
     const note = el('p', 'action-note', `Flagged for review: ${summary.anomaly_count || 0}. Review signals are descriptive, never a fraud finding.`);
+    body.replaceChildren(strip, note);
+  };
+
+  const renderForecastWidget = (result) => {
+    const body = widgetBody('cash_flow_forecast');
+    if (!body) return;
+    if (!result || result.status !== 200 || !result.data || !result.data.data) {
+      UI.renderState(body, 'error', { message: 'Could not load the forecast.', retry: loadDashboard });
+      return;
+    }
+    const data = result.data.data;
+    const strip = document.createElement('div');
+    strip.className = 'metric-strip';
+    strip.append(
+      metricMini('Expected income', money(data.expected_income)),
+      metricMini('Expected expenses', money(data.expected_expenses)),
+      metricMini('Projected net', money(data.projected_net_cash_flow))
+    );
+    const note = el(
+      'p',
+      'action-note',
+      'Schedule-based expectations only. No cash balance is reported, and running a forecast never creates a transaction.'
+    );
+    body.replaceChildren(strip, note);
+  };
+
+  const renderNetWorthWidget = (result) => {
+    const body = widgetBody('net_worth');
+    if (!body) return;
+    if (!result || result.status !== 200 || !result.data || !result.data.data) {
+      UI.renderState(body, 'error', { message: 'Could not load net worth.', retry: loadDashboard });
+      return;
+    }
+    const summary = (result.data.data.summary) || {};
+    if (!summary.active_entry_count) {
+      UI.renderState(body, 'empty', {
+        message: 'No net worth entries yet.',
+        action: { href: '../financial-intelligence/net-worth.html', label: 'Add an entry' },
+      });
+      return;
+    }
+    const strip = document.createElement('div');
+    strip.className = 'metric-strip';
+    strip.append(
+      metricMini('Assets', money(summary.total_assets)),
+      metricMini('Liabilities', money(summary.total_liabilities)),
+      metricMini('Net worth', money(summary.net_worth))
+    );
+    const note = el('p', 'action-note', 'Manual dated valuations. Net worth is not a verified available-cash balance.');
     body.replaceChildren(strip, note);
   };
 
@@ -997,6 +1049,8 @@ document.addEventListener('DOMContentLoaded', () => {
     call('savings_goals', '/analytics/savings-progress', renderSavingsWidget);
     call('upcoming_bills', '/analytics/commitments', renderCommitmentsWidget);
     call('spending_insights', '/analytics/spending-insights', renderInsightsWidget);
+    call('cash_flow_forecast', '/analytics/cash-flow-forecast?horizon=30', renderForecastWidget);
+    call('net_worth', '/net-worth', renderNetWorthWidget);
     call('subscription_renewals', '/subscriptions', renderSubscriptionsWidget);
 
     const settled = await Promise.allSettled(jobs);
@@ -1016,6 +1070,23 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  if (refreshButton) {
+    refreshButton.addEventListener('click', async () => {
+      const original = refreshButton.textContent;
+      refreshButton.disabled = true;
+      refreshButton.textContent = 'Refreshing…';
+      const result = await loadDashboard();
+      refreshButton.disabled = false;
+      refreshButton.textContent = original;
+      if (result && result.ok) {
+        UI.showToast('Dashboard refreshed', 'success');
+      } else if (result && result.any) {
+        UI.showToast('Some dashboard data could not be refreshed.', 'error');
+      } else {
+        UI.showToast('Could not refresh the dashboard. Try again.', 'error');
+      }
+    });
+  }
 
   // A transaction created in the quick-add dialog refreshes the page data.
   window.addEventListener('spendsense:transaction-created', () => {

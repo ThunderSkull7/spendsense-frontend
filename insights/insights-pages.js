@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     message: document.querySelector('[data-insights-message]'),
     pageState: document.querySelector('[data-insights-page-state]'),
     content: document.querySelector('[data-insights-content]'),
+    refresh: document.querySelector('[data-insights-refresh]'),
   };
 
   const el = (tag, className, text) => {
@@ -181,7 +182,33 @@ document.addEventListener('DOMContentLoaded', () => {
       comparisonLabel: document.querySelector('[data-o="comparison-label"]'),
       categories: document.querySelector('[data-o="categories"]'),
       categoriesEmpty: document.querySelector('[data-o="categories-empty"]'),
+      links: document.querySelector('[data-o="links"]'),
     };
+
+    const LINKS = [
+      { href: 'trends.html', title: 'Spending trends', text: 'Daily, weekly and monthly spending with a previous-period comparison.' },
+      { href: 'income.html', title: 'Income analysis', text: 'Actual income against expected scheduled income, by source and month.' },
+      { href: 'budgets.html', title: 'Budget performance', text: 'Budget utilisation, repeated overspending and threshold crossings.' },
+      { href: 'savings.html', title: 'Savings goal progress', text: 'Goal progress, net contributions and a completion estimate.' },
+      { href: 'commitments.html', title: 'Recurring commitments', text: 'Bills and subscriptions combined, with linked obligations counted once.' },
+      { href: 'data-quality.html', title: 'Data quality review', text: 'Duplicate candidates, missing descriptions and schedule issues.' },
+      { href: '../financial-intelligence/forecast.html', title: 'Cash-flow forecast', text: 'Expected income and expenses over the next 30, 60 or 90 days.' },
+      { href: '../financial-intelligence/net-worth.html', title: 'Net worth', text: 'Manual dated valuations, shown separately from available cash.' },
+      { href: '../financial-intelligence/subscriptions.html', title: 'Subscriptions', text: 'Manage subscription trackers and renewal dates.' },
+      { href: '../reports-analytics/reports.html', title: 'Reports centre', text: 'Build, preview, print and export a report for any period.' },
+    ];
+
+    const list = document.createElement('ul');
+    list.className = 'insight-link-list';
+    LINKS.forEach((entry) => {
+      const item = el('li');
+      const link = el('a', 'insight-link');
+      link.href = entry.href;
+      link.append(el('strong', '', entry.title), el('span', '', entry.text));
+      item.appendChild(link);
+      list.appendChild(item);
+    });
+    if (nodes.links) nodes.links.replaceChildren(list);
 
     const compareSelect = dom.form.querySelector('[name="compare"]');
     const from = dom.form.querySelector('[name="from"]');
@@ -303,6 +330,336 @@ document.addEventListener('DOMContentLoaded', () => {
       setMessage('');
       load();
     });
+
+    monthRangeForm(load);
+  };
+
+  /* A2 + A3 — Spending trends and category analysis ---------------------- */
+  const renderTrends = () => {
+    const nodes = {
+      expenses: document.querySelector('[data-t="expenses"]'),
+      expensesNote: document.querySelector('[data-t="expenses-note"]'),
+      average: document.querySelector('[data-t="average"]'),
+      averageNote: document.querySelector('[data-t="average-note"]'),
+      change: document.querySelector('[data-t="change"]'),
+      changeNote: document.querySelector('[data-t="change-note"]'),
+      anomalies: document.querySelector('[data-t="anomalies"]'),
+      anomaliesNote: document.querySelector('[data-t="anomalies-note"]'),
+      periodLabel: document.querySelector('[data-t="period-label"]'),
+      bars: document.querySelector('[data-t="bars"]'),
+      barsEmpty: document.querySelector('[data-t="bars-empty"]'),
+      rows: document.querySelector('[data-t="rows"]'),
+      categories: document.querySelector('[data-t="categories"]'),
+      categoriesEmpty: document.querySelector('[data-t="categories-empty"]'),
+      categoryCount: document.querySelector('[data-t="category-count"]'),
+      categoryRows: document.querySelector('[data-t="category-rows"]'),
+      anomalyRule: document.querySelector('[data-t="anomaly-rule"]'),
+      anomalyRows: document.querySelector('[data-t="anomaly-rows"]'),
+      anomalyReason: document.querySelector('[data-t="anomaly-reason"]'),
+      largestRows: document.querySelector('[data-t="largest-rows"]'),
+      largestEmpty: document.querySelector('[data-t="largest-empty"]'),
+    };
+
+    const from = dom.form.querySelector('[name="from"]');
+    const to = dom.form.querySelector('[name="to"]');
+    const granularityGroup = dom.form.querySelector('[data-trends-granularity]');
+    let granularity = 'day';
+
+    const defaultRange = () => {
+      const today = new Date();
+      const end = today.toISOString().slice(0, 10);
+      const start = new Date(today.getTime() - 89 * 86400000).toISOString().slice(0, 10);
+      from.value = start;
+      to.value = end;
+    };
+
+    const load = async () => {
+      if (!from.value || !to.value) {
+        setMessage('Choose a start and end date.', 'error');
+        return;
+      }
+      if (from.value > to.value) {
+        setMessage('The start date must be on or before the end date.', 'error');
+        return;
+      }
+
+      setMessage('');
+      setLoading('Loading spending trends…');
+
+      const query = new URLSearchParams({ from: from.value, to: to.value, granularity });
+      const result = await API.get(`/analytics/spending-trends?${query.toString()}`);
+
+      if (!result || result.status !== 200 || !result.data || !result.data.data) {
+        showError(H.errorMessage(result, 'Could not load spending trends.'));
+        return;
+      }
+
+      const data = result.data.data;
+      const summary = data.summary || {};
+      const comparison = data.comparison || {};
+
+      setText(nodes.expenses, money(summary.expenses_amount));
+      setText(nodes.expensesNote, `${summary.bucket_count || 0} ${granularity} bucket${summary.bucket_count === 1 ? '' : 's'}`);
+      setText(nodes.average, money(summary.average_expense_per_bucket));
+      setText(nodes.averageNote, 'Divided by the selected buckets');
+
+      const expenseChange = comparison.expenses || {};
+      setText(nodes.change, expenseChange.change_percent === null || expenseChange.change_percent === undefined
+        ? '—'
+        : percent(expenseChange.change_percent, '0%'));
+      setText(
+        nodes.changeNote,
+        expenseChange.previous_amount === undefined
+          ? 'Compared with the previous period'
+          : `${money(expenseChange.current_amount)} vs ${money(expenseChange.previous_amount)}`
+      );
+      if (nodes.change) {
+        nodes.change.classList.remove('pos', 'neg');
+        const value = Number(expenseChange.change_percent);
+        if (Number.isFinite(value) && value !== 0) {
+          // More spending is not a good thing, so the tone is inverted.
+          nodes.change.classList.add(value > 0 ? 'neg' : 'pos');
+        }
+      }
+
+      setText(nodes.anomalies, summary.anomaly_count || 0);
+      setText(nodes.anomaliesNote, summary.anomaly_count ? 'Above the documented threshold' : 'No transaction crossed it');
+
+      setText(
+        nodes.periodLabel,
+        `${data.from} to ${data.to} · ${granularity} buckets · ${data.timezone} calendar days`
+      );
+
+      // Bars
+      const buckets = Array.isArray(data.buckets) ? data.buckets : [];
+      if (nodes.bars) nodes.bars.replaceChildren();
+      const hasAny = buckets.some((bucket) => Number(bucket.income_amount) !== 0 || Number(bucket.expenses_amount) !== 0);
+      if (nodes.barsEmpty) nodes.barsEmpty.hidden = hasAny;
+      const max = buckets.reduce(
+        (highest, bucket) => Math.max(highest, Number(bucket.income_amount) || 0, Number(bucket.expenses_amount) || 0),
+        0
+      ) || 1;
+      buckets.forEach((bucket) => {
+        const group = el('div', 'intel-stack');
+        group.style.gap = '7px';
+        group.appendChild(
+          barRow(
+            `${H.dateLabel(bucket.start)} income`,
+            bucket.income_amount,
+            ((Number(bucket.income_amount) || 0) / max) * 100,
+            'income'
+          )
+        );
+        group.appendChild(
+          barRow(
+            `${H.dateLabel(bucket.start)} expenses`,
+            bucket.expenses_amount,
+            ((Number(bucket.expenses_amount) || 0) / max) * 100,
+            'expense'
+          )
+        );
+        nodes.bars.appendChild(group);
+      });
+
+      tbodyRows(
+        nodes.rows,
+        buckets.map((bucket) => [
+          bucket.key,
+          money(bucket.income_amount),
+          money(bucket.expenses_amount),
+          signedMoney(bucket.net_amount),
+          bucket.rolling_average_expense === null || bucket.rolling_average_expense === undefined
+            ? '—'
+            : money(bucket.rolling_average_expense),
+          bucket.is_partial ? 'Partial period' : 'Complete period',
+        ]),
+        6
+      );
+
+      // Categories
+      const categories = Array.isArray(data.categories) ? data.categories : [];
+      if (nodes.categories) nodes.categories.replaceChildren();
+      if (nodes.categoriesEmpty) nodes.categoriesEmpty.hidden = categories.length > 0;
+      setText(nodes.categoryCount, `${categories.length} categories`);
+      const categoryMax = categories.reduce((highest, row) => Math.max(highest, Number(row.amount) || 0), 0) || 1;
+      const colors = ['blue', 'teal', 'amber', 'danger'];
+      categories.forEach((row, index) => {
+        nodes.categories.appendChild(
+          barRow(
+            row.category_name,
+            row.amount,
+            ((Number(row.amount) || 0) / categoryMax) * 100,
+            colors[index % colors.length],
+            percent(row.share_percent, '0%')
+          )
+        );
+      });
+
+      // Category table with a drill-down link into the server-side search.
+      const categoryRows = categories.map((row) => {
+        const drill = document.createElement('a');
+        drill.className = 'link small';
+        drill.href = `../expense-management/expenses.html?category_id=${encodeURIComponent(row.category_id)}&from=${encodeURIComponent(data.from)}&to=${encodeURIComponent(data.to)}`;
+        drill.textContent = 'View transactions';
+        const cell = el('td');
+        cell.appendChild(drill);
+        return [
+          row.category_name,
+          money(row.amount),
+          percent(row.share_percent, '0%'),
+          row.change_percent === null || row.change_percent === undefined
+            ? '—'
+            : `${row.change_percent >= 0 ? '+' : ''}${percent(row.change_percent, '0%')}`,
+          cell,
+        ];
+      });
+      tbodyRows(nodes.categoryRows, categoryRows, 5, 'No category spending in this period.');
+
+      // Anomalies
+      const rule = data.anomaly_rule || {};
+      if (nodes.anomalyRule) {
+        nodes.anomalyRule.textContent = `${rule.note || 'Large-expense review.'} Threshold: ${money(rule.threshold_amount)}. Requires at least ${rule.minimum_transactions || 5} expenses.`;
+      }
+      if (nodes.anomalyReason) nodes.anomalyReason.textContent = rule.note || '';
+      tbodyRows(
+        nodes.anomalyRows,
+        (data.anomalies || []).map((row) => [
+          H.dateLabel(row.expense_date),
+          row.description || 'Expense',
+          row.category_name || 'Uncategorised',
+          money(row.amount),
+        ]),
+        4,
+        'No transaction crossed the documented threshold.'
+      );
+
+      // Largest transactions
+      const largest = Array.isArray(data.largest_expenses) ? data.largest_expenses : [];
+      if (nodes.largestEmpty) nodes.largestEmpty.hidden = largest.length > 0;
+      tbodyRows(
+        nodes.largestRows,
+        largest.map((row) => [
+          H.dateLabel(row.expense_date),
+          row.description || 'Expense',
+          row.category_name || 'Uncategorised',
+          money(row.amount),
+        ]),
+        4,
+        'No expense transactions to rank yet.'
+      );
+
+      showContent();
+    };
+
+    if (granularityGroup) {
+      granularityGroup.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-granularity]');
+        if (!button) return;
+        granularity = button.dataset.granularity;
+        granularityGroup.querySelectorAll('[data-granularity]').forEach((item) => {
+          item.setAttribute('aria-pressed', String(item === button));
+        });
+        load();
+      });
+    }
+
+    dom.form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      load();
+    });
+
+    defaultRange();
+    load();
+  };
+
+  /* A4 — Income analysis -------------------------------------------------- */
+  const renderIncome = () => {
+    const nodes = {
+      actual: document.querySelector('[data-i="actual"]'),
+      actualNote: document.querySelector('[data-i="actual-note"]'),
+      expected: document.querySelector('[data-i="expected"]'),
+      expectedNote: document.querySelector('[data-i="expected-note"]'),
+      received: document.querySelector('[data-i="received"]'),
+      receivedNote: document.querySelector('[data-i="received-note"]'),
+      unplanned: document.querySelector('[data-i="unplanned"]'),
+      unplannedNote: document.querySelector('[data-i="unplanned-note"]'),
+      periodLabel: document.querySelector('[data-i="period-label"]'),
+      monthlyRows: document.querySelector('[data-i="monthly-rows"]'),
+      monthlyEmpty: document.querySelector('[data-i="monthly-empty"]'),
+      sourceRows: document.querySelector('[data-i="source-rows"]'),
+      sourceEmpty: document.querySelector('[data-i="source-empty"]'),
+      frequencyStrip: document.querySelector('[data-i="frequency-strip"]'),
+    };
+
+    const load = async (from, to) => {
+      setLoading('Loading income analysis…');
+      const query = new URLSearchParams({ from, to });
+      const result = await API.get(`/analytics/income-analysis?${query.toString()}`);
+
+      if (!result || result.status !== 200 || !result.data || !result.data.data) {
+        showError(H.errorMessage(result, 'Could not load the income analysis.'));
+        return;
+      }
+
+      const data = result.data.data;
+      const summary = data.summary || {};
+
+      setText(nodes.actual, money(summary.actual_income_amount));
+      setText(nodes.actualNote, `Across ${summary.month_count || 0} calendar month${summary.month_count === 1 ? '' : 's'}`);
+      setText(nodes.expected, money(summary.scheduled_expected_amount));
+      setText(nodes.expectedNote, 'Materialised planned occurrences, not actual income');
+      setText(nodes.received, money(summary.scheduled_received_amount));
+      setText(nodes.receivedNote, 'Actual income linked to a schedule');
+      setText(nodes.unplanned, money(summary.unplanned_actual_amount));
+      setText(nodes.unplannedNote, 'Actual total minus scheduled receipts');
+      setText(nodes.periodLabel, `${H.monthLabel(data.from)} to ${H.monthLabel(data.to)} · UTC calendar months`);
+
+      const monthly = Array.isArray(data.monthly) ? data.monthly : [];
+      if (nodes.monthlyEmpty) nodes.monthlyEmpty.hidden = monthly.length > 0;
+      tbodyRows(
+        nodes.monthlyRows,
+        monthly.map((row) => [
+          H.monthLabel(row.month),
+          money(row.actual_amount),
+          money(row.scheduled_expected_amount),
+          money(row.scheduled_received_amount),
+          money(row.planned_unreceived_amount),
+          money(row.unplanned_actual_amount),
+        ]),
+        6,
+        'No income was recorded in the selected months.'
+      );
+
+      const sources = Array.isArray(data.sources) ? data.sources : [];
+      if (nodes.sourceEmpty) nodes.sourceEmpty.hidden = sources.length > 0;
+      tbodyRows(
+        nodes.sourceRows,
+        sources.map((row) => [
+          row.source,
+          money(row.actual_amount),
+          money(row.previous_amount),
+          row.change_percent === null || row.change_percent === undefined
+            ? '—'
+            : `${row.change_percent >= 0 ? '+' : ''}${percent(row.change_percent, '0%')}`,
+          row.transaction_count,
+        ]),
+        5,
+        'No income sources in the selected period.'
+      );
+
+      if (nodes.frequencyStrip) {
+        nodes.frequencyStrip.replaceChildren(
+          ...(data.frequencies || []).map((row) =>
+            metric(H.frequencyLabel(row.frequency), money(row.amount), `${row.transaction_count} record${row.transaction_count === 1 ? '' : 's'}`)
+          )
+        );
+        if (!(data.frequencies || []).length) {
+          nodes.frequencyStrip.appendChild(el('div', 'empty-inline', 'No income entries in the selected period.'));
+        }
+      }
+
+      showContent();
+    };
 
     monthRangeForm(load);
   };
@@ -770,6 +1127,8 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ── Registry & bootstrap ────────────────────────────────────────────── */
   const renderers = {
     overview: renderOverview,
+    trends: renderTrends,
+    income: renderIncome,
     budgets: renderBudgets,
     savings: renderSavings,
     commitments: renderCommitments,
@@ -778,6 +1137,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const renderer = renderers[page];
   if (!renderer) return;
+
+  // The refresh button re-runs the current page with the values in the form.
+  if (dom.refresh) {
+    dom.refresh.addEventListener('click', () => {
+      if (dom.form) dom.form.requestSubmit();
+    });
+  }
 
   renderer();
 });

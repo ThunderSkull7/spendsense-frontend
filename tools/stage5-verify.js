@@ -1,11 +1,9 @@
 /*
  * Stage 5 frontend verification helper.
  *
- * Checks that every page carries the shared navigation, that the Stage 5
+ * Checks that every page carries the shared navigation, that the new Stage 5
  * surfaces exist, and that the pages do not reference removed third-party
- * scripts. Updated for the retired Bills / Spending trends / Cash-flow
- * forecast / Net worth pages (their blocks were removed intentionally; the
- * four legacy URLs now redirect). Run from the frontend directory:
+ * scripts. Run from the frontend directory:
  *
  *   node tools/stage5-verify.js
  */
@@ -23,18 +21,19 @@ const read = (relative) => fs.readFileSync(path.join(ROOT, relative), 'utf8');
 const exists = (relative) => fs.existsSync(path.join(ROOT, relative));
 
 /* ── Navigation consistency ───────────────────────────────────────────── */
-// Every protected page should expose the same sidebar link set. The retired
-// pages (Bills, Spending trends, Cash-flow forecast, Net worth) redirect to
-// retained pages and are intentionally not listed here.
+// Every protected page should expose the same sidebar link set.
 const navPages = [
   'dashboard/dashboard.html',
   'expense-management/expenses.html',
-  'expense-management/add-expense.html',
   'income-management/income.html',
   'budget-planning/budget.html',
+  'recurring-expenses/recurring-expenses.html',
   'savings-goals/savings-goals.html',
   'categories-management/categories.html',
   'reports-analytics/reports.html',
+  'financial-intelligence/insights.html',
+  'financial-intelligence/forecast.html',
+  'financial-intelligence/net-worth.html',
   'financial-intelligence/subscriptions.html',
   'notifications/notifications.html',
   'settings/settings.html',
@@ -46,14 +45,13 @@ const navKeys = [
   'expenses',
   'income',
   'budgets',
+  'bills',
   'goals',
   'categories',
-  'insights-overview',
-  'insights-budgets',
-  'insights-savings',
-  'insights-commitments',
-  'insights-quality',
   'reports',
+  'insights',
+  'forecast',
+  'net-worth',
   'subscriptions',
   'notifications',
   'settings',
@@ -70,25 +68,7 @@ navPages.forEach((page) => {
   check(`nav: ${page}`, missing.length === 0, missing.length ? `missing ${missing.join(', ')}` : '');
 });
 
-/* ── Retired pages redirect instead of 404-ing ─────────────────────────── */
-const REDIRECTS = {
-  'recurring-expenses/recurring-expenses.html': '../insights/commitments.html',
-  'insights/trends.html': '../insights/overview.html',
-  'financial-intelligence/forecast.html': '../insights/commitments.html',
-  'financial-intelligence/net-worth.html': '../reports-analytics/reports.html',
-  'financial-intelligence/insights.html': '../insights/overview.html',
-  'insights/income.html': '../income-management/income.html',
-};
-Object.entries(REDIRECTS).forEach(([page, target]) => {
-  if (!exists(page)) {
-    check(`redirect: ${page}`, false, 'file missing');
-    return;
-  }
-  const html = read(page);
-  check(`redirect: ${page} -> ${target}`, html.includes(`window.location.replace("${target}")`) || html.includes(`url=${target}`));
-});
-
-/* ── Stage 5 dashboard surfaces ────────────────────────────────────────── */
+/* ── New Stage 5 surfaces ─────────────────────────────────────────────── */
 const dashboard = read('dashboard/dashboard.html');
 [
   'data-dashboard-customize',
@@ -100,6 +80,8 @@ const dashboard = read('dashboard/dashboard.html');
   'data-widget="savings_goals"',
   'data-widget="upcoming_bills"',
   'data-widget="spending_insights"',
+  'data-widget="cash_flow_forecast"',
+  'data-widget="net_worth"',
   'data-widget="subscription_renewals"',
   'dashboard-customize-dialog',
   'quick-add-dialog',
@@ -108,11 +90,6 @@ const dashboard = read('dashboard/dashboard.html');
   check(`dashboard: ${needle}`, dashboard.includes(needle));
 });
 
-check(
-  'dashboard: retired forecast/net-worth widgets removed',
-  !dashboard.includes('data-widget="cash_flow_forecast"') && !dashboard.includes('data-widget="net_worth"')
-);
-
 const reports = read('reports-analytics/reports.html');
 [
   'id="report-compare"',
@@ -120,14 +97,18 @@ const reports = read('reports-analytics/reports.html');
   'data-export-json',
   'data-report-print',
   'data-preset="this-month"',
-  'data-preset="year-to-date"',
+  'data-preset="last-quarter"',
   'data-preset="custom"',
-  'data-report-chart',
-  'data-comparison-wrap',
+  'data-section="comparison"',
+  'data-section="budgets"',
+  'data-section="savings"',
+  'data-section="net_worth"',
   'data-r="monthly-rows"',
   'data-r="category-rows"',
   'data-r="source-rows"',
-  'data-r="review-rows"',
+  'data-r="upcoming-rows"',
+  'data-r="budget-rows"',
+  'data-r="savings-rows"',
 ].forEach((needle) => {
   check(`reports: ${needle}`, reports.includes(needle));
 });
@@ -156,9 +137,11 @@ const expenses = read('expense-management/expenses.js');
   check(`expenses search: ${needle}`, expenses.includes(needle));
 });
 
-/* ── Insights pages ───────────────────────────────────────────────────── */
+/* ── New Insights pages ───────────────────────────────────────────────── */
 const INSIGHT_PAGES = {
   'insights/overview.html': 'insights-overview',
+  'insights/trends.html': 'insights-trends',
+  'insights/income.html': 'insights-income',
   'insights/budgets.html': 'insights-budgets',
   'insights/savings.html': 'insights-savings',
   'insights/commitments.html': 'insights-commitments',
@@ -178,6 +161,7 @@ Object.entries(INSIGHT_PAGES).forEach(([file, navKey]) => {
 });
 
 /* ── Quick add ────────────────────────────────────────────────────────── */
+const quickAdd = read('dashboard/dashboard.html');
 [
   'data-quick-add-trigger',
   'id="quick-add-dialog"',
@@ -187,7 +171,7 @@ Object.entries(INSIGHT_PAGES).forEach(([file, navKey]) => {
   'id="quick-add-category"',
   'id="quick-add-source"',
 ].forEach((needle) => {
-  check(`quick add: ${needle}`, dashboard.includes(needle));
+  check(`quick add: ${needle}`, quickAdd.includes(needle));
 });
 
 const dashboardJs = read('dashboard/dashboard.js');
@@ -199,11 +183,6 @@ const dashboardJs = read('dashboard/dashboard.js');
 ].forEach((needle) => {
   check(`dashboard js: ${needle}`, dashboardJs.includes(needle));
 });
-
-check(
-  'dashboard js: retired forecast/net-worth renderers removed',
-  !dashboardJs.includes('cash_flow_forecast') && !dashboardJs.includes("'/net-worth'")
-);
 
 /* ── No leftover debug output ──────────────────────────────────────────── */
 const jsFiles = [

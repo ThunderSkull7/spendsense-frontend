@@ -142,7 +142,8 @@ test('unified notification center renders bill reminders and budget alerts', () 
 
   assert.ok(html.includes('Notifications'));
   assert.ok(html.includes('data-notification-list'));
-  assert.ok(html.includes('aria-label="Notification filter"'));
+  assert.ok(html.includes('data-notification-list'));
+  assert.ok(html.includes('Filter notifications'));
   assert.ok(html.includes('Mark all read'));
 
   for (const endpoint of [

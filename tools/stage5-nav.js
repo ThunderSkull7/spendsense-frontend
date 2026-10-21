@@ -17,6 +17,10 @@ const ROOT = path.join(__dirname, '..');
 const ICON = {
   overview:
     '<svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/><path d="M17 5l4 4"/></svg>',
+  trends:
+    '<svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg>',
+  income:
+    '<svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>',
   budgets:
     '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg>',
   savings:
@@ -27,6 +31,12 @@ const ICON = {
     '<svg viewBox="0 0 24 24"><path d="M12 3l7 4v5c0 4.4-3 8.4-7 9-4-.6-7-4.6-7-9V7z"/><path d="M9 12l2 2 4-4"/></svg>',
   reports:
     '<svg viewBox="0 0 24 24"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg>',
+  insights:
+    '<svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/><path d="M17 5l4 4"/></svg>',
+  forecast:
+    '<svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg>',
+  netWorth:
+    '<svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M7 7V4h10v3"/><path d="M4 11h16"/><path d="M15 15h2"/></svg>',
   subscriptions:
     '<svg viewBox="0 0 24 24"><path d="M20 7h-9a4 4 0 0 0-4 4v1"/><path d="M17 4l3 3-3 3"/><path d="M4 17h9a4 4 0 0 0 4-4v-1"/><path d="M7 20l-3-3 3-3"/></svg>',
 };
@@ -40,6 +50,8 @@ const GROUPS = [
     title: 'Insights',
     links: [
       { key: 'insights-overview', href: '../insights/overview.html', label: 'Insights overview', icon: ICON.overview },
+      { key: 'insights-trends', href: '../insights/trends.html', label: 'Spending trends', icon: ICON.trends },
+      { key: 'insights-income', href: '../insights/income.html', label: 'Income analysis', icon: ICON.income },
       { key: 'insights-budgets', href: '../insights/budgets.html', label: 'Budget performance', icon: ICON.budgets },
       { key: 'insights-savings', href: '../insights/savings.html', label: 'Savings progress', icon: ICON.savings },
       { key: 'insights-commitments', href: '../insights/commitments.html', label: 'Recurring commitments', icon: ICON.commitments },
@@ -50,6 +62,9 @@ const GROUPS = [
     title: 'Reports & more',
     links: [
       { key: 'reports', href: '../reports-analytics/reports.html', label: 'Reports', icon: ICON.reports },
+      { key: 'insights', href: '../financial-intelligence/insights.html', label: 'Spending insights', icon: ICON.insights },
+      { key: 'forecast', href: '../financial-intelligence/forecast.html', label: 'Cash-flow forecast', icon: ICON.forecast },
+      { key: 'net-worth', href: '../financial-intelligence/net-worth.html', label: 'Net worth', icon: ICON.netWorth },
       { key: 'subscriptions', href: '../financial-intelligence/subscriptions.html', label: 'Subscriptions', icon: ICON.subscriptions },
     ],
   },
@@ -74,14 +89,20 @@ const PAGES = [
   ['expense-management/add-expense.html', 'expenses'],
   ['income-management/income.html', 'income'],
   ['budget-planning/budget.html', 'budgets'],
+  ['recurring-expenses/recurring-expenses.html', 'bills'],
   ['savings-goals/savings-goals.html', 'goals'],
   ['categories-management/categories.html', 'categories'],
   ['reports-analytics/reports.html', 'reports'],
+  ['financial-intelligence/insights.html', 'insights'],
+  ['financial-intelligence/forecast.html', 'forecast'],
+  ['financial-intelligence/net-worth.html', 'net-worth'],
   ['financial-intelligence/subscriptions.html', 'subscriptions'],
   ['notifications/notifications.html', 'notifications'],
   ['settings/settings.html', 'settings'],
   ['support/support.html', 'support'],
   ['insights/overview.html', 'insights-overview'],
+  ['insights/trends.html', 'insights-trends'],
+  ['insights/income.html', 'insights-income'],
   ['insights/budgets.html', 'insights-budgets'],
   ['insights/savings.html', 'insights-savings'],
   ['insights/commitments.html', 'insights-commitments'],

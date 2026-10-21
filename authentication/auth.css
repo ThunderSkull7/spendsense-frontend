@@ -84,7 +84,7 @@
   letter-spacing: -0.015em;
 }
 .auth-brand .brand-mark {
-  background: var(--surface);
+  background: #FFFFFF;
   color: var(--primary-action);
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow: none;

@@ -1,12 +1,11 @@
 /*
- * Reports centre — simplified, graph-focused.
+ * Reports centre.
  *
  * One report contract (/api/reports) powers the preview and both exports, so
  * the numbers shown here are exactly the numbers that are exported. All
  * actual totals come from the server; this module only formats and renders.
- * There is no charting dependency: the income-versus-expenses trend is an
- * inline SVG built from the shared design tokens, and everything else is
- * CSS bars and tables.
+ * There is no charting dependency: the visuals are CSS bars and tables built
+ * from the shared SpendSense design tokens.
  */
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.SpendSenseAPI || !window.SpendSenseUI || !window.SpendSenseIntelligence) return;
@@ -26,24 +25,17 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const percent = (value, fallback = '—') => H.formatPercent(value, fallback);
 
-  /* The sections this page renders. The report keeps to what is shown, so an
-     export downloads exactly the data on screen instead of the full builder
-     payload used by the retired multi-section report. */
-  const STATIC_SECTIONS = ['monthly', 'categories', 'income_sources', 'upcoming_bills', 'expense_review'];
-
   const dom = {
     form: document.querySelector('[data-report-form]'),
     from: document.querySelector('#report-from'),
     to: document.querySelector('#report-to'),
     compare: document.querySelector('#report-compare'),
-    fromField: document.querySelector('[data-report-date-from-field]'),
-    toField: document.querySelector('[data-report-date-to-field]'),
     presets: document.querySelector('[data-report-presets]'),
     message: document.querySelector('[data-report-message]'),
     state: document.querySelector('[data-report-state]'),
     content: document.querySelector('[data-report-content]'),
     period: document.querySelector('[data-report-period]'),
-    chartLabel: document.querySelector('[data-report-chart-label]'),
+    refresh: document.querySelector('[data-report-refresh]'),
     exportCsv: document.querySelector('[data-export-csv]'),
     exportJson: document.querySelector('[data-export-json]'),
     print: document.querySelector('[data-report-print]'),
@@ -114,6 +106,13 @@ document.addEventListener('DOMContentLoaded', () => {
     return row;
   };
 
+  const metric = (label, value, note = '') => {
+    const box = el('div', 'metric-mini');
+    box.append(el('span', '', label), el('strong', '', value));
+    if (note) box.appendChild(el('div', 'action-note', note));
+    return box;
+  };
+
   /* ── Period presets ──────────────────────────────────────────────────── */
   // The period maths lives in the shared Stage 5 module so the reports
   // centre, the insights pages and the tests all agree on the boundaries.
@@ -129,17 +128,23 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.presets.querySelectorAll('[data-preset]').forEach((button) => {
       button.setAttribute('aria-pressed', String(button.dataset.preset === preset));
     });
-    const custom = preset === 'custom';
-    if (dom.fromField) dom.fromField.hidden = !custom;
-    if (dom.toField) dom.toField.hidden = !custom;
+  };
+
+  /* ── Section selection (the custom report builder) ───────────────────── */
+  const sectionInputs = () =>
+    Array.from(document.querySelectorAll('[data-section]')).filter((input) => input.checked);
+
+  const selectedSections = () => sectionInputs().map((input) => input.dataset.section);
+
+  const applySectionVisibility = () => {
+    const active = selectedSections();
+    document.querySelectorAll('[data-section-wrap]').forEach((wrap) => {
+      const key = wrap.dataset.sectionWrap;
+      wrap.hidden = !active.includes(key);
+    });
   };
 
   /* ── Load ────────────────────────────────────────────────────────────── */
-  const selectedSections = () =>
-    dom.compare && dom.compare.value !== 'none'
-      ? ['comparison', ...STATIC_SECTIONS]
-      : STATIC_SECTIONS.slice();
-
   const buildQuery = () =>
     S5.buildReportQuery({
       from: dom.from.value,
@@ -181,133 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.content.hidden = false;
   };
 
-  /* ── The income-versus-expenses trend chart ──────────────────────────── */
-  // A grouped bar chart rendered as inline SVG. Colours come from the theme
-  // tokens (--chart-income / --chart-expense), so the chart follows the
-  // active palette and light/dark mode automatically.
-  const trendChart = (monthly) => {
-    const chartBox = document.querySelector('[data-report-chart]');
-    if (chartBox) chartBox.replaceChildren();
-
-    if (!chartBox || !monthly.length) {
-      const empty = document.querySelector('[data-r="monthly-empty"]');
-      if (empty) empty.hidden = false;
-      return;
-    }
-    const empty = document.querySelector('[data-r="monthly-empty"]');
-    if (empty) empty.hidden = true;
-
-    const WIDTH = 720;
-    const HEIGHT = 260;
-    const PAD = { top: 12, right: 8, bottom: 28, left: 8 };
-    const plotWidth = WIDTH - PAD.left - PAD.right;
-    const plotHeight = HEIGHT - PAD.top - PAD.bottom;
-
-    const peak = monthly.reduce(
-      (highest, row) => Math.max(highest, Number(row.income_amount) || 0, Number(row.expense_amount) || 0),
-      0
-    );
-    const max = peak > 0 ? peak : 1;
-    const groupWidth = plotWidth / monthly.length;
-    const barWidth = Math.min(26, Math.max(8, (groupWidth - 10) / 2));
-
-    const svgNS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', String(HEIGHT));
-    svg.setAttribute('role', 'img');
-    svg.setAttribute(
-      'aria-label',
-      `Income versus expenses per calendar month, ${monthly.length} month${monthly.length === 1 ? '' : 's'}`
-    );
-    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
-
-    // Horizontal grid lines with the scale they represent.
-    const GRID_LINES = 4;
-    for (let index = 0; index <= GRID_LINES; index += 1) {
-      const y = PAD.top + (plotHeight / GRID_LINES) * index;
-      const line = document.createElementNS(svgNS, 'line');
-      line.setAttribute('x1', String(PAD.left));
-      line.setAttribute('x2', String(WIDTH - PAD.right));
-      line.setAttribute('y1', String(y));
-      line.setAttribute('y2', String(y));
-      line.setAttribute('stroke', 'var(--border)');
-      line.setAttribute('stroke-width', '1');
-      svg.appendChild(line);
-
-      const label = document.createElementNS(svgNS, 'text');
-      label.setAttribute('x', String(PAD.left + 4));
-      label.setAttribute('y', String(Math.max(10, y - 4)));
-      label.setAttribute('class', 'trend-axis-label');
-      label.textContent = money((max / GRID_LINES) * (GRID_LINES - index));
-      svg.appendChild(label);
-    }
-
-    monthly.forEach((row, index) => {
-      const income = Number(row.income_amount) || 0;
-      const expense = Number(row.expense_amount) || 0;
-      const groupX = PAD.left + groupWidth * index;
-      const incomeHeight = (income / max) * plotHeight;
-      const expenseHeight = (expense / max) * plotHeight;
-      const incomeY = PAD.top + plotHeight - incomeHeight;
-      const expenseY = PAD.top + plotHeight - expenseHeight;
-
-      const group = document.createElementNS(svgNS, 'g');
-
-      const incomeBar = document.createElementNS(svgNS, 'rect');
-      incomeBar.setAttribute('x', String(groupX + groupWidth / 2 - barWidth - 2));
-      incomeBar.setAttribute('y', String(incomeY));
-      incomeBar.setAttribute('width', String(barWidth));
-      incomeBar.setAttribute('height', String(Math.max(incomeHeight, income > 0 ? 2 : 0)));
-      incomeBar.setAttribute('rx', '3');
-      incomeBar.setAttribute('fill', 'var(--chart-income)');
-      incomeBar.setAttribute('class', 'trend-bar');
-      group.appendChild(incomeBar);
-
-      const expenseBar = document.createElementNS(svgNS, 'rect');
-      expenseBar.setAttribute('x', String(groupX + groupWidth / 2 + 2));
-      expenseBar.setAttribute('y', String(expenseY));
-      expenseBar.setAttribute('width', String(barWidth));
-      expenseBar.setAttribute('height', String(Math.max(expenseHeight, expense > 0 ? 2 : 0)));
-      expenseBar.setAttribute('rx', '3');
-      expenseBar.setAttribute('fill', 'var(--chart-expense)');
-      expenseBar.setAttribute('class', 'trend-bar');
-      group.appendChild(expenseBar);
-
-      // The values are exposed to assistive tech and pointer users via the
-      // accessible names, not as cramped in-chart text.
-      const incomeTitle = document.createElementNS(svgNS, 'title');
-      incomeTitle.textContent = `${H.monthLabel(row.month)} — income ${money(income)}`;
-      incomeBar.appendChild(incomeTitle);
-
-      const expenseTitle = document.createElementNS(svgNS, 'title');
-      expenseTitle.textContent = `${H.monthLabel(row.month)} — expenses ${money(expense)}`;
-      expenseBar.appendChild(expenseTitle);
-
-      const monthLabel = document.createElementNS(svgNS, 'text');
-      monthLabel.setAttribute('x', String(groupX + groupWidth / 2));
-      monthLabel.setAttribute('y', String(HEIGHT - 8));
-      monthLabel.setAttribute('text-anchor', 'middle');
-      monthLabel.setAttribute('class', 'trend-axis-label');
-      monthLabel.textContent = H.monthLabel(row.month, { short: true });
-      group.appendChild(monthLabel);
-
-      svg.appendChild(group);
-    });
-
-    chartBox.appendChild(svg);
-  };
-
   /* ── Render ──────────────────────────────────────────────────────────── */
   const render = (data) => {
     const summary = data.summary || {};
     const expectations = data.expectations || {};
 
     if (dom.period) dom.period.textContent = data.period ? data.period.label : 'Build, preview and export a report for any period';
-    if (dom.chartLabel && data.monthly && data.monthly.length) {
-      dom.chartLabel.textContent = `${H.monthLabel(data.monthly[0].month, { short: true })} to ${H.monthLabel(data.monthly[data.monthly.length - 1].month)} · actuals by calendar month`;
-    }
 
     /* Summary */
     setText(document.querySelector('[data-r="income"]'), money(summary.income_amount));
@@ -321,36 +205,13 @@ document.addEventListener('DOMContentLoaded', () => {
       `${expectations.upcoming_bill_count || 0} expected bill${expectations.upcoming_bill_count === 1 ? '' : 's'} in the next 30 days`
     );
 
-    /* The trend chart — the centrepiece of the page. */
-    trendChart(Array.isArray(data.monthly) ? data.monthly : []);
-
-    /* Monthly table alternative */
-    const monthly = data.monthly || [];
-    if (document.querySelector('[data-r="monthly-empty"]')) {
-      document.querySelector('[data-r="monthly-empty"]').hidden = monthly.length > 0;
-    }
-    tbodyRows(
-      document.querySelector('[data-r="monthly-rows"]'),
-      monthly.map((row) => [
-        H.monthLabel(row.month),
-        money(row.income_amount),
-        money(row.expense_amount),
-        signedMoney(row.net_amount),
-        row.is_partial ? 'Partial month' : 'Complete month',
-      ]),
-      5,
-      'No monthly data for the selected period.'
-    );
-
     /* Comparison */
     const comparisonEl = document.querySelector('[data-r="comparison"]');
     const comparisonNote = document.querySelector('[data-r="comparison-note"]');
     const comparisonLabel = document.querySelector('[data-r="comparison-label"]');
-    const comparisonWrap = document.querySelector('[data-comparison-wrap]');
     if (comparisonEl) comparisonEl.replaceChildren();
 
-    if (data.comparison && comparisonEl) {
-      if (comparisonWrap) comparisonWrap.hidden = false;
+    if (data.comparison) {
       [
         ['Current period', data.comparison.current || {}],
         ['Previous period', data.comparison.previous || {}],
@@ -382,11 +243,58 @@ document.addEventListener('DOMContentLoaded', () => {
       if (comparisonLabel && data.comparison_period) {
         comparisonLabel.textContent = `${data.comparison_period.from} to ${data.comparison_period.to} · ${String(data.comparison_period.basis || '').replace(/_/g, ' ')}`;
       }
-    } else if (comparisonWrap) {
-      comparisonWrap.hidden = true;
-      if (comparisonEl) comparisonEl.replaceChildren();
+
+      const drivers = [
+        ...(data.comparison.drivers.expense_categories || []).map((row) => [
+          'Expense category',
+          row.category_name,
+          money(row.current_amount),
+          money(row.previous_amount),
+          money(row.change_amount),
+          row.change_percent === null || row.change_percent === undefined ? '—' : percent(row.change_percent, '0%'),
+        ]),
+        ...(data.comparison.drivers.income_sources || []).map((row) => [
+          'Income source',
+          row.source,
+          money(row.current_amount),
+          money(row.previous_amount),
+          money(row.change_amount),
+          row.change_percent === null || row.change_percent === undefined ? '—' : percent(row.change_percent, '0%'),
+        ]),
+      ];
+      tbodyRows(document.querySelector('[data-r="driver-rows"]'), drivers, 6, 'No change drivers for this period.');
+    } else {
+      if (comparisonEl) comparisonEl.appendChild(el('div', 'empty-inline', 'No comparison was requested for this report.'));
       setText(comparisonNote, '');
+      setText(comparisonLabel, 'No comparison requested');
+      tbodyRows(document.querySelector('[data-r="driver-rows"]'), [], 6, 'No change drivers for this period.');
     }
+
+    /* Balances */
+    const balances = data.balances || {};
+    setText(document.querySelector('[data-r="balance-reason"]'), balances.opening ? balances.opening.reason : '');
+    setText(
+      document.querySelector('[data-r="balance-note"]'),
+      balances.ending ? balances.ending.reason : ''
+    );
+
+    /* Monthly actuals */
+    const monthly = data.monthly || [];
+    if (document.querySelector('[data-r="monthly-empty"]')) {
+      document.querySelector('[data-r="monthly-empty"]').hidden = monthly.length > 0;
+    }
+    tbodyRows(
+      document.querySelector('[data-r="monthly-rows"]'),
+      monthly.map((row) => [
+        H.monthLabel(row.month),
+        money(row.income_amount),
+        money(row.expense_amount),
+        signedMoney(row.net_amount),
+        row.is_partial ? 'Partial month' : 'Complete month',
+      ]),
+      5,
+      'No monthly data for the selected period.'
+    );
 
     /* Categories */
     const categories = data.categories || [];
@@ -395,6 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (document.querySelector('[data-r="category-empty"]')) {
       document.querySelector('[data-r="category-empty"]').hidden = categories.length > 0;
     }
+    const categoryTotal = categories.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
     const categoryMax = categories.reduce((highest, row) => Math.max(highest, Number(row.amount) || 0), 0) || 1;
     const colors = ['blue', 'teal', 'amber', 'danger'];
     categories.forEach((row, index) => {
@@ -437,7 +346,147 @@ document.addEventListener('DOMContentLoaded', () => {
       'No income in the selected period.'
     );
 
-    /* Largest transactions */
+    /* Budgets */
+    const budgets = data.budgets;
+    const budgetItems = budgets && budgets.items ? budgets.items : [];
+    if (document.querySelector('[data-r="budget-empty"]')) {
+      document.querySelector('[data-r="budget-empty"]').hidden = budgetItems.length > 0;
+    }
+    const STATUS = {
+      over: 'Over limit',
+      near_limit: 'Near limit',
+      on_track: 'On track',
+    };
+    tbodyRows(
+      document.querySelector('[data-r="budget-rows"]'),
+      budgetItems.map((row) => [
+        H.monthLabel(row.month),
+        row.category_name,
+        money(row.limit_amount),
+        money(row.spent_amount),
+        percent(row.utilization_percent, '0%'),
+        STATUS[row.status] || row.status,
+      ]),
+      6,
+      'No budgets are set for the selected months.'
+    );
+
+    /* Savings */
+    const savingsGoals = data.savings && data.savings.goals ? data.savings.goals : [];
+    if (document.querySelector('[data-r="savings-empty"]')) {
+      document.querySelector('[data-r="savings-empty"]').hidden = savingsGoals.length > 0;
+    }
+    tbodyRows(
+      document.querySelector('[data-r="savings-rows"]'),
+      savingsGoals.map((row) => {
+        const estimate = row.estimated_completion || {};
+        return [
+          row.name,
+          H.statusLabel(row.status),
+          money(row.target_amount),
+          money(row.saved_amount),
+          percent(row.progress_percent, '0%'),
+          estimate.status === 'estimated'
+            ? H.monthLabel(estimate.projected_month)
+            : estimate.reason || '—',
+        ];
+      }),
+      6,
+      'No savings goals have been created yet.'
+    );
+
+    /* Upcoming bills */
+    const upcoming = data.upcoming_bills || [];
+    if (document.querySelector('[data-r="upcoming-empty"]')) {
+      document.querySelector('[data-r="upcoming-empty"]').hidden = upcoming.length > 0;
+    }
+    tbodyRows(
+      document.querySelector('[data-r="upcoming-rows"]'),
+      upcoming.map((row) => [
+        H.dateLabel(row.date),
+        row.name,
+        row.category_name || '—',
+        money(row.amount),
+        row.status,
+      ]),
+      5,
+      'No upcoming expected obligations.'
+    );
+
+    /* Subscriptions */
+    const subscriptionStrip = document.querySelector('[data-r="subscription-summary"]');
+    if (subscriptionStrip) {
+      subscriptionStrip.replaceChildren();
+      const summary = (data.subscriptions && data.subscriptions.summary) || {};
+      subscriptionStrip.append(
+        metric('Active trackers', summary.active_count || 0),
+        metric('Linked (in bill schedules)', summary.linked_count || 0),
+        metric('Standalone', summary.standalone_count || 0),
+        metric('Estimated monthly cost', money(summary.estimated_monthly_cost || 0)),
+        metric('Estimated annual cost', money(summary.estimated_annual_cost || 0))
+      );
+    }
+    setText(
+      document.querySelector('[data-r="subscription-note"]'),
+      'Subscription estimates are separate from recorded expenses. A linked tracker is represented by its bill schedule, so it is not counted twice.'
+    );
+
+    /* Combined commitments */
+    const commitmentStrip = document.querySelector('[data-r="commitment-summary"]');
+    if (commitmentStrip) {
+      commitmentStrip.replaceChildren();
+      const summary = (data.commitments && data.commitments.summary) || {};
+      commitmentStrip.append(
+        metric('Combined monthly', money(summary.combined_monthly_commitment || 0)),
+        metric('Combined annual', money(summary.combined_annual_commitment || 0)),
+        metric('Bill schedules', money(summary.bill_schedule_monthly_cost || 0), 'Active schedules'),
+        metric('Standalone subscriptions', money(summary.standalone_subscription_monthly_cost || 0), 'Added to the bill total'),
+        metric('Linked subscriptions', money(summary.linked_subscription_monthly_cost || 0), 'Already inside the bill total')
+      );
+    }
+    setText(
+      document.querySelector('[data-r="commitment-note"]'),
+      'Expected obligations and subscription estimates are not included in the actual income or expense totals above.'
+    );
+
+    /* Forecast */
+    const forecastStrip = document.querySelector('[data-r="forecast-summary"]');
+    if (forecastStrip) {
+      forecastStrip.replaceChildren();
+      const forecast = data.forecast || {};
+      forecastStrip.append(
+        metric('Expected income', money(forecast.expected_income || 0)),
+        metric('Expected expenses', money(forecast.expected_expenses || 0)),
+        metric('Projected net flow', signedMoney(forecast.projected_net_cash_flow || 0)),
+        metric('Negative-date status', forecast.negative_cash_flow_status || 'not_calculable')
+      );
+    }
+    setText(
+      document.querySelector('[data-r="forecast-note"]'),
+      (data.forecast && data.forecast.starting_balance_reason) ||
+        'The forecast projects materialized planned occurrences. It never creates a transaction and it does not report a cash balance.'
+    );
+
+    /* Net worth */
+    const netWorthStrip = document.querySelector('[data-r="net-worth-summary"]');
+    if (netWorthStrip) {
+      netWorthStrip.replaceChildren();
+      const netWorth = data.net_worth || {};
+      const summary = netWorth.summary || {};
+      netWorthStrip.append(
+        metric('Assets', money(summary.total_assets || 0)),
+        metric('Liabilities', money(summary.total_liabilities || 0)),
+        metric('Net worth', money(summary.net_worth || 0)),
+        metric('As of', netWorth.as_of ? H.dateLabel(netWorth.as_of) : '—')
+      );
+    }
+    setText(
+      document.querySelector('[data-r="net-worth-note"]'),
+      (data.net_worth && data.net_worth.note) ||
+        'Net worth uses manual dated valuations. It is not a verified available-cash balance and does not change actual income or expense totals.'
+    );
+
+    /* Expense review */
     const review = data.expense_review;
     const reviewRows = review && review.largest_expenses ? review.largest_expenses : [];
     if (document.querySelector('[data-r="review-empty"]')) {
@@ -455,7 +504,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'No expense transactions to rank yet.'
     );
 
-    /* Notes from the server (reading rules for the figures shown). */
+    /* Notes */
     const notesList = document.querySelector('[data-r="notes"]');
     if (notesList) {
       notesList.replaceChildren();
@@ -463,6 +512,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof note === 'string' && note.trim()) notesList.appendChild(el('li', '', note));
       });
     }
+
+    applySectionVisibility();
   };
 
   /* ── Exports ─────────────────────────────────────────────────────────── */
@@ -540,6 +591,24 @@ document.addEventListener('DOMContentLoaded', () => {
     dom.compare.addEventListener('change', () => load());
   }
 
+  document.querySelectorAll('[data-section]').forEach((input) => {
+    input.addEventListener('change', () => {
+      applySectionVisibility();
+      load();
+    });
+  });
+
+  if (dom.refresh) {
+    dom.refresh.addEventListener('click', async () => {
+      dom.refresh.disabled = true;
+      const original = dom.refresh.textContent;
+      dom.refresh.textContent = 'Refreshing…';
+      await load();
+      dom.refresh.disabled = false;
+      dom.refresh.textContent = original;
+    });
+  }
+
   if (dom.exportCsv) dom.exportCsv.addEventListener('click', exportCsv);
   if (dom.exportJson) dom.exportJson.addEventListener('click', exportJson);
   if (dom.print) {
@@ -553,5 +622,6 @@ document.addEventListener('DOMContentLoaded', () => {
   dom.from.value = initial.from;
   dom.to.value = initial.to;
   setActivePreset('this-month');
+  applySectionVisibility();
   load();
 });

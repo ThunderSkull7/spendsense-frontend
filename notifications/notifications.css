@@ -8,11 +8,6 @@
   border-radius: var(--r);
 }
 
-/* On narrow screens the three tabs sit under the card title at full width. */
-@media (max-width: 720px) {
-  .card-head .filter-tabs { width: 100%; }
-}
-
 .filter-tab {
   flex: 1;
   padding: 8px 12px;
@@ -266,6 +261,6 @@
 
   .notification-item {
     break-inside: avoid;
-    border: 1px solid var(--border-strong);
+    border: 1px solid #000;
   }
 }

@@ -3,22 +3,225 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Page moved | SpendSense</title>
+    <link rel="icon" href="data:," />
+    <meta name="api-base-url" content="http://127.0.0.1:8002" />
+    <title>Cash-flow forecast | SpendSense</title>
+    <script src="../theme.js"></script>
     <link rel="stylesheet" href="../styles.css" />
-    <!-- The Cash-flow forecast page was retired; old links now land on the
-         closest remaining page (Recurring commitments). -->
-    <script>
-      window.location.replace("../insights/commitments.html");
-    </script>
-    <meta http-equiv="refresh" content="0; url=../insights/commitments.html" />
+    <link rel="stylesheet" href="financial-intelligence.css" />
   </head>
-  <body class="app-body">
-    <main class="card" style="max-width: 560px; margin: 18vh auto; padding: 28px; text-align: center">
-      <h1 class="card-title">This page has moved</h1>
-      <p class="sub" style="margin-top: 10px">
-        Cash-flow expectations are now covered by
-        <a href="../insights/commitments.html">Recurring commitments</a>.
-      </p>
-    </main>
+  <body class="app-body" data-requires-auth data-login-href="../authentication/login.html">
+    <aside class="sidebar" data-sidebar>
+      <a class="sidebar-brand" href="../dashboard/dashboard.html">
+        <span class="brand-mark">S</span>
+        <span>SpendSense</span>
+      </a>
+      <nav class="sidebar-nav" aria-label="Main navigation">
+        <p class="sidebar-group">Overview</p>
+        <a class="sidebar-link" href="../dashboard/dashboard.html" data-nav="dashboard"><span class="nav-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Dashboard</a>
+        <p class="sidebar-group">Money</p>
+        <a class="sidebar-link" href="../expense-management/expenses.html" data-nav="expenses"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>Expenses</a>
+        <a class="sidebar-link" href="../income-management/income.html" data-nav="income"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income</a>
+        <a class="sidebar-link" href="../budget-planning/budget.html" data-nav="budgets"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budgets</a>
+        <a class="sidebar-link" href="../recurring-expenses/recurring-expenses.html" data-nav="bills"><span class="nav-ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg></span>Bills</a>
+        <a class="sidebar-link" href="../savings-goals/savings-goals.html" data-nav="goals"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/></svg></span>Goals</a>
+        <a class="sidebar-link" href="../categories-management/categories.html" data-nav="categories"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h6l10 10-8 8L3 11z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg></span>Categories</a>
+                        <p class="sidebar-group">Insights</p>
+        <a class="sidebar-link" href="../insights/overview.html" data-nav="insights-overview"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/><path d="M17 5l4 4"/></svg></span>Insights overview</a>
+        <a class="sidebar-link" href="../insights/trends.html" data-nav="insights-trends"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Spending trends</a>
+        <a class="sidebar-link" href="../insights/income.html" data-nav="insights-income"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income analysis</a>
+        <a class="sidebar-link" href="../insights/budgets.html" data-nav="insights-budgets"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budget performance</a>
+        <a class="sidebar-link" href="../insights/savings.html" data-nav="insights-savings"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/></svg></span>Savings progress</a>
+        <a class="sidebar-link" href="../insights/commitments.html" data-nav="insights-commitments"><span class="nav-ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span>Recurring commitments</a>
+        <a class="sidebar-link" href="../insights/data-quality.html" data-nav="insights-quality"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v5c0 4.4-3 8.4-7 9-4-.6-7-4.6-7-9V7z"/><path d="M9 12l2 2 4-4"/></svg></span>Data quality</a>
+        <p class="sidebar-group">Reports & more</p>
+        <a class="sidebar-link" href="../reports-analytics/reports.html" data-nav="reports"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg></span>Reports</a>
+        <a class="sidebar-link" href="../financial-intelligence/insights.html" data-nav="insights"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M22 19H2"/><path d="M17 5l4 4"/></svg></span>Spending insights</a>
+        <a class="sidebar-link active" href="../financial-intelligence/forecast.html" data-nav="forecast"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Cash-flow forecast</a>
+        <a class="sidebar-link" href="../financial-intelligence/net-worth.html" data-nav="net-worth"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M7 7V4h10v3"/><path d="M4 11h16"/><path d="M15 15h2"/></svg></span>Net worth</a>
+        <a class="sidebar-link" href="../financial-intelligence/subscriptions.html" data-nav="subscriptions"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M20 7h-9a4 4 0 0 0-4 4v1"/><path d="M17 4l3 3-3 3"/><path d="M4 17h9a4 4 0 0 0 4-4v-1"/><path d="M7 20l-3-3 3-3"/></svg></span>Subscriptions</a>
+<p class="sidebar-group">Account</p>
+        <a class="sidebar-link" href="../notifications/notifications.html" data-nav="notifications"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>Notifications</a>
+        <a class="sidebar-link" href="../settings/settings.html" data-nav="settings"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</a>
+        <a class="sidebar-link" href="../support/support.html" data-nav="support"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 1 1 3.8 2.6c-.8.3-1 .9-1 1.6v.4"/><path d="M12 17.2v.01"/></svg></span>Support</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-chip">
+          <span class="user-avatar" data-user-avatar>S</span>
+          <span class="user-meta"><strong data-user-name>Account</strong><small data-user-email>Signed-in session</small></span>
+        </div>
+        <button class="btn ghost sm block" type="button" data-logout>Log out</button>
+      </div>
+    </aside>
+    <div class="sidebar-overlay" data-sidebar-overlay></div>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
+        <div class="topbar-titles">
+          <h1 class="topbar-title">Cash-flow forecast</h1>
+          <span class="topbar-sub">Scheduled expectations, clearly separated from completed transactions</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+          <a class="btn secondary sm" href="../recurring-expenses/recurring-expenses.html">Manage bills</a>
+        </div>
+      </header>
+
+      <main class="content intel-page">
+        <div class="intel-note warn" role="note">
+          <span class="note-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 16H3z"/><path d="M12 9v4"/><path d="M12 16.5v.01"/></svg></span>
+          <div><strong>This is a schedule-based forecast, not a bank balance.</strong> It projects materialized planned occurrences from active recurring schedules. It does not add historical spending, subscription summaries, savings goals or net worth to expected cash flow.</div>
+        </div>
+
+        <form class="intel-controls" data-forecast-form novalidate>
+          <div class="field">
+            <label for="forecast-as-of">Starting from</label>
+            <input id="forecast-as-of" name="as_of" type="date" required />
+          </div>
+          <div class="field" style="flex-basis: 240px">
+            <label id="forecast-horizon-label">Forecast horizon</label>
+            <div class="segmented" role="group" aria-labelledby="forecast-horizon-label" data-forecast-horizon>
+              <button type="button" data-horizon="30" aria-pressed="true">30 days</button>
+              <button type="button" data-horizon="60" aria-pressed="false">60 days</button>
+              <button type="button" data-horizon="90" aria-pressed="false">90 days</button>
+            </div>
+          </div>
+          <button class="btn primary" type="submit">Run forecast</button>
+          <span class="controls-spacer"></span>
+          <div class="intel-message" data-forecast-message role="status" aria-live="polite"></div>
+          <p class="control-note">The window includes the start date and each UTC calendar day through the selected horizon. No transaction is created, edited or paid by running a forecast.</p>
+        </form>
+
+        <div data-forecast-page-state aria-live="polite">
+          <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Building schedule forecast…</p></div>
+        </div>
+
+        <div data-forecast-content class="intel-page" hidden>
+          <section class="intel-summary" aria-label="Forecast summary">
+            <article class="card intel-kpi"><span class="kpi-label">Expected income</span><strong class="kpi-value pos" data-forecast="income">—</strong><span class="kpi-note" data-forecast="income-count">—</span></article>
+            <article class="card intel-kpi"><span class="kpi-label">Expected expenses</span><strong class="kpi-value" data-forecast="expenses">—</strong><span class="kpi-note" data-forecast="expense-count">—</span></article>
+            <article class="card intel-kpi"><span class="kpi-label">Projected net flow</span><strong class="kpi-value" data-forecast="net">—</strong><span class="kpi-note">Expected income minus expected expenses</span></article>
+            <article class="card intel-kpi"><span class="kpi-label">Opening / ending balance</span><strong class="kpi-value text-value" data-forecast="balance">—</strong><span class="kpi-note" data-forecast="balance-note">No verified cash balance available</span></article>
+          </section>
+
+          <div class="intel-grid main-side">
+            <article class="card">
+              <div class="card-head intel-card-head">
+                <div>
+                  <h2 class="card-title">Monthly projection</h2>
+                  <p class="card-sub sub" data-forecast-window>—</p>
+                </div>
+                <span class="pill neutral" data-forecast-horizon-pill>—</span>
+              </div>
+              <div class="card-body">
+                <div class="viz-list" data-forecast-month-bars role="img" aria-label="Projected income and expenses by month"></div>
+                <div class="empty-inline" data-forecast-month-empty hidden>No planned occurrences fall inside this forecast window.</div>
+                <details class="data-alt" open>
+                  <summary>View monthly projection as a table</summary>
+                  <div class="table-wrap">
+                    <table class="table compact">
+                      <caption class="sr-only">Projected monthly expected cash flow</caption>
+                      <thead><tr><th scope="col">Month</th><th scope="col" class="num">Expected income</th><th scope="col" class="num">Expected expenses</th><th scope="col" class="num">Projected net</th><th scope="col">Coverage</th></tr></thead>
+                      <tbody data-forecast-month-rows></tbody>
+                    </table>
+                  </div>
+                </details>
+              </div>
+            </article>
+
+            <div class="intel-stack">
+              <article class="card">
+                <div class="card-head intel-card-head">
+                  <div>
+                    <h2 class="card-title">Balance availability</h2>
+                    <p class="card-sub sub">Why an ending balance is not shown</p>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="callout danger" data-forecast-balance-reason></div>
+                  <div class="metric-strip" style="margin-top: 12px">
+                    <div class="metric-mini"><span>Negative-date status</span><strong data-forecast="negative-status">—</strong></div>
+                    <div class="metric-mini"><span>Forecast events</span><strong data-forecast="event-count">—</strong></div>
+                    <div class="metric-mini"><span>Window</span><strong data-forecast="window-days">—</strong></div>
+                  </div>
+                  <p class="action-note" data-forecast-negative-reason></p>
+                  <p class="action-note">Net worth and savings goals are not spendable cash and are never treated as an opening balance here.</p>
+                </div>
+              </article>
+
+              <article class="card">
+                <div class="card-head intel-card-head">
+                  <div>
+                    <h2 class="card-title">Recent historical context</h2>
+                    <p class="card-sub sub">Completed UTC months only; context is not added to the forecast</p>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div class="metric-strip" data-forecast-history></div>
+                  <p class="action-note" data-forecast-history-note></p>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <section class="card">
+            <div class="card-head intel-card-head">
+              <div>
+                <h2 class="card-title">Planned events</h2>
+                <p class="card-sub sub">Every materialized planned occurrence in the forecast window, sorted by date</p>
+              </div>
+              <a class="link small" href="../recurring-expenses/recurring-expenses.html">Manage schedules</a>
+            </div>
+            <div class="card-body">
+              <div class="callout warn" data-forecast-overdue hidden></div>
+              <div class="table-wrap" style="margin-top: 12px">
+                <table class="table compact">
+                  <caption class="sr-only">Planned recurring income and expense occurrences</caption>
+                  <thead><tr><th scope="col">Date</th><th scope="col">Type</th><th scope="col">Name</th><th scope="col">Category</th><th scope="col" class="num">Expected amount</th></tr></thead>
+                  <tbody data-forecast-event-rows></tbody>
+                </table>
+              </div>
+              <p class="action-note" data-forecast-event-note></p>
+              <div class="empty-inline" data-forecast-event-empty hidden>No planned income or bill occurrences were generated for this window.</div>
+            </div>
+          </section>
+
+          <section class="intel-grid">
+            <article class="card">
+              <div class="card-head intel-card-head">
+                <div>
+                  <h2 class="card-title">Upcoming bills</h2>
+                  <p class="card-sub sub">First 20 planned expense occurrences in the window</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="timeline" data-forecast-upcoming></div>
+                <div class="empty-inline" data-forecast-upcoming-empty hidden>No upcoming planned bills in this window.</div>
+                <p class="action-note">Unpaid plans are expectations. Pay them from the Bills page when the payment actually happens.</p>
+              </div>
+            </article>
+
+            <article class="card">
+              <div class="card-head intel-card-head">
+                <div>
+                  <h2 class="card-title">Schedule coverage</h2>
+                  <p class="card-sub sub">Only active schedules contribute events</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="metric-strip" data-forecast-schedule-counts></div>
+                <div class="callout" data-forecast-subscription-note style="margin-top: 12px"></div>
+                <ul class="note-list" data-forecast-notes style="margin-top: 12px"></ul>
+              </div>
+            </article>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="../script.js"></script>
+    <script src="intelligence-common.js"></script>
+    <script src="forecast.js"></script>
   </body>
 </html>

@@ -118,14 +118,10 @@ test('todayInputValue returns the local calendar date just after midnight', () =
 test('storage failures fall back to memory instead of breaking the shell', () => {
   const { settings } = loadSettings({ storageThrows: true });
   assert.equal(settings.themeColor(), 'emerald');
-  // With nothing saved the mode preference is "system"; in this environment
-  // there is no matchMedia, so "system" resolves to light.
-  assert.equal(settings.themeMode(), 'system');
-  assert.equal(settings.resolvedThemeMode(), 'light');
+  assert.equal(settings.themeMode(), 'light');
   settings.applyTheme('blue', 'dark');
   assert.equal(settings.themeColor(), 'blue');
   assert.equal(settings.themeMode(), 'dark');
-  assert.equal(settings.resolvedThemeMode(), 'dark');
   settings.applyCurrency('USD');
   assert.equal(settings.currency, 'USD');
   assert.equal(settings.symbol, '$');
