@@ -1,4 +1,4 @@
-name: Frontend CI Pipeline
+name: Frontend CI and Cloudflare Deployment
 on:
   push:
     branches: [main, develop]
