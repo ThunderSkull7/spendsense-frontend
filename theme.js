@@ -179,40 +179,6 @@
   root.dataset.themeColor = savedColor;
   root.dataset.mode = savedMode;
 
-  // Stable category-to-palette slots shared by charts across the classic UI.
-  // Keep this helper available to legacy dashboard/report scripts without
-  // changing the restored theme or navigation.
-  const chartColors = () => {
-    const fallback = [
-      "#059669", "#2563EB", "#D97706", "#DC2626", "#7C3AED",
-      "#0891B2", "#DB2777", "#65A30D", "#EA580C", "#4F46E5",
-    ];
-    let computed;
-    try {
-      computed = typeof getComputedStyle === "function" ? getComputedStyle(root) : null;
-    } catch (e) {
-      computed = null;
-    }
-    return fallback.map((color, index) => {
-      const configured = computed && computed.getPropertyValue("--chart-" + (index + 1)).trim();
-      return configured || color;
-    });
-  };
-
-  const categoryTones = (keys) => {
-    const result = {};
-    [...new Set((Array.isArray(keys) ? keys : []).map((key) => String(key)))].forEach((key) => {
-      // Hash the stable category key, not its position in the current list.
-      let hash = 2166136261;
-      for (let i = 0; i < key.length; i++) {
-        hash ^= key.charCodeAt(i);
-        hash = Math.imul(hash, 16777619);
-      }
-      result[key] = (hash >>> 0) % 10;
-    });
-    return result;
-  };
-
   window.SpendSenseSettings = {
     currency: savedCurrency,
     symbol: symbolFor(savedCurrency),
@@ -222,8 +188,6 @@
     applyMoneySymbols,
     formatMoney,
     formatDate,
-    chartColors,
-    categoryTones,
   };
 
   document.addEventListener("DOMContentLoaded", initShell);
