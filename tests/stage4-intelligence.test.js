@@ -10,14 +10,13 @@ const ROOT = path.join(__dirname, '..');
 const DIR = path.join(ROOT, 'financial-intelligence');
 const COMMON = path.join(DIR, 'intelligence-common.js');
 const CSS = path.join(DIR, 'financial-intelligence.css');
-// Stage 4 originally shipped four pages; the cash-flow forecast and net worth
-// pages were retired from the UI, so their contracts were removed with them.
+// Stage 4 shipped four pages; the cash-flow forecast, net worth and Spending
+// insights pages were retired from the UI, so their contracts were removed
+// with them (each retired URL now redirects to a retained page).
 const PAGES = {
-  insights: path.join(DIR, 'insights.html'),
   subscriptions: path.join(DIR, 'subscriptions.html'),
 };
 const SCRIPTS = {
-  insights: path.join(DIR, 'insights.js'),
   subscriptions: path.join(DIR, 'subscriptions.js'),
 };
 
@@ -78,13 +77,6 @@ test('stage 4 API error helper is bounded and does not return markup fields', ()
 
 test('the retained Stage 4 pages expose controls, states and textual alternatives', () => {
   const required = {
-    insights: [
-      'data-nav="insights"', 'id="insights-from"', 'id="insights-to"',
-      'data-insights-page-state', 'data-insights-form', 'data-insight-categories',
-      'data-insight-category-rows', 'data-insight-month-rows', 'data-insight-anomaly-rows',
-      'data-insight-budget-items', 'data-insight-recurring-summary', 'aria-live="polite"',
-      'Actual ledger totals only', 'documented anomaly threshold',
-    ],
     subscriptions: [
       'data-nav="subscriptions"', 'data-subscription-form', 'data-subscription-filters',
       'data-subscription-page-state', 'data-subscription-upcoming-rows',
@@ -101,24 +93,14 @@ test('the retained Stage 4 pages expose controls, states and textual alternative
   }
 });
 
-test('the retained Stage 4 pages use accessible charts with table or summary alternatives', () => {
-  const insights = read(PAGES.insights);
+test('the retained Stage 4 page uses accessible charts with table alternatives', () => {
+  const subscriptions = read(PAGES.subscriptions);
 
-  assert.match(insights, /role="img" aria-label="[^"]+"/);
-  assert.ok(insights.includes('<caption class="sr-only">'));
-  assert.ok(insights.includes('View category data as a table'));
-  assert.ok(insights.includes('View monthly totals as a table'));
+  assert.ok(subscriptions.includes('<caption class="sr-only">'));
 });
 
 test('the retained Stage 4 scripts use the documented read-only and owner-scoped endpoints', () => {
-  const insights = read(SCRIPTS.insights);
   const subscriptions = read(SCRIPTS.subscriptions);
-
-  assert.ok(insights.includes('/analytics/spending-insights?from='));
-  assert.ok(insights.includes('encodeURIComponent(from)'));
-  assert.ok(insights.includes('rangeMonthCount(from, to) > 24'));
-  assert.ok(!insights.includes('API.post('), 'insights must not write');
-  assert.ok(!insights.includes('API.put('), 'insights must not write');
 
   for (const endpoint of [
     "API.get(`/subscriptions?${query.toString()}`)",
@@ -137,10 +119,12 @@ test('the retained Stage 4 scripts use the documented read-only and owner-scoped
 test('the retired Stage 4 pages redirect to a retained page', () => {
   // Old bookmarks and stale links land somewhere useful instead of 404-ing.
   const redirects = {
+    'financial-intelligence/insights.html': '../insights/overview.html',
     'financial-intelligence/forecast.html': '../insights/commitments.html',
     'financial-intelligence/net-worth.html': '../reports-analytics/reports.html',
     'recurring-expenses/recurring-expenses.html': '../insights/commitments.html',
     'insights/trends.html': '../insights/overview.html',
+    'insights/income.html': '../income-management/income.html',
   };
   for (const [page, target] of Object.entries(redirects)) {
     const html = read(path.join(ROOT, page));
@@ -164,7 +148,9 @@ test('Stage 4 navigation is present across the existing app pages', () => {
 
   for (const relative of appPages) {
     const html = read(path.join(ROOT, relative));
-    for (const nav of ['insights', 'subscriptions']) {
+    // The Spending insights page was retired, so only the Subscriptions
+    // Stage 4 page remains in the shared navigation.
+    for (const nav of ['subscriptions']) {
       assert.ok(html.includes(`data-nav="${nav}"`), `${relative} missing ${nav} navigation`);
       assert.ok(html.includes(`../financial-intelligence/`), `${relative} missing Stage 4 links`);
     }

@@ -62,8 +62,6 @@ const STAGE5_GROUPS = [
     title: 'Insights',
     links: [
       { key: 'insights-overview', href: '../insights/overview.html', label: 'Insights overview', icon: ICON.insightsOverview },
-      { key: 'insights-trends', href: '../insights/trends.html', label: 'Spending trends', icon: ICON.trends },
-      { key: 'insights-income', href: '../insights/income.html', label: 'Income analysis', icon: ICON.income },
       { key: 'insights-budgets', href: '../insights/budgets.html', label: 'Budget performance', icon: ICON.budgets },
       { key: 'insights-savings', href: '../insights/savings.html', label: 'Savings goals progress', icon: ICON.goals },
       { key: 'insights-commitments', href: '../insights/commitments.html', label: 'Recurring commitments', icon: ICON.bills },
@@ -74,9 +72,6 @@ const STAGE5_GROUPS = [
     title: 'Reports & more',
     links: [
       { key: 'reports', href: '../reports-analytics/reports.html', label: 'Reports', icon: ICON.reports },
-      { key: 'insights', href: '../financial-intelligence/insights.html', label: 'Spending insights', icon: ICON.spendingInsights },
-      { key: 'forecast', href: '../financial-intelligence/forecast.html', label: 'Cash-flow forecast', icon: ICON.forecast },
-      { key: 'net-worth', href: '../financial-intelligence/net-worth.html', label: 'Net worth', icon: ICON.netWorth },
       { key: 'subscriptions', href: '../financial-intelligence/subscriptions.html', label: 'Subscriptions', icon: ICON.subscriptions },
     ],
   },

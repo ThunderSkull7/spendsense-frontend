@@ -360,6 +360,8 @@
   .tp-side { flex-direction: row; }
   .tp-side .tp-nav-item { flex: 1; justify-content: center; }
   .security-unavailable { flex-direction: column; }
+  /* Three mode choices fit any width once the control is allowed to wrap. */
+  .mode-options { flex-wrap: wrap; }
 }
 
 @media (max-width: 1180px) {

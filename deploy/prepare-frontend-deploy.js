@@ -188,8 +188,11 @@ function main() {
   for (const s of skipped) {
     console.log(`  - ${s}`);
   }
-  if (replaced !== 24) {
-    console.warn(`Warning: expected 24 SpendSense pages to carry the API meta tag, rewrote ${replaced} - verify the page set before deploying.`);
+  // The application pages carry the dev API URL; the standalone redirect
+  // stubs (retired pages) intentionally do not. 22 app pages were counted at
+  // the removal of the Spending insights and Income analysis pages.
+  if (replaced !== 22) {
+    console.warn(`Warning: expected 22 SpendSense pages to carry the API meta tag, rewrote ${replaced} - verify the page set before deploying.`);
   }
   console.log(`Source untouched    : ${sourceAfter.size} source pages still contain ${replaceThis}`);
   console.log('OK - deployable copy ready.');

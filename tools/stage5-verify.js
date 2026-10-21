@@ -35,7 +35,6 @@ const navPages = [
   'savings-goals/savings-goals.html',
   'categories-management/categories.html',
   'reports-analytics/reports.html',
-  'financial-intelligence/insights.html',
   'financial-intelligence/subscriptions.html',
   'notifications/notifications.html',
   'settings/settings.html',
@@ -50,13 +49,11 @@ const navKeys = [
   'goals',
   'categories',
   'insights-overview',
-  'insights-income',
   'insights-budgets',
   'insights-savings',
   'insights-commitments',
   'insights-quality',
   'reports',
-  'insights',
   'subscriptions',
   'notifications',
   'settings',
@@ -79,6 +76,8 @@ const REDIRECTS = {
   'insights/trends.html': '../insights/overview.html',
   'financial-intelligence/forecast.html': '../insights/commitments.html',
   'financial-intelligence/net-worth.html': '../reports-analytics/reports.html',
+  'financial-intelligence/insights.html': '../insights/overview.html',
+  'insights/income.html': '../income-management/income.html',
 };
 Object.entries(REDIRECTS).forEach(([page, target]) => {
   if (!exists(page)) {
@@ -121,18 +120,14 @@ const reports = read('reports-analytics/reports.html');
   'data-export-json',
   'data-report-print',
   'data-preset="this-month"',
-  'data-preset="last-quarter"',
+  'data-preset="year-to-date"',
   'data-preset="custom"',
-  'data-section="comparison"',
-  'data-section="budgets"',
-  'data-section="savings"',
-  'data-section="net_worth"',
+  'data-report-chart',
+  'data-comparison-wrap',
   'data-r="monthly-rows"',
   'data-r="category-rows"',
   'data-r="source-rows"',
-  'data-r="upcoming-rows"',
-  'data-r="budget-rows"',
-  'data-r="savings-rows"',
+  'data-r="review-rows"',
 ].forEach((needle) => {
   check(`reports: ${needle}`, reports.includes(needle));
 });
@@ -164,7 +159,6 @@ const expenses = read('expense-management/expenses.js');
 /* ── Insights pages ───────────────────────────────────────────────────── */
 const INSIGHT_PAGES = {
   'insights/overview.html': 'insights-overview',
-  'insights/income.html': 'insights-income',
   'insights/budgets.html': 'insights-budgets',
   'insights/savings.html': 'insights-savings',
   'insights/commitments.html': 'insights-commitments',

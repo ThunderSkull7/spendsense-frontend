@@ -353,6 +353,6 @@ dialog.ss-dialog[hidden] {
   .card {
     break-inside: avoid;
     box-shadow: none !important;
-    border-color: #cfd8cd !important;
+    border-color: var(--border-strong) !important;
   }
 }

@@ -307,98 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
     monthRangeForm(load);
   };
 
-  /* A4 — Income analysis -------------------------------------------------- */
-  const renderIncome = () => {
-    const nodes = {
-      actual: document.querySelector('[data-i="actual"]'),
-      actualNote: document.querySelector('[data-i="actual-note"]'),
-      expected: document.querySelector('[data-i="expected"]'),
-      expectedNote: document.querySelector('[data-i="expected-note"]'),
-      received: document.querySelector('[data-i="received"]'),
-      receivedNote: document.querySelector('[data-i="received-note"]'),
-      unplanned: document.querySelector('[data-i="unplanned"]'),
-      unplannedNote: document.querySelector('[data-i="unplanned-note"]'),
-      periodLabel: document.querySelector('[data-i="period-label"]'),
-      monthlyRows: document.querySelector('[data-i="monthly-rows"]'),
-      monthlyEmpty: document.querySelector('[data-i="monthly-empty"]'),
-      sourceRows: document.querySelector('[data-i="source-rows"]'),
-      sourceEmpty: document.querySelector('[data-i="source-empty"]'),
-      frequencyStrip: document.querySelector('[data-i="frequency-strip"]'),
-    };
-
-    const load = async (from, to) => {
-      setLoading('Loading income analysis…');
-      const query = new URLSearchParams({ from, to });
-      const result = await API.get(`/analytics/income-analysis?${query.toString()}`);
-
-      if (!result || result.status !== 200 || !result.data || !result.data.data) {
-        showError(H.errorMessage(result, 'Could not load the income analysis.'));
-        return;
-      }
-
-      const data = result.data.data;
-      const summary = data.summary || {};
-
-      setText(nodes.actual, money(summary.actual_income_amount));
-      setText(nodes.actualNote, `Across ${summary.month_count || 0} calendar month${summary.month_count === 1 ? '' : 's'}`);
-      setText(nodes.expected, money(summary.scheduled_expected_amount));
-      setText(nodes.expectedNote, 'Materialised planned occurrences, not actual income');
-      setText(nodes.received, money(summary.scheduled_received_amount));
-      setText(nodes.receivedNote, 'Actual income linked to a schedule');
-      setText(nodes.unplanned, money(summary.unplanned_actual_amount));
-      setText(nodes.unplannedNote, 'Actual total minus scheduled receipts');
-      setText(nodes.periodLabel, `${H.monthLabel(data.from)} to ${H.monthLabel(data.to)} · UTC calendar months`);
-
-      const monthly = Array.isArray(data.monthly) ? data.monthly : [];
-      if (nodes.monthlyEmpty) nodes.monthlyEmpty.hidden = monthly.length > 0;
-      tbodyRows(
-        nodes.monthlyRows,
-        monthly.map((row) => [
-          H.monthLabel(row.month),
-          money(row.actual_amount),
-          money(row.scheduled_expected_amount),
-          money(row.scheduled_received_amount),
-          money(row.planned_unreceived_amount),
-          money(row.unplanned_actual_amount),
-        ]),
-        6,
-        'No income was recorded in the selected months.'
-      );
-
-      const sources = Array.isArray(data.sources) ? data.sources : [];
-      if (nodes.sourceEmpty) nodes.sourceEmpty.hidden = sources.length > 0;
-      tbodyRows(
-        nodes.sourceRows,
-        sources.map((row) => [
-          row.source,
-          money(row.actual_amount),
-          money(row.previous_amount),
-          row.change_percent === null || row.change_percent === undefined
-            ? '—'
-            : `${row.change_percent >= 0 ? '+' : ''}${percent(row.change_percent, '0%')}`,
-          row.transaction_count,
-        ]),
-        5,
-        'No income sources in the selected period.'
-      );
-
-      if (nodes.frequencyStrip) {
-        nodes.frequencyStrip.replaceChildren(
-          ...(data.frequencies || []).map((row) =>
-            metric(H.frequencyLabel(row.frequency), money(row.amount), `${row.transaction_count} record${row.transaction_count === 1 ? '' : 's'}`)
-          )
-        );
-        if (!(data.frequencies || []).length) {
-          nodes.frequencyStrip.appendChild(el('div', 'empty-inline', 'No income entries in the selected period.'));
-        }
-      }
-
-      showContent();
-    };
-
-    monthRangeForm(load);
-  };
-
   /* A5 — Budget performance ------------------------------------------------ */
   const renderBudgets = () => {
     const nodes = {
@@ -862,7 +770,6 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ── Registry & bootstrap ────────────────────────────────────────────── */
   const renderers = {
     overview: renderOverview,
-    income: renderIncome,
     budgets: renderBudgets,
     savings: renderSavings,
     commitments: renderCommitments,

@@ -7,13 +7,14 @@
  * existing Stage 4 pages, so no page is a duplicate of another.
  *
  *   A1  overview        (period + comparison summary, links to every view)
- *   A2  trends          (spending trends, day / week / month)
- *   A3  trends          (category analysis with drill-down to the search page)
- *   A4  income          (income analysis)
  *   A5  budgets         (budget performance)
  *   A6  savings         (savings goal progress)
  *   A9  commitments     (recurring commitments, linked bills counted once)
  *   A10 data-quality    (data quality review)
+ *
+ * The spending-trends and income-analysis pages were retired: insights/
+ * trends.html redirects to the overview and insights/income.html redirects
+ * to the Income page, so this generator no longer creates them.
  *
  * A6 (cash-flow forecast), A7 (net worth) and A8 (subscriptions) keep using
  * the existing Stage 4 pages under frontend/financial-intelligence/ so the
@@ -201,213 +202,6 @@ const overview = {
             <div class="card-body">
               <ul class="note-list" data-o="links"></ul>
             </div>
-          </section>
-`,
-};
-
-/* ── A2 + A3 – Spending trends and category analysis ──────────────────── */
-const trends = {
-  key: 'trends',
-  navKey: 'insights-trends',
-  title: 'Spending trends',
-  subtitle: 'Where your money went, and how that changed',
-  note: NOTE(
-    '<strong>Actual transactions only.</strong> Large‑expense review flags amounts above three times the period average when at least five expenses exist; it is a descriptive screen, never a fraud finding.'
-  ),
-  controls: `
-        <form class="intel-controls" data-insights-form novalidate>
-          <div class="field">
-            <label for="trends-from">From date</label>
-            <input id="trends-from" name="from" type="date" required />
-          </div>
-          <div class="field">
-            <label for="trends-to">To date</label>
-            <input id="trends-to" name="to" type="date" required />
-          </div>
-          <div class="field" style="flex-basis: 240px">
-            <label id="trends-granularity-label">Granularity</label>
-            <div class="segmented" role="group" aria-labelledby="trends-granularity-label" data-trends-granularity>
-              <button type="button" data-granularity="day" aria-pressed="true">Daily</button>
-              <button type="button" data-granularity="week" aria-pressed="false">Weekly</button>
-              <button type="button" data-granularity="month" aria-pressed="false">Monthly</button>
-            </div>
-          </div>
-          <button class="btn primary" type="submit">Apply period</button>
-          <span class="controls-spacer"></span>
-          <div class="intel-message" data-insights-message role="status" aria-live="polite"></div>
-          <p class="control-note">Daily trends cover up to 120 days; weekly and monthly cover up to about two years. Dates are inclusive UTC calendar days.</p>
-        </form>
-`,
-  content: `
-          <section class="intel-summary" aria-label="Trend summary">
-            <article class="card intel-kpi"><span class="kpi-label">Total spending</span><strong class="kpi-value" data-t="expenses">—</strong><span class="kpi-note" data-t="expenses-note">Actual expenses in the period</span></article>
-            <article class="card intel-kpi"><span class="kpi-label">Average per bucket</span><strong class="kpi-value" data-t="average">—</strong><span class="kpi-note" data-t="average-note">Across the selected buckets</span></article>
-            <article class="card intel-kpi"><span class="kpi-label">Change vs previous</span><strong class="kpi-value" data-t="change">—</strong><span class="kpi-note" data-t="change-note">Compared with the previous period</span></article>
-            <article class="card intel-kpi"><span class="kpi-label">Flagged transactions</span><strong class="kpi-value" data-t="anomalies">—</strong><span class="kpi-note" data-t="anomalies-note">Above the documented threshold</span></article>
-          </section>
-
-          <section class="card">
-            <div class="card-head intel-card-head">
-              <div>
-                <h2 class="card-title">Spending over time</h2>
-                <p class="card-sub sub" data-t="period-label">Loading…</p>
-              </div>
-              <div class="intel-legend"><span><span class="dot income"></span>Income</span><span><span class="dot expense"></span>Expenses</span></div>
-            </div>
-            <div class="card-body">
-              <div class="viz-list" data-t="bars" role="img" aria-label="Income and expenses per bucket"></div>
-              <div class="empty-inline" data-t="bars-empty" hidden>No actual income or expenses in the selected period.</div>
-              <details class="data-alt" open>
-                <summary>Bucket values and rolling average</summary>
-                <div class="table-wrap">
-                  <table class="table compact">
-                    <caption class="sr-only">Income, expenses and rolling average per bucket</caption>
-                    <thead><tr><th scope="col">Period</th><th scope="col" class="num">Income</th><th scope="col" class="num">Expenses</th><th scope="col" class="num">Net</th><th scope="col" class="num">Rolling average</th><th scope="col">Status</th></tr></thead>
-                    <tbody data-t="rows"></tbody>
-                  </table>
-                </div>
-              </details>
-            </div>
-          </section>
-
-          <section class="intel-grid main-side">
-            <article class="card">
-              <div class="card-head intel-card-head">
-                <div>
-                  <h2 class="card-title">Category analysis</h2>
-                  <p class="card-sub sub">Amounts, share and change against the previous period</p>
-                </div>
-                <span class="pill blue" data-t="category-count">—</span>
-              </div>
-              <div class="card-body">
-                <div class="viz-list" data-t="categories" role="img" aria-label="Category spending bars"></div>
-                <div class="empty-inline" data-t="categories-empty" hidden>No expenses were recorded in this period.</div>
-                <details class="data-alt" open>
-                  <summary>View category data as a table</summary>
-                  <div class="table-wrap">
-                    <table class="table compact">
-                      <caption class="sr-only">Category totals with change against the previous period</caption>
-                      <thead><tr><th scope="col">Category</th><th scope="col" class="num">Spent</th><th scope="col" class="num">Share</th><th scope="col" class="num">Change</th><th scope="col">Drill down</th></tr></thead>
-                      <tbody data-t="category-rows"></tbody>
-                    </table>
-                  </div>
-                </details>
-              </div>
-            </article>
-
-            <div class="intel-stack">
-              <article class="card">
-                <div class="card-head intel-card-head">
-                  <div>
-                    <h2 class="card-title">Large transactions</h2>
-                    <p class="card-sub sub">A documented screen, not financial advice</p>
-                  </div>
-                </div>
-                <div class="card-body">
-                  <div class="callout" data-t="anomaly-rule"></div>
-                  <div class="table-wrap" style="margin-top: 12px">
-                    <table class="table compact">
-                      <caption class="sr-only">Expenses above the documented threshold</caption>
-                      <thead><tr><th scope="col">Date</th><th scope="col">Description</th><th scope="col">Category</th><th scope="col" class="num">Amount</th></tr></thead>
-                      <tbody data-t="anomaly-rows"></tbody>
-                    </table>
-                  </div>
-                  <p class="action-note" data-t="anomaly-reason"></p>
-                </div>
-              </article>
-
-              <article class="card">
-                <div class="card-head intel-card-head">
-                  <div>
-                    <h2 class="card-title">Largest transactions</h2>
-                    <p class="card-sub sub">The ten largest actual expenses in the period</p>
-                  </div>
-                </div>
-                <div class="card-body">
-                  <div class="table-wrap">
-                    <table class="table compact">
-                      <caption class="sr-only">Largest expense transactions</caption>
-                      <thead><tr><th scope="col">Date</th><th scope="col">Description</th><th scope="col">Category</th><th scope="col" class="num">Amount</th></tr></thead>
-                      <tbody data-t="largest-rows"></tbody>
-                    </table>
-                  </div>
-                  <div class="empty-inline" data-t="largest-empty" hidden>No expense transactions to rank yet.</div>
-                </div>
-              </article>
-            </div>
-          </section>
-`,
-};
-
-/* ── A4 – Income analysis ─────────────────────────────────────────────── */
-const income = {
-  key: 'income',
-  navKey: 'insights-income',
-  title: 'Income analysis',
-  subtitle: 'Actual income against expected scheduled income',
-  note: NOTE(
-    '<strong>Income is grouped by source.</strong> This schema has no income category, so the source and the recorded frequency are used instead. Expected income comes only from already‑materialised recurring occurrences and is never added to actual totals.'
-  ),
-  controls: MONTH_CONTROLS('income'),
-  content: `
-          <section class="intel-summary" aria-label="Income summary">
-            <article class="card intel-kpi"><span class="kpi-label">Actual income</span><strong class="kpi-value pos" data-i="actual">—</strong><span class="kpi-note" data-i="actual-note">Recorded income entries</span></article>
-            <article class="card intel-kpi"><span class="kpi-label">Expected (scheduled)</span><strong class="kpi-value text-value" data-i="expected">—</strong><span class="kpi-note" data-i="expected-note">Materialised planned occurrences</span></article>
-            <article class="card intel-kpi"><span class="kpi-label">Received from schedules</span><strong class="kpi-value" data-i="received">—</strong><span class="kpi-note" data-i="received-note">Actual linked income</span></article>
-            <article class="card intel-kpi"><span class="kpi-label">Unplanned actual</span><strong class="kpi-value" data-i="unplanned">—</strong><span class="kpi-note" data-i="unplanned-note">Actual total minus scheduled receipts</span></article>
-          </section>
-
-          <section class="card">
-            <div class="card-head intel-card-head">
-              <div>
-                <h2 class="card-title">Monthly actual vs expected</h2>
-                <p class="card-sub sub" data-i="period-label">Loading…</p>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="table-wrap">
-                <table class="table compact">
-                  <caption class="sr-only">Actual and expected income per month</caption>
-                  <thead><tr><th scope="col">Month</th><th scope="col" class="num">Actual</th><th scope="col" class="num">Expected</th><th scope="col" class="num">Received</th><th scope="col" class="num">Unreceived</th><th scope="col" class="num">Unplanned actual</th></tr></thead>
-                  <tbody data-i="monthly-rows"></tbody>
-                </table>
-              </div>
-              <div class="empty-inline" data-i="monthly-empty" hidden>No income was recorded in the selected months.</div>
-            </div>
-          </section>
-
-          <section class="intel-grid">
-            <article class="card">
-              <div class="card-head intel-card-head">
-                <div>
-                  <h2 class="card-title">Income by source</h2>
-                  <p class="card-sub sub">Totals, transaction counts and change</p>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="table-wrap">
-                  <table class="table compact">
-                    <caption class="sr-only">Income totals by source</caption>
-                    <thead><tr><th scope="col">Source</th><th scope="col" class="num">Actual</th><th scope="col" class="num">Previous</th><th scope="col" class="num">Change</th><th scope="col" class="num">Records</th></tr></thead>
-                    <tbody data-i="source-rows"></tbody>
-                  </table>
-                </div>
-                <div class="empty-inline" data-i="source-empty" hidden>No income sources in the selected period.</div>
-              </div>
-            </article>
-
-            <article class="card">
-              <div class="card-head intel-card-head">
-                <div>
-                  <h2 class="card-title">Recorded frequency</h2>
-                  <p class="card-sub sub">How the income entries were labelled</p>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="metric-strip" data-i="frequency-strip"></div>
-                <p class="action-note">The frequency label is a description of the entry. Recurring income is never added automatically.</p>
-              </div>
-            </article>
           </section>
 `,
 };
@@ -759,7 +553,11 @@ const quality = {
 `,
 };
 
-const PAGES = [overview, trends, income, budgets, savings, commitments, quality];
+/* The Income analysis and Spending trends pages were retired; the income
+   page redirects to the Income page and trends redirects to this overview.
+   Their blocks and entries were removed so a regeneration cannot recreate
+   retired routes. */
+const PAGES = [overview, budgets, savings, commitments, quality];
 
 // The file name is not always the page key: the data-quality page uses a
 // readable "data-quality" file name.

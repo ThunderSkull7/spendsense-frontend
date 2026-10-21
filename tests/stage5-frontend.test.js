@@ -171,19 +171,19 @@ const NAV_KEYS = [
   'goals',
   'categories',
   'insights-overview',
-  'insights-income',
   'insights-budgets',
   'insights-savings',
   'insights-commitments',
   'insights-quality',
   'reports',
-  'insights',
   'subscriptions',
   'notifications',
   'settings',
   'support',
 ];
 
+// The Spending insights and Income analysis pages were retired from the UI;
+// their legacy URLs redirect instead of being linked anywhere.
 const NAV_PAGES = [
   'dashboard/dashboard.html',
   'expense-management/expenses.html',
@@ -193,13 +193,11 @@ const NAV_PAGES = [
   'savings-goals/savings-goals.html',
   'categories-management/categories.html',
   'reports-analytics/reports.html',
-  'financial-intelligence/insights.html',
   'financial-intelligence/subscriptions.html',
   'notifications/notifications.html',
   'settings/settings.html',
   'support/support.html',
   'insights/overview.html',
-  'insights/income.html',
   'insights/budgets.html',
   'insights/savings.html',
   'insights/commitments.html',
@@ -217,6 +215,26 @@ test('the Stage 5 navigation is present on every application page', () => {
       );
     });
   });
+});
+
+test('the retired analysis pages are redirected, not linked', () => {
+  // The old URLs still resolve (bookmarks, search results), but they bounce
+  // to the closest remaining page instead of rendering the retired views.
+  const insightsRedirect = read('financial-intelligence/insights.html');
+  const incomeRedirect = read('insights/income.html');
+  assert.ok(insightsRedirect.includes('window.location.replace("../insights/overview.html")'));
+  assert.ok(insightsRedirect.includes('http-equiv="refresh"'));
+  assert.ok(incomeRedirect.includes('window.location.replace("../income-management/income.html")'));
+  assert.ok(incomeRedirect.includes('http-equiv="refresh"'));
+
+  // Nothing in the shell may link to either retired route.
+  [...NAV_PAGES, 'dashboard/dashboard.js', 'insights/insights-pages.js', 'reports-analytics/reports.js'].forEach(
+    (file) => {
+      const source = read(file);
+      assert.ok(!source.includes('financial-intelligence/insights.html'), `${file} must not link to the retired Spending insights page`);
+      assert.ok(!source.includes('insights/income.html'), `${file} must not link to the retired Income analysis page`);
+    }
+  );
 });
 
 test('exactly one navigation entry is marked active on each page', () => {
@@ -302,40 +320,50 @@ test('the reports centre uses the reports API and offers every export', () => {
 
 test('the reports centre offers the period presets and a comparison', () => {
   const html = read('reports-analytics/reports.html');
-  ['this-month', 'last-month', 'this-quarter', 'last-quarter', 'last-6-months', 'custom'].forEach(
-    (preset) => {
-      assert.ok(html.includes(`data-preset="${preset}"`), `the ${preset} preset should exist`);
-    }
-  );
+  ['this-month', 'last-month', 'last-6-months', 'year-to-date', 'custom'].forEach((preset) => {
+    assert.ok(html.includes(`data-preset="${preset}"`), `the ${preset} preset should exist`);
+  });
   assert.ok(html.includes('id="report-compare"'));
   assert.ok(html.includes('value="previous"'));
   assert.ok(html.includes('value="none"'));
 });
 
-test('the reports centre exposes the configurable section list', () => {
+test('the reports centre is graph-first with one income-versus-expenses trend', () => {
   const html = read('reports-analytics/reports.html');
-  const sections = [
-    'comparison',
-    'monthly',
-    'categories',
-    'income_sources',
-    'budgets',
-    'savings',
-    'commitments',
-    'upcoming_bills',
-    'subscriptions',
-    'forecast',
-    'net_worth',
-    'expense_review',
-  ];
-  sections.forEach((section) => {
-    assert.ok(html.includes(`data-section="${section}"`), `the ${section} section should exist`);
-  });
+  const source = read('reports-analytics/reports.js');
+
+  // The retired section builder is gone; the page always renders the same
+  // focused report.
+  assert.ok(!html.includes('data-section="'), 'the section chooser should be removed');
+
+  // A single trend chart (inline SVG), drawn from the shared report data,
+  // with the monthly table kept as the accessible alternative.
+  assert.ok(html.includes('data-report-chart'));
+  assert.ok(source.includes('const trendChart'));
+  assert.ok(source.includes("const svgNS = 'http://www.w3.org/2000/svg'"));
+  assert.ok(source.includes('createElementNS(svgNS'));
+  assert.ok(source.includes('--chart-income'));
+  assert.ok(source.includes('--chart-expense'));
+  assert.ok(html.includes('data-r="monthly-rows"'));
+  assert.ok(html.includes('View monthly totals as a table'));
+
+  // Concise summaries: KPI strip, comparison panel, category/source tables.
+  assert.ok(html.includes('data-r="income"'));
+  assert.ok(html.includes('data-r="expenses"'));
+  assert.ok(html.includes('data-r="net"'));
+  assert.ok(html.includes('data-r="expected"'));
+  assert.ok(html.includes('data-comparison-wrap'));
+  assert.ok(html.includes('data-r="categories"'));
+  assert.ok(html.includes('data-r="source-rows"'));
+  assert.ok(html.includes('data-r="review-rows"'));
+
+  // The report requests only the sections it renders, so an export never
+  // contains more sections than the page shows.
+  assert.ok(source.includes("'monthly', 'categories', 'income_sources', 'upcoming_bills', 'expense_review'"));
 });
 
 test('the reports centre states that no balance is available', () => {
   const html = read('reports-analytics/reports.html');
-  assert.ok(html.includes('data-r="balance-reason"'));
   assert.ok(html.includes('No opening or ending bank balance is inferred'));
 });
 
@@ -351,7 +379,6 @@ test('the reports centre has no third-party charting dependency', () => {
 
 const INSIGHT_PAGES = {
   'insights/overview.html': 'insights-overview',
-  'insights/income.html': 'insights-income',
   'insights/budgets.html': 'insights-budgets',
   'insights/savings.html': 'insights-savings',
   'insights/commitments.html': 'insights-commitments',
@@ -373,7 +400,6 @@ test('the insights pages use the documented owner-scoped analytics endpoints', (
   // The shared API client already prefixes "/api".
   [
     '/reports?',
-    '/analytics/income-analysis?',
     '/analytics/budget-performance?',
     '/analytics/savings-progress?',
     '/analytics/commitments?',
@@ -383,11 +409,15 @@ test('the insights pages use the documented owner-scoped analytics endpoints', (
   });
 });
 
+test('the retired income-analysis endpoint is no longer called by the frontend', () => {
+  const source = read('insights/insights-pages.js');
+  assert.ok(!source.includes('/analytics/income-analysis'));
+});
+
 test('the insights pages state the actual versus expected separation', () => {
   // The pages that show actual ledger figures must say so explicitly.
   [
     'insights/overview.html',
-    'insights/income.html',
     'insights/budgets.html',
     'insights/commitments.html',
   ].forEach((page) => {

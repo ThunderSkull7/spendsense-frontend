@@ -64,7 +64,34 @@
   };
 
   const normalizeColor = (value) => COLOR_ALIASES[String(value || "").toLowerCase()] || "emerald";
-  const normalizeMode = (value) => (String(value || "").toLowerCase() === "dark" ? "dark" : "light");
+
+  // Modes: "light", "dark", or "system" (follow the OS preference). The saved
+  // value is always the preference; the attribute on <html> is always the
+  // resolved value, because that is what the CSS keys off.
+  const normalizeMode = (value) => {
+    const mode = String(value || "").toLowerCase();
+    if (mode === "dark" || mode === "light" || mode === "system") return mode;
+    return "system";
+  };
+
+  // OS-level dark preference. With no explicit choice saved the app follows
+  // this, and it keeps following it live when the OS setting changes.
+  const darkQuery = () => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") return null;
+    try {
+      return window.matchMedia("(prefers-color-scheme: dark)");
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const systemPrefersDark = () => {
+    const query = darkQuery();
+    return Boolean(query && query.matches);
+  };
+
+  const resolveMode = (preference) =>
+    preference === "system" ? (systemPrefersDark() ? "dark" : "light") : preference;
 
   const savedColor = normalizeColor(storage.get(KEYS.color));
   const savedMode = normalizeMode(storage.get(KEYS.mode));
@@ -103,19 +130,50 @@
 
   const applyTheme = (color, mode) => {
     const nextColor = normalizeColor(color);
-    const nextMode = normalizeMode(mode);
+    const preference = normalizeMode(mode);
+    const resolved = resolveMode(preference);
     root.dataset.themeColor = nextColor;
-    root.dataset.mode = nextMode;
+    root.dataset.mode = resolved;
     storage.set(KEYS.color, nextColor);
-    storage.set(KEYS.mode, nextMode);
+    storage.set(KEYS.mode, preference);
     syncThemeToggleLabels();
     window.dispatchEvent(
-      new CustomEvent("spendsense:theme-change", { detail: { color: nextColor, mode: nextMode } })
+      new CustomEvent("spendsense:theme-change", {
+        detail: { color: nextColor, mode: preference, resolvedMode: resolved },
+      })
     );
   };
 
   const themeColor = () => normalizeColor(root.dataset.themeColor || storage.get(KEYS.color));
-  const themeMode = () => normalizeMode(root.dataset.mode || storage.get(KEYS.mode));
+
+  // The saved preference: "light", "dark" or "system".
+  const themeMode = () => normalizeMode(storage.get(KEYS.mode) || root.dataset.mode);
+
+  // The mode the CSS is currently using (never "system").
+  const resolvedThemeMode = () => (root.dataset.mode === "dark" ? "dark" : "light");
+
+  // While the preference is "system", an OS dark/light switch re-resolves the
+  // applied mode immediately — no reload needed — and pages keeping their own
+  // theme state can react to the same spendsense:theme-change event.
+  const followSystemChanges = () => {
+    const query = darkQuery();
+    if (!query) return;
+    const onChange = () => {
+      if (normalizeMode(storage.get(KEYS.mode)) !== "system") return;
+      const resolved = systemPrefersDark() ? "dark" : "light";
+      if (resolvedThemeMode() === resolved) return;
+      root.dataset.mode = resolved;
+      syncThemeToggleLabels();
+      window.dispatchEvent(
+        new CustomEvent("spendsense:theme-change", {
+          detail: { color: themeColor(), mode: "system", resolvedMode: resolved },
+        })
+      );
+    };
+    if (typeof query.addEventListener === "function") query.addEventListener("change", onChange);
+    else if (typeof query.addListener === "function") query.addListener(onChange);
+  };
+  followSystemChanges();
 
   // Keep every theme toggle's accessible state in sync, including when the
   // mode is changed from Settings rather than by the toggle itself.
@@ -385,10 +443,9 @@
 
     document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
       button.addEventListener("click", () => {
-        applyTheme(
-          root.dataset.themeColor || savedColor,
-          root.dataset.mode === "dark" ? "light" : "dark"
-        );
+        // Toggling always stores an explicit choice; "system" is opt-in via
+        // Settings so the toggle can never silently detach from the OS again.
+        applyTheme(themeColor(), resolvedThemeMode() === "dark" ? "light" : "dark");
       });
     });
     syncThemeToggleLabels();
@@ -419,7 +476,7 @@
   };
 
   root.dataset.themeColor = savedColor;
-  root.dataset.mode = savedMode;
+  root.dataset.mode = resolveMode(savedMode);
   // Persist normalised values so legacy "green"/"yellow" entries migrate.
   storage.set(KEYS.color, savedColor);
   storage.set(KEYS.mode, savedMode);
@@ -436,6 +493,7 @@
     todayInputValue,
     themeColor,
     themeMode,
+    resolvedThemeMode,
     chartColors,
     categoryTones,
   };

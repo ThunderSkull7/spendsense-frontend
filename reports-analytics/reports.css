@@ -6,20 +6,13 @@
    ========================================================================== */
 
 /* ---------- Compact filter bar ---------- */
+/* The preset pill row sits above the dates row. */
 .report-form {
   /* Slotted: (1) preset pill row, (2) dates + comparison + build, (3) note. */
+  display: flex;
+  flex-direction: column;
   row-gap: 10px;
   padding: 13px 16px;
-}
-
-.report-form .report-period-field {
-  flex: 1 1 100%;
-  min-width: 0;
-}
-
-.report-form .report-controls {
-  flex: 0 1 auto;
-  max-width: 720px;
 }
 
 .report-form .report-row {
@@ -78,22 +71,53 @@
   }
 }
 
-/* ---------- Section chooser (kept, but visually smaller) ---------- */
-.report-sections { margin: 0; }
-.report-sections summary { cursor: pointer; }
-.report-section-list {
+/* ---------- Period presets ---------- */
+.report-form .report-period-field label {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.report-form .report-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 18px;
-  padding: 10px 0 2px;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
-.report-section-list label {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.82rem;
-  color: var(--ink-2);
+
+/* ---------- Trend chart (inline SVG, theme-token coloured) ---------- */
+.report-trend-card { margin-top: 0; }
+
+.report-chart {
+  width: 100%;
+  border: 0;
 }
+
+.report-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+}
+
+.report-chart .trend-axis-label {
+  font-size: 10px;
+  fill: var(--muted);
+  font-family: inherit;
+}
+
+.report-chart .trend-bar {
+  transition: opacity 0.12s ease;
+}
+
+.report-chart .trend-bar:hover {
+  opacity: 0.82;
+}
+
+/* Hide the chart container entirely when there is nothing to draw so the
+   empty state reads as one clean message, not an empty box. */
+.report-chart:empty { display: none; }
 
 /* ---------- Summary KPI strip ---------- */
 .report-summary { margin-bottom: 0; }
@@ -124,9 +148,11 @@
 /* ---------- Print ---------- */
 @media print {
   .report-form,
-  .report-sections,
   [data-report-content] .viz-list {
     max-height: none;
     overflow: visible;
+  }
+  .report-chart svg {
+    max-height: none;
   }
 }
