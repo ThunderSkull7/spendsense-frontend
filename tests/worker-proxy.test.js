@@ -203,3 +203,54 @@ test('worker delegates static asset requests to env.ASSETS.fetch', async () => {
     globalThis.fetch = originalFetch;
   }
 });
+
+test('prepare-frontend-deploy safely supports in-tree destination without recursion or source corruption', () => {
+  const { execFileSync } = require('child_process');
+  const fs = require('fs');
+  const path = require('path');
+
+  const repoRoot = path.resolve(__dirname, '..');
+  const inTreeDest = path.join(repoRoot, 'scratch-test-dist');
+
+  try {
+    // Run the preparation script targeting an in-tree folder
+    execFileSync(
+      process.execPath,
+      [
+        path.join(repoRoot, 'deploy', 'prepare-frontend-deploy.js'),
+        '--api-base-url',
+        'https://spendsensehq.pages.dev',
+        '--destination',
+        inTreeDest,
+        '--force',
+      ],
+      { cwd: repoRoot, stdio: 'pipe' }
+    );
+
+    assert.ok(fs.existsSync(inTreeDest), 'in-tree destination directory must be created');
+    assert.ok(fs.existsSync(path.join(inTreeDest, 'index.html')), 'index.html must be copied');
+    assert.ok(fs.existsSync(path.join(inTreeDest, '_worker.js')), '_worker.js must be generated');
+
+    // Exclusions check
+    assert.equal(fs.existsSync(path.join(inTreeDest, '.git')), false, '.git must be excluded');
+    assert.equal(fs.existsSync(path.join(inTreeDest, '.github')), false, '.github must be excluded');
+    assert.equal(fs.existsSync(path.join(inTreeDest, 'deploy')), false, 'deploy/ must be excluded');
+    assert.equal(fs.existsSync(path.join(inTreeDest, 'tests')), false, 'tests/ must be excluded');
+    assert.equal(fs.existsSync(path.join(inTreeDest, 'tools')), false, 'tools/ must be excluded');
+    assert.equal(fs.existsSync(path.join(inTreeDest, 'scratch-test-dist')), false, 'destination must not copy into itself');
+
+    // Worker routing verification in output
+    const workerContent = fs.readFileSync(path.join(inTreeDest, '_worker.js'), 'utf8');
+    assert.match(workerContent, /pathname\.startsWith\('\/sanctum\/'\)/, 'worker must proxy /sanctum/*');
+    assert.match(workerContent, /pathname\.startsWith\('\/api\/'\)/, 'worker must proxy /api/*');
+    assert.match(workerContent, /pathname === '\/user'/, 'worker must proxy /user');
+
+    // Source immutability check
+    const sourceIndex = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
+    assert.match(sourceIndex, /http:\/\/127\.0\.0\.1:8002/, 'source index.html must remain untouched with dev URL');
+  } finally {
+    if (fs.existsSync(inTreeDest)) {
+      fs.rmSync(inTreeDest, { recursive: true, force: true });
+    }
+  }
+});

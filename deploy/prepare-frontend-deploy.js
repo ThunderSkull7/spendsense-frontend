@@ -22,8 +22,18 @@ const path = require('path');
 const PRODUCTION_ORIGIN = 'https://spendsensehq.pages.dev';
 const API_ORIGIN = 'https://spendsense-api-t0up.onrender.com';
 
-// Never publish repository metadata, CI configuration, tests, or build tools.
-const EXCLUDED_ROOT_ENTRIES = new Set(['.git', '.github', 'deploy', 'tests', 'tools']);
+// Never publish repository metadata, CI configuration, tests, build tools, or build artifacts.
+const EXCLUDED_ROOT_ENTRIES = new Set([
+  '.git',
+  '.github',
+  'deploy',
+  'tests',
+  'tools',
+  'dist',
+  'dist-deploy',
+  'build',
+  'out',
+]);
 
 // Simple argument parsing without external dependencies
 function parseArgs() {
@@ -95,11 +105,17 @@ function main() {
   if (destination === source) {
     throw new Error('Destination must differ from the source');
   }
-  if (destination.startsWith(source + path.sep)) {
-    throw new Error('Destination must not be inside the source tree');
-  }
   if (source.startsWith(destination + path.sep)) {
     throw new Error('Source must not be inside the destination directory');
+  }
+
+  // Calculate if destination is inside the source tree. If so, its top-level
+  // directory name inside source must be excluded from copying to avoid recursion.
+  const isInsideSource = destination.startsWith(source + path.sep);
+  let inTreeExcludeName = null;
+  if (isInsideSource) {
+    const relFromSource = path.relative(source, destination);
+    inTreeExcludeName = relFromSource.split(path.sep)[0];
   }
 
   // Create clean destination
@@ -115,8 +131,8 @@ function main() {
   console.log(`Destination : ${destination}`);
   console.log(`API base    : ${apiBaseUrl}`);
 
-  // Copy source to destination, excluding non-public repository files
-  copyRecursiveSync(source, destination, true);
+  // Copy source to destination, excluding non-public repository files and in-tree destination
+  copyRecursiveSync(source, destination, true, inTreeExcludeName);
 
   // Create Cloudflare Pages _worker.js for the same-origin API proxy
   createWorkerProxy(destination);
@@ -160,7 +176,7 @@ function main() {
   }
 
   // Verify the source was NOT touched
-  const sourceHtmlFiles = getHtmlFiles(source);
+  const sourceHtmlFiles = getHtmlFiles(source, inTreeExcludeName);
   let sourceMatchesAfter = 0;
   for (const file of sourceHtmlFiles) {
     const text = fs.readFileSync(file, 'utf8');
@@ -277,30 +293,36 @@ function createWorkerProxy(destDir) {
   console.log(`Created Cloudflare worker: ${path.relative(process.cwd(), workerPath)}`);
 }
 
-function copyRecursiveSync(src, dest, isRoot = false) {
+function copyRecursiveSync(src, dest, isRoot = false, excludeDir = null) {
   const entries = fs.readdirSync(src, { withFileTypes: true });
   for (const entry of entries) {
-    if (isRoot && EXCLUDED_ROOT_ENTRIES.has(entry.name)) {
+    if (isRoot && (EXCLUDED_ROOT_ENTRIES.has(entry.name) || entry.name === excludeDir)) {
       continue;
     }
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
     if (entry.isDirectory()) {
       fs.mkdirSync(destPath, { recursive: true });
-      copyRecursiveSync(srcPath, destPath, false);
+      copyRecursiveSync(srcPath, destPath, false, null);
     } else {
       fs.copyFileSync(srcPath, destPath);
     }
   }
 }
 
-function getHtmlFiles(dir) {
+function getHtmlFiles(dir, excludeDir = null, isRoot = true) {
   const results = [];
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   for (const entry of entries) {
+    if (isRoot && EXCLUDED_ROOT_ENTRIES.has(entry.name)) {
+      continue;
+    }
+    if (excludeDir && entry.name === excludeDir) {
+      continue;
+    }
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      results.push(...getHtmlFiles(fullPath));
+      results.push(...getHtmlFiles(fullPath, null, false));
     } else if (entry.name.endsWith('.html')) {
       results.push(fullPath);
     }
