@@ -485,25 +485,49 @@ select {
 .check-row { display: flex; align-items: center; gap: 9px; font-size: 0.88rem; color: var(--ink-2); cursor: pointer; }
 .check-row input { width: auto; height: auto; cursor: pointer; }
 
-.password-field { position: relative; }
-.password-field input { padding-right: 68px; }
-.password-field button {
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.password-field input {
+  width: 100%;
+  padding-right: 74px;
+}
+.password-field button,
+.password-field [data-toggle-password] {
   position: absolute;
   top: 50%;
-  right: 6px;
+  right: 8px;
   transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 10px;
   border: 0;
+  border-radius: 6px;
   background: transparent;
   color: var(--muted);
   font: inherit;
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: 6px;
-  transition: all 0.15s;
+  line-height: 1;
+  user-select: none;
+  transition: all 0.15s ease;
 }
-.password-field button:hover { background: var(--surface-3); color: var(--ink); }
+.password-field button:hover,
+.password-field [data-toggle-password]:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+.password-field button:focus-visible,
+.password-field [data-toggle-password]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
 
 /* Inline feedback messages */
 .msg, .expense-message, .income-message, .budget-message, .category-message, .auth-message {
@@ -1091,14 +1115,14 @@ table.table {
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-lg);
-  padding: 30px;
+  padding: 34px 32px 30px;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
 }
 .modal-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 18px;
+  right: 18px;
   width: 34px; height: 34px;
   display: grid; place-items: center;
   border: 0; border-radius: 8px;
@@ -1109,10 +1133,18 @@ table.table {
   transition: all 0.15s;
 }
 .modal-close:hover { background: var(--surface-3); color: var(--ink); }
-.modal h2 { font-size: 1.3rem; }
-.modal .modal-sub { font-size: 0.88rem; color: var(--muted); margin-top: 4px; }
+.modal-close:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.modal h2 { font-size: 1.35rem; font-weight: 750; letter-spacing: -0.015em; }
+.modal .modal-sub { font-size: 0.88rem; color: var(--muted); margin-top: 6px; line-height: 1.45; }
 
-.auth-tabs { display: flex; gap: 4px; background: var(--surface-3); border-radius: 10px; padding: 4px; margin: 20px 0 16px; }
+.auth-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface-3);
+  border-radius: 10px;
+  padding: 4px;
+  margin: 22px 0 20px;
+}
 .auth-tab {
   flex: 1;
   border: 0;
@@ -1121,15 +1153,45 @@ table.table {
   font-size: 0.88rem;
   font-weight: 650;
   color: var(--muted);
-  padding: 8px 12px;
+  padding: 9px 12px;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s;
+}
+.auth-tab:hover {
+  color: var(--ink);
+}
+.auth-tab:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
 }
 .auth-tab[aria-selected="true"] {
   background: var(--surface);
   color: var(--ink);
   box-shadow: var(--shadow-sm);
+}
+
+/* Modal auth form vertical cadence and element spacing */
+.modal form[data-auth-form] {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.modal form[data-auth-form] .field {
+  gap: 8px;
+}
+.modal form[data-auth-form] button[type="submit"] {
+  margin-top: 6px;
+  height: 44px;
+  font-size: 0.94rem;
+  font-weight: 650;
+}
+.modal form[data-auth-form] .auth-message {
+  margin-top: 4px;
+  margin-bottom: 2px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  text-align: center;
 }
 
 /* ---------- Landing Page ---------- */
@@ -1442,8 +1504,15 @@ table.table {
   .table td > * { min-width: 0; }
   .table .col-tight { width: 100%; }
   .table .num { text-align: left; }
-  .table .pill { max-width: none; }
   .table td.actions-cell { justify-content: flex-end; padding-top: 8px; border-top: 1px solid var(--border); margin-top: 4px; }
+
+  /* Mobile auth modal spacing */
+  .modal-backdrop { padding: 12px; }
+  .modal { padding: 24px 20px 22px; border-radius: var(--r); }
+  .modal h2 { font-size: 1.2rem; }
+  .modal-close { top: 12px; right: 12px; width: 32px; height: 32px; }
+  .auth-tabs { margin: 18px 0 16px; }
+  .modal form[data-auth-form] { gap: 15px; }
 }
 
 /* Reduced Motion Support */

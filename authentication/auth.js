@@ -119,7 +119,12 @@ if (authForm) {
         }
       }
     } catch (err) {
-      authMessage.textContent = "Something went wrong. " + (err.message || "");
+      const rawMsg = String(err && err.message ? err.message : "");
+      let cleanMsg = rawMsg;
+      if (/failed to fetch/i.test(rawMsg)) {
+        cleanMsg = "Unable to reach the server. Please check your network connection or try again later.";
+      }
+      authMessage.textContent = cleanMsg ? `Something went wrong. ${cleanMsg}` : "Unable to complete request. Please try again.";
       authMessage.classList.add("error");
       restoreSubmit();
     }

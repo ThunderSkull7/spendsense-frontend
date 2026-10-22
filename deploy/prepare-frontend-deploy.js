@@ -221,9 +221,20 @@ function isProxyPath(pathname) {
   return pathname === '/user' || pathname.startsWith('/api/') || pathname.startsWith('/sanctum/');
 }
 
-function corsHeaders() {
+function isAllowedOrigin(origin) {
+  if (!origin) return false;
+  if (origin === PAGES_ORIGIN) return true;
+  // Allow Cloudflare Pages preview subdomains, e.g. https://<hash>.spendsensehq.pages.dev
+  if (/^https:\\/\\/[a-z0-9_-]+\\.spendsensehq\\.pages\\.dev$/i.test(origin)) return true;
+  // Allow local development server
+  if (/^http:\\/\\/(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$/i.test(origin)) return true;
+  return false;
+}
+
+function corsHeaders(requestOrigin) {
+  const allowOrigin = isAllowedOrigin(requestOrigin) ? requestOrigin : PAGES_ORIGIN;
   return {
-    'Access-Control-Allow-Origin': PAGES_ORIGIN,
+    'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Accept, Content-Type, Authorization, X-XSRF-TOKEN, X-Requested-With, Idempotency-Key',
     'Access-Control-Allow-Credentials': 'true',
@@ -241,9 +252,11 @@ export default {
       return env.ASSETS.fetch(request);
     }
 
+    const requestOrigin = request.headers.get('origin');
+
     // Handle preflight without forwarding it to the backend.
     if (request.method === 'OPTIONS') {
-      return new Response(null, { status: 204, headers: corsHeaders() });
+      return new Response(null, { status: 204, headers: corsHeaders(requestOrigin) });
     }
 
     // Preserve the request path and query string while changing only the
@@ -273,7 +286,7 @@ export default {
     // Preserve backend response headers, including Set-Cookie, and add the
     // same-origin CORS headers used by the browser-facing Pages host.
     const responseHeaders = new Headers(response.headers);
-    for (const [name, value] of Object.entries(corsHeaders())) {
+    for (const [name, value] of Object.entries(corsHeaders(requestOrigin))) {
       responseHeaders.set(name, value);
     }
 

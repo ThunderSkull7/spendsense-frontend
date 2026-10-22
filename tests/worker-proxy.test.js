@@ -169,6 +169,75 @@ test('worker responds to CORS preflight OPTIONS without forwarding upstream', as
   }
 });
 
+test('worker allows Cloudflare Pages preview origin and reflects it in CORS headers', async () => {
+  const worker = loadWorkerModule();
+  const mockEnv = {
+    ASSETS: { fetch: async () => { throw new Error('ASSETS should not be called'); } },
+  };
+
+  const previewOrigin = 'https://1019b890.spendsensehq.pages.dev';
+
+  // Test preflight OPTIONS
+  const preflightReq = new Request('https://spendsensehq.pages.dev/api/login', {
+    method: 'OPTIONS',
+    headers: {
+      Origin: previewOrigin,
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'Content-Type,X-XSRF-TOKEN',
+    },
+  });
+  const preflightRes = await worker.fetch(preflightReq, mockEnv);
+  assert.equal(preflightRes.status, 204);
+  assert.equal(preflightRes.headers.get('Access-Control-Allow-Origin'), previewOrigin);
+  assert.equal(preflightRes.headers.get('Access-Control-Allow-Credentials'), 'true');
+  assert.equal(preflightRes.headers.get('Vary'), 'Origin');
+
+  // Test proxied response preserves the preview origin
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    return new Response(JSON.stringify({ user: { email: 'preview@example.com' } }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  };
+
+  try {
+    const postReq = new Request('https://spendsensehq.pages.dev/api/login', {
+      method: 'POST',
+      headers: {
+        Origin: previewOrigin,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: 'preview@example.com', password: 'password123' }),
+    });
+    const postRes = await worker.fetch(postReq, mockEnv);
+    assert.equal(postRes.status, 200);
+    assert.equal(postRes.headers.get('Access-Control-Allow-Origin'), previewOrigin);
+    assert.equal(postRes.headers.get('Access-Control-Allow-Credentials'), 'true');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('worker falls back to production PAGES_ORIGIN for unauthorized cross-origin requests', async () => {
+  const worker = loadWorkerModule();
+  const mockEnv = {
+    ASSETS: { fetch: async () => { throw new Error('ASSETS should not be called'); } },
+  };
+
+  const untrustedOrigin = 'https://malicious-site.example.com';
+  const preflightReq = new Request('https://spendsensehq.pages.dev/api/login', {
+    method: 'OPTIONS',
+    headers: {
+      Origin: untrustedOrigin,
+      'Access-Control-Request-Method': 'POST',
+    },
+  });
+  const preflightRes = await worker.fetch(preflightReq, mockEnv);
+  assert.equal(preflightRes.status, 204);
+  assert.equal(preflightRes.headers.get('Access-Control-Allow-Origin'), 'https://spendsensehq.pages.dev');
+});
+
 test('worker delegates static asset requests to env.ASSETS.fetch', async () => {
   const worker = loadWorkerModule();
   let assetFetchCalled = false;

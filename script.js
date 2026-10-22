@@ -5,7 +5,18 @@ let API_BASE_URL = ''; // configured via API.init() from <meta name="api-base-ur
 const API = {
   // Initialize with base URL from meta tag
   init(baseUrl) {
-    API_BASE_URL = baseUrl;
+    let resolved = String(baseUrl || '').replace(/\/+$/, '');
+    // If the page is hosted on a Cloudflare Pages preview deployment (e.g. *.spendsensehq.pages.dev)
+    // while the meta tag points to the production Pages host (https://spendsensehq.pages.dev),
+    // route to the same preview origin so requests use this deployment's proxy worker directly
+    // and maintain same-origin cookie context.
+    if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+      const hostname = window.location.hostname.toLowerCase();
+      if (hostname.endsWith('.spendsensehq.pages.dev') && resolved === 'https://spendsensehq.pages.dev') {
+        resolved = window.location.origin;
+      }
+    }
+    API_BASE_URL = resolved;
   },
 
   _csrfPromise: null,
@@ -350,7 +361,12 @@ document.addEventListener('DOMContentLoaded', () => {
           ? await window.auth.register(name, email, password)
           : await window.auth.login(email, password);
       } catch (err) {
-        result = { success: false, message: 'Something went wrong. ' + (err.message || '') };
+        const rawMsg = String(err && err.message ? err.message : '');
+        let cleanMsg = rawMsg;
+        if (/failed to fetch/i.test(rawMsg)) {
+          cleanMsg = 'Unable to reach the server. Please check your network connection or try again later.';
+        }
+        result = { success: false, message: cleanMsg ? `Something went wrong. ${cleanMsg}` : 'Unable to complete request. Please try again.' };
       }
 
       // Re-enable button
