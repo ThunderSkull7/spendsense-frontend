@@ -193,8 +193,14 @@ document.addEventListener('DOMContentLoaded', () => {
     tile.className = 'category-tile';
     tile.dataset.categoryId = category.id;
 
+    const isIncome = category.type === 'income';
+    const tone = window.SpendSenseSettings.getCategoryTone(category);
+
     const icon = document.createElement('span');
-    icon.className = 'c-ico' + (category.type === 'income' ? ' income' : '');
+    icon.className = 'c-ico' + (isIncome ? ' income' : '');
+    icon.style.backgroundColor = isIncome ? 'var(--primary-100)' : (tone.bgSubtle || (tone.color + '18'));
+    icon.style.color = isIncome ? 'var(--primary)' : tone.color;
+    icon.style.borderColor = isIncome ? 'var(--primary-100)' : (tone.borderSubtle || (tone.color + '38'));
     icon.textContent = (category.name || '?').charAt(0).toUpperCase();
 
     const main = document.createElement('div');
@@ -205,8 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const meta = document.createElement('div');
     meta.className = 'c-meta';
     const pill = document.createElement('span');
-    pill.className = 'pill ' + (category.type === 'income' ? 'teal' : 'green');
-    pill.textContent = category.type === 'income' ? 'Income' : 'Expense';
+    pill.className = 'pill ' + (isIncome ? 'income' : 'expense');
+    pill.textContent = isIncome ? 'Income' : 'Expense';
     meta.appendChild(pill);
     main.append(name, meta);
 

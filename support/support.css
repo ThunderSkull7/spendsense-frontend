@@ -1,7 +1,76 @@
-/* Support page — refinements on top of the shared design system. */
+/* Support page — modern FAQ accordion & layout refinements */
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.faq-list details {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  overflow: hidden;
+}
+
+.faq-list details[open] {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-sm);
+}
 
 .faq-list details summary {
+  padding: 16px 18px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-text);
+  cursor: pointer;
   user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background-color var(--transition);
+}
+
+.faq-list details summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-list details summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--color-muted);
+  border-bottom: 2px solid var(--color-muted);
+  transform: rotate(45deg);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.faq-list details[open] summary::after {
+  transform: rotate(-135deg);
+  border-color: var(--color-primary);
+}
+
+.faq-list details summary:hover {
+  background-color: var(--color-surface-hover);
+}
+
+.faq-list details summary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.faq-list details p {
+  padding: 0 18px 16px;
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: 14px;
 }
 
 @media (max-width: 1180px) {
@@ -9,3 +78,4 @@
     grid-template-columns: 1fr;
   }
 }
+

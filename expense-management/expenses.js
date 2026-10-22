@@ -56,7 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastCategoryValue = '';   // last real selection, restored when cancelling
     let creatingCategory = false; // blocks duplicate category creation
 
-    if (dateInput && !dateInput.value) dateInput.valueAsDate = new Date();
+    const resetExpenseDate = () => {
+      if (!dateInput) return;
+      dateInput.value = (window.SpendSenseSettings && window.SpendSenseSettings.todayInputValue)
+        ? window.SpendSenseSettings.todayInputValue()
+        : new Date().toISOString().slice(0, 10);
+    };
+
+    if (dateInput && !dateInput.value) resetExpenseDate();
 
     // First human-readable detail from a JSON error payload.
     const errorDetail = (data, fallback) => {
@@ -322,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
           addForm.reset();
-          if (dateInput) dateInput.valueAsDate = new Date();
+          resetExpenseDate();
           if (categorySelect) lastCategoryValue = categorySelect.value;
         } else {
           setMessage(errorDetail(data, editingExpenseId ? 'Failed to update expense.' : 'Failed to log expense.'), 'error');
@@ -401,9 +408,20 @@ document.addEventListener('DOMContentLoaded', () => {
     catCell.className = 'col-tight';
     catCell.dataset.label = 'Category';
     const pill = document.createElement('span');
-    pill.className = 'pill neutral';
-    pill.textContent = item.category ? item.category.name : '—';
-    if (item.category && item.category.name) pill.title = item.category.name;
+    if (item.category && item.category.name) {
+      const tone = window.SpendSenseSettings.getCategoryTone(item.category);
+      pill.className = 'pill';
+      pill.style.backgroundColor = tone.bgSubtle || (tone.color + '18');
+      pill.style.color = tone.color;
+      const dot = document.createElement('span');
+      dot.className = 'dot ' + tone.toneName;
+      dot.style.backgroundColor = tone.color;
+      pill.append(dot, document.createTextNode(' ' + item.category.name));
+      pill.title = item.category.name;
+    } else {
+      pill.className = 'pill neutral';
+      pill.textContent = '—';
+    }
     catCell.appendChild(pill);
 
     const amountCell = document.createElement('td');
@@ -415,13 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
     actionsCell.className = 'col-tight actions-cell';
     const actions = document.createElement('div');
     actions.className = 'row-actions';
-    const deleteBtn = document.createElement('button');
-    deleteBtn.type = 'button';
-    deleteBtn.className = 'row-btn danger';
-    deleteBtn.dataset.deleteExpense = '';
-    deleteBtn.dataset.id = item.id;
-    deleteBtn.textContent = 'Delete';
-    actions.appendChild(deleteBtn);
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'row-btn secondary';
@@ -429,6 +440,13 @@ document.addEventListener('DOMContentLoaded', () => {
     editBtn.dataset.id = item.id;
     editBtn.textContent = 'Edit';
     actions.appendChild(editBtn);
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'row-btn danger';
+    deleteBtn.dataset.deleteExpense = '';
+    deleteBtn.dataset.id = item.id;
+    deleteBtn.textContent = 'Delete';
+    actions.appendChild(deleteBtn);
     actionsCell.appendChild(actions);
 
     row.append(dateCell, descCell, catCell, amountCell, actionsCell);

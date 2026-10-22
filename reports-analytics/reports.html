@@ -55,12 +55,41 @@
       </header>
 
       <main class="content">
+        <!-- Analytics Top Stat Cards -->
+        <section class="grid grid-3" aria-label="Key Financial Metrics" style="margin-bottom: 24px;">
+          <article class="card stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Income this month</span>
+              <span class="stat-icon tone-teal"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
+            </div>
+            <div class="stat-value pos" data-stat-income>—</div>
+            <div class="stat-foot" data-stat-income-foot>Loading…</div>
+          </article>
+          <article class="card stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Expenses this month</span>
+              <span class="stat-icon tone-amber"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>
+            </div>
+            <div class="stat-value neg" data-stat-expenses>—</div>
+            <div class="stat-foot" data-stat-expenses-foot>Loading…</div>
+          </article>
+          <article class="card stat-card">
+            <div class="stat-top">
+              <span class="stat-label">Net cash flow</span>
+              <span class="stat-icon tone-blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M15.5 9.5c-.6-.9-1.8-1.5-3.5-1.5-2 0-3.5 1-3.5 2.4 0 1.3 1.1 2 3.5 2.4 2.4.4 3.5 1.1 3.5 2.4 0 1.4-1.5 2.4-3.5 2.4-1.7 0-2.9-.6-3.5-1.5"/></svg></span>
+            </div>
+            <div class="stat-value" data-stat-net>—</div>
+            <div class="stat-foot" data-stat-net-foot>Loading…</div>
+          </article>
+        </section>
+
+        <!-- Charts Section -->
         <section class="grid grid-2">
           <article class="card">
             <div class="card-head">
               <div>
                 <h2 class="card-title">Spending by category</h2>
-                <p class="card-sub">Where this month's money went</p>
+                <p class="card-sub">Distribution of expenses this month</p>
               </div>
             </div>
             <div class="card-body">
@@ -68,7 +97,7 @@
                 <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading chart…</p></div>
               </div>
               <div data-spending-chart hidden>
-                <div class="chart-box"><canvas id="spendingChart" aria-label="Spending by category chart" role="img"></canvas></div>
+                <div class="chart-box"><canvas id="spendingChart" aria-label="Spending by category doughnut chart" role="img"></canvas></div>
                 <div class="legend mt-2" data-spending-legend></div>
               </div>
             </div>
@@ -78,7 +107,7 @@
             <div class="card-head">
               <div>
                 <h2 class="card-title">Income vs expenses</h2>
-                <p class="card-sub">This month compared with last month</p>
+                <p class="card-sub">Comparison across recent months</p>
               </div>
             </div>
             <div class="card-body">
@@ -86,16 +115,17 @@
                 <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading chart…</p></div>
               </div>
               <div data-cashflow-chart hidden>
-                <div class="chart-box"><canvas id="cashflowChart" aria-label="Income versus expenses chart" role="img"></canvas></div>
-                <div class="legend mt-2">
-                  <span class="legend-item"><span class="dot"></span> Income</span>
-                  <span class="legend-item"><span class="dot amber"></span> Expenses</span>
+                <div class="chart-box"><canvas id="cashflowChart" aria-label="Income versus expenses bar chart" role="img"></canvas></div>
+                <div class="legend mt-2" style="justify-content: center;">
+                  <span class="legend-item"><span class="dot" style="background: var(--success)"></span> Income</span>
+                  <span class="legend-item"><span class="dot" style="background: var(--warn)"></span> Expenses</span>
                 </div>
               </div>
             </div>
           </article>
         </section>
 
+        <!-- Budget Section -->
         <section class="grid grid-2 section-gap">
           <article class="card">
             <div class="card-head">

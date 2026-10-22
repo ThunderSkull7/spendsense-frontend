@@ -3,9 +3,10 @@
 .auth-page {
   position: relative;
   overflow: hidden;
+  background-color: var(--bg);
 }
 
-/* Soft sage glow in the corner for a calm, branded backdrop. */
+/* Soft ambient glow in the corners for a calm, branded backdrop. */
 .auth-page::before {
   content: "";
   position: absolute;
@@ -14,7 +15,7 @@
   width: 520px;
   height: 520px;
   border-radius: 50%;
-  background: radial-gradient(closest-side, var(--primary-100), transparent);
+  background: radial-gradient(closest-side, rgba(var(--primary-rgb, 16, 185, 129), 0.12), transparent 70%);
   pointer-events: none;
 }
 
@@ -26,7 +27,7 @@
   width: 480px;
   height: 480px;
   border-radius: 50%;
-  background: radial-gradient(closest-side, var(--teal-100), transparent);
+  background: radial-gradient(closest-side, rgba(59, 130, 246, 0.08), transparent 70%);
   pointer-events: none;
 }
 
@@ -37,4 +38,6 @@
 
 .auth-message {
   text-align: center;
+  min-height: 1.25rem;
 }
+
