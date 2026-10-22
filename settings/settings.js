@@ -1,4 +1,4 @@
-﻿// Settings — profile preferences. Theme and currency persist locally.
+// Settings — profile preferences. Theme and currency persist locally.
 const settingsForm = document.querySelector('[data-settings-form]');
 const securityForm = document.querySelector('[data-security-form]');
 const currencySelect = document.querySelector('[data-currency-select]');
@@ -39,6 +39,13 @@ if (themeModeSelect) {
     settings.applyTheme(themeColorSelect ? themeColorSelect.value : "green", themeModeSelect.value);
   });
 }
+
+window.addEventListener("spendsense:theme-change", (event) => {
+  if (event.detail) {
+    if (themeColorSelect && event.detail.color) themeColorSelect.value = event.detail.color;
+    if (themeModeSelect && event.detail.mode) themeModeSelect.value = event.detail.mode;
+  }
+});
 
 if (settingsForm) {
   settingsForm.addEventListener("submit", (event) => {

@@ -132,3 +132,46 @@ test('prefix matching is case-insensitive', () => {
   assert.equal(lower['name:groceries'], upper['NAME:Groceries']);
 });
 
+test('applyTheme persists color and mode to storage and updates documentElement dataset', () => {
+  const { settings, root, storage } = loadSettings();
+  
+  const palettes = ['green', 'blue', 'red', 'yellow', 'amethyst', 'clean-light'];
+  for (const color of palettes) {
+    settings.applyTheme(color, 'dark');
+    assert.equal(root.dataset.themeColor, color);
+    assert.equal(root.dataset.mode, 'dark');
+    assert.equal(storage.get('spendsenseThemeColor'), color);
+    assert.equal(storage.get('spendsenseThemeMode'), 'dark');
+
+    settings.applyTheme(color, 'light');
+    assert.equal(root.dataset.themeColor, color);
+    assert.equal(root.dataset.mode, 'light');
+    assert.equal(storage.get('spendsenseThemeColor'), color);
+    assert.equal(storage.get('spendsenseThemeMode'), 'light');
+  }
+});
+
+test('styles.css contains fixed viewport height and flex column rules for sidebar', () => {
+  const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+  assert.match(css, /\.sidebar\s*\{[^}]*height:\s*100vh;/i);
+  assert.match(css, /\.sidebar\s*\{[^}]*height:\s*100dvh;/i);
+  assert.match(css, /\.sidebar\s*\{[^}]*display:\s*flex;/i);
+  assert.match(css, /\.sidebar\s*\{[^}]*flex-direction:\s*column;/i);
+  assert.match(css, /\.sidebar\s*\{[^}]*overflow-y:\s*hidden;/i);
+  assert.match(css, /\.sidebar-nav\s*\{[^}]*overflow-y:\s*auto;/i);
+  assert.match(css, /\.sidebar-footer\s*\{[^}]*margin-top:\s*auto;/i);
+  assert.match(css, /@media\s*\(\s*max-height:\s*750px\s*\)/i);
+});
+
+test('styles.css contains semantic tokens for all 6 required theme palettes in both light and dark mode', () => {
+  const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+  const requiredPalettes = ['green', 'blue', 'red', 'yellow', 'amethyst', 'clean-light'];
+  for (const palette of requiredPalettes) {
+    assert.match(css, new RegExp(`:root\\[data-theme-color=["']?${palette}["']?\\]`, 'i'), `missing light mode for ${palette}`);
+    if (palette !== 'clean-light') {
+      assert.match(css, new RegExp(`:root\\[data-mode=["']?dark["']?\\]\\[data-theme-color=["']?${palette}["']?\\]`, 'i'), `missing dark mode for ${palette}`);
+    }
+  }
+});
+
+
