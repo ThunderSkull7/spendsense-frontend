@@ -88,13 +88,20 @@ document.addEventListener('DOMContentLoaded', () => {
     form.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
-  if (dateInput && !dateInput.value) dateInput.valueAsDate = new Date();
+  const resetDateInput = () => {
+    if (!dateInput) return;
+    dateInput.value = (window.SpendSenseSettings && window.SpendSenseSettings.todayInputValue)
+      ? window.SpendSenseSettings.todayInputValue()
+      : new Date().toISOString().slice(0, 10);
+  };
+
+  if (dateInput && !dateInput.value) resetDateInput();
 
   if (cancelEditBtn) {
     cancelEditBtn.addEventListener('click', () => {
       if (!form) return;
       form.reset();
-      if (dateInput) dateInput.valueAsDate = new Date();
+      resetDateInput();
       exitEditMode();
       setMessage('');
     });
@@ -143,7 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
           setMessage(editingIncomeId ? 'Income updated.' : data.message || 'Income saved!', 'success');
           UI.showToast(editingIncomeId ? 'Income updated' : 'Income saved', 'success');
           form.reset();
-          if (dateInput) dateInput.valueAsDate = new Date();
+          resetDateInput();
           exitEditMode();
           loadIncomes(false);
         } else {
@@ -215,14 +222,23 @@ document.addEventListener('DOMContentLoaded', () => {
     sourceMain.textContent = item.source || 'Income';
     sourceCell.appendChild(sourceMain);
 
-    // The frequency is stored with the entry; show it under the source.
-    const sourceSub = document.createElement('div');
-    sourceSub.className = 'cell-sub';
-    sourceSub.textContent = item.frequency
-      ? FREQUENCY_LABELS[item.frequency] || String(item.frequency)
-      : FREQUENCY_LABELS[DEFAULT_FREQUENCY];
-    sourceCell.appendChild(sourceSub);
-    if (item.notes) sourceMain.title = item.notes;
+    if (item.notes) {
+      const notesEl = document.createElement('div');
+      notesEl.className = 'cell-sub';
+      notesEl.textContent = item.notes;
+      sourceCell.appendChild(notesEl);
+      sourceMain.title = item.notes;
+    }
+
+    const freqCell = document.createElement('td');
+    freqCell.className = 'col-tight';
+    freqCell.dataset.label = 'Frequency';
+    const isRecurring = item.frequency && item.frequency !== 'one-time';
+    const freqPill = document.createElement('span');
+    freqPill.className = 'pill ' + (isRecurring ? 'recurring' : 'onetime');
+    const freqLabel = item.frequency ? (FREQUENCY_LABELS[item.frequency] || String(item.frequency)) : 'One-time';
+    freqPill.textContent = (isRecurring ? '↻ ' : '') + freqLabel;
+    freqCell.appendChild(freqPill);
 
     const amountCell = document.createElement('td');
     amountCell.className = 'num amount-pos col-tight';
@@ -233,13 +249,6 @@ document.addEventListener('DOMContentLoaded', () => {
     actionsCell.className = 'col-tight actions-cell';
     const actions = document.createElement('div');
     actions.className = 'row-actions';
-    const deleteBtn = document.createElement('button');
-    deleteBtn.type = 'button';
-    deleteBtn.className = 'row-btn danger';
-    deleteBtn.dataset.deleteIncome = '';
-    deleteBtn.dataset.id = item.id;
-    deleteBtn.textContent = 'Delete';
-    actions.appendChild(deleteBtn);
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'row-btn secondary';
@@ -247,9 +256,17 @@ document.addEventListener('DOMContentLoaded', () => {
     editBtn.dataset.id = item.id;
     editBtn.textContent = 'Edit';
     actions.appendChild(editBtn);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'row-btn danger';
+    deleteBtn.dataset.deleteIncome = '';
+    deleteBtn.dataset.id = item.id;
+    deleteBtn.textContent = 'Delete';
+    actions.appendChild(deleteBtn);
     actionsCell.appendChild(actions);
 
-    row.append(dateCell, sourceCell, amountCell, actionsCell);
+    row.append(dateCell, sourceCell, freqCell, amountCell, actionsCell);
     return row;
   };
 

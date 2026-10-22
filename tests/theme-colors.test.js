@@ -115,3 +115,20 @@ test('theme changes affect colours, not category slots', () => {
   assert.notDeepEqual(light.settings.chartColors().slice(0, 2), dark.settings.chartColors().slice(0, 2));
   assert.equal(light.settings.chartColors().length, 10);
 });
+
+test('word boundaries prevent substring keyword false positives', () => {
+  const { settings } = loadSettings();
+  const tones = plain(settings.categoryTones(['name:rent', 'name:parenting', 'name:current account']));
+  assert.equal(tones['name:rent'], 6, 'rent is slot 6');
+  assert.notEqual(tones['name:parenting'], 6, 'parenting must not match rent');
+  assert.notEqual(tones['name:current account'], 6, 'current must not match rent');
+});
+
+test('prefix matching is case-insensitive', () => {
+  const { settings } = loadSettings();
+  const lower = plain(settings.categoryTones(['cat:2', 'name:groceries']));
+  const upper = plain(settings.categoryTones(['CAT:2', 'NAME:Groceries']));
+  assert.equal(lower['cat:2'], upper['CAT:2']);
+  assert.equal(lower['name:groceries'], upper['NAME:Groceries']);
+});
+

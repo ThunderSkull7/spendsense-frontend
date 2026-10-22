@@ -200,9 +200,9 @@ const PAGES_ORIGIN = '${PRODUCTION_ORIGIN}';
 const BACKEND_HOST = '${new URL(API_ORIGIN).hostname}';
 
 function isProxyPath(pathname) {
-  // Only the API namespace and the one session-hydration route may reach the
-  // backend. Never proxy arbitrary paths from this worker.
-  return pathname === '/user' || pathname.startsWith('/api/');
+  // Only the API namespace, the session-hydration route, and Sanctum's
+  // CSRF-cookie endpoint may reach the backend. Never proxy arbitrary paths.
+  return pathname === '/user' || pathname.startsWith('/api/') || pathname.startsWith('/sanctum/');
 }
 
 function corsHeaders() {

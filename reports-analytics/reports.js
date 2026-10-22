@@ -13,6 +13,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const monthLabels = document.querySelectorAll('[data-month-label]');
   const refreshBtn = document.querySelector('[data-reports-refresh]');
 
+  const statIncomeEl = document.querySelector('[data-stat-income]');
+  const statIncomeFootEl = document.querySelector('[data-stat-income-foot]');
+  const statExpensesEl = document.querySelector('[data-stat-expenses]');
+  const statExpensesFootEl = document.querySelector('[data-stat-expenses-foot]');
+  const statNetEl = document.querySelector('[data-stat-net]');
+  const statNetFootEl = document.querySelector('[data-stat-net-foot]');
+
   const spendingState = document.querySelector('[data-spending-state]');
   const spendingChartBox = document.querySelector('[data-spending-chart]');
   const spendingLegend = document.querySelector('[data-spending-legend]');
@@ -23,19 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let spendingChartInstance = null;
   let cashflowChartInstance = null;
-
-  const css = getComputedStyle(document.documentElement);
-  const cssVar = (name, fallback) => (css.getPropertyValue(name) || fallback).trim() || fallback;
-  const palette = () => [
-    cssVar('--primary', '#6f9166'),
-    cssVar('--teal', '#5f8f8b'),
-    cssVar('--amber', '#b9803a'),
-    cssVar('--blue', '#5f7f9e'),
-    cssVar('--rose', '#b06a63'),
-    cssVar('--accent', '#c9a26b'),
-    cssVar('--primary-600', '#5d7d55'),
-  ];
-  const barTones = ['', 'teal', 'amber', 'blue', 'rose'];
 
   const monthName = (month, year) =>
     new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
@@ -65,13 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (chartBox) chartBox.hidden = false;
   };
 
-  // ---------- CSS bar fallback (also used for the spending legend) ----------
+  // ---------- CSS bar fallback (also used for fallback when Chart.js unavailable) ----------
   const buildBars = (items) => {
     const max = items[0].total_spent || 1;
     const total = items.reduce((sum, item) => sum + item.total_spent, 0) || 1;
     const list = document.createElement('div');
     list.className = 'bar-list';
-    items.forEach((item, index) => {
+    items.forEach((item) => {
+      const tone = window.SpendSenseSettings.getCategoryTone({ id: item.category_id, name: item.category_name });
       const row = document.createElement('div');
       row.className = 'bar-row';
 
@@ -79,16 +74,19 @@ document.addEventListener('DOMContentLoaded', () => {
       meta.className = 'bar-meta';
       const label = document.createElement('span');
       const dot = document.createElement('span');
-      dot.className = 'dot ' + barTones[index % barTones.length];
+      dot.className = 'dot ' + tone.toneName;
+      dot.style.backgroundColor = tone.color;
       label.append(dot, document.createTextNode(' ' + item.category_name));
       const value = document.createElement('strong');
-      value.textContent = `${money(item.total_spent)} · ${Math.round((item.total_spent / total) * 100)}%`;
+      const pct = Math.round((item.total_spent / total) * 100);
+      value.textContent = `${money(item.total_spent)} · ${pct}%`;
       meta.append(label, value);
 
       const track = document.createElement('div');
       track.className = 'progress';
       const fill = document.createElement('span');
-      fill.className = barTones[index % barTones.length];
+      fill.className = tone.toneName;
+      fill.style.backgroundColor = tone.color;
       fill.style.width = Math.max(4, Math.round((item.total_spent / max) * 100)) + '%';
       track.appendChild(fill);
 
@@ -96,6 +94,56 @@ document.addEventListener('DOMContentLoaded', () => {
       list.appendChild(row);
     });
     return list;
+  };
+
+  // ---------- Top Metrics Update ----------
+  const updateTopMetrics = (cashflowData, spendingData) => {
+    if (!cashflowData || !cashflowData.data || !cashflowData.data.data) return;
+    const current = cashflowData.data.data.current_month || {};
+    const previous = cashflowData.data.data.previous_month || {};
+
+    const income = current.income || 0;
+    const expenses = current.expenses || 0;
+    const net = current.net != null ? current.net : income - expenses;
+
+    if (statIncomeEl) {
+      statIncomeEl.textContent = money(income);
+      if (statIncomeFootEl) {
+        const prevIncome = previous.income || 0;
+        const diff = income - prevIncome;
+        statIncomeFootEl.textContent = prevIncome > 0
+          ? `${diff >= 0 ? '+' : ''}${money(diff)} vs last month`
+          : 'Current month total';
+      }
+    }
+
+    if (statExpensesEl) {
+      statExpensesEl.textContent = money(expenses);
+      if (statExpensesFootEl) {
+        const prevExpenses = previous.expenses || 0;
+        const diff = expenses - prevExpenses;
+        statExpensesFootEl.textContent = prevExpenses > 0
+          ? `${diff > 0 ? '+' : ''}${money(diff)} vs last month`
+          : 'Current month total';
+      }
+    }
+
+    if (statNetEl) {
+      statNetEl.textContent = (net >= 0 ? '+' : '') + money(net);
+      statNetEl.className = 'stat-value ' + (net >= 0 ? 'pos' : 'neg');
+      if (statNetFootEl) {
+        if (income > 0) {
+          const savingsRate = Math.round((net / income) * 100);
+          statNetFootEl.textContent = net >= 0
+            ? `${savingsRate}% savings rate`
+            : `${Math.abs(savingsRate)}% deficit rate`;
+        } else if (income === 0 && expenses === 0) {
+          statNetFootEl.textContent = 'No cash flow activity';
+        } else {
+          statNetFootEl.textContent = net >= 0 ? 'No expenses recorded' : 'Unfunded deficit';
+        }
+      }
+    }
   };
 
   // ---------- Spending by category ----------
@@ -120,14 +168,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     showChart(spendingState, spendingChartBox);
 
+    const total = items.reduce((sum, item) => sum + item.total_spent, 0) || 1;
+    const categoryColors = items.map((item) => {
+      const tone = window.SpendSenseSettings.getCategoryTone({ id: item.category_id, name: item.category_name });
+      return tone.color;
+    });
+
     if (spendingLegend) {
       spendingLegend.replaceChildren();
       items.forEach((item, index) => {
         const entry = document.createElement('span');
         entry.className = 'legend-item';
         const dot = document.createElement('span');
-        dot.className = 'dot ' + barTones[index % barTones.length];
-        entry.append(dot, document.createTextNode(`${item.category_name} · ${money(item.total_spent)}`));
+        dot.className = 'dot';
+        dot.style.backgroundColor = categoryColors[index];
+        const pct = Math.round((item.total_spent / total) * 100);
+        entry.append(dot, document.createTextNode(`${item.category_name} · ${money(item.total_spent)} (${pct}%)`));
         spendingLegend.appendChild(entry);
       });
     }
@@ -135,7 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.querySelector('#spendingChart');
     if (window.Chart && canvas) {
       if (spendingChartInstance) spendingChartInstance.destroy();
-      const colors = palette();
+      const isDark = document.documentElement.dataset.mode === 'dark';
+
       spendingChartInstance = new window.Chart(canvas, {
         type: 'doughnut',
         data: {
@@ -143,20 +200,33 @@ document.addEventListener('DOMContentLoaded', () => {
           datasets: [
             {
               data: items.map((item) => item.total_spent),
-              backgroundColor: items.map((_, index) => colors[index % colors.length]),
-              borderWidth: 0,
-              hoverOffset: 6,
+              backgroundColor: categoryColors,
+              borderColor: isDark ? '#151D2A' : '#FFFFFF',
+              borderWidth: 2,
+              hoverOffset: 8,
             },
           ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          cutout: '62%',
+          cutout: '64%',
           plugins: {
             legend: { display: false },
             tooltip: {
-              callbacks: { label: (ctx) => ` ${ctx.label}: ${money(ctx.parsed)}` },
+              backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)',
+              titleColor: '#FFFFFF',
+              bodyColor: '#FFFFFF',
+              padding: 10,
+              boxPadding: 6,
+              cornerRadius: 8,
+              callbacks: {
+                label: (ctx) => {
+                  const val = ctx.parsed;
+                  const pct = Math.round((val / total) * 100);
+                  return ` ${ctx.label}: ${money(val)} (${pct}%)`;
+                },
+              },
             },
           },
         },
@@ -220,25 +290,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.querySelector('#cashflowChart');
     if (window.Chart && canvas) {
       if (cashflowChartInstance) cashflowChartInstance.destroy();
-      const colors = palette();
+      const isDark = document.documentElement.dataset.mode === 'dark';
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+      const textColor = isDark ? '#94A3B8' : '#64748B';
+
       cashflowChartInstance = new window.Chart(canvas, {
         type: 'bar',
         data: {
-          labels: [shortMonthLabel(previous.month, previous.year), shortMonthLabel(current.month, current.year)],
+          labels: [
+            shortMonthLabel(previous.month, previous.year),
+            shortMonthLabel(current.month, current.year),
+          ],
           datasets: [
             {
               label: 'Income',
               data: [previous.income || 0, current.income || 0],
-              backgroundColor: colors[0],
-              borderRadius: 8,
-              maxBarThickness: 46,
+              backgroundColor: isDark ? '#22C55E' : '#16A34A',
+              borderRadius: 6,
+              maxBarThickness: 44,
             },
             {
               label: 'Expenses',
               data: [previous.expenses || 0, current.expenses || 0],
-              backgroundColor: colors[2],
-              borderRadius: 8,
-              maxBarThickness: 46,
+              backgroundColor: isDark ? '#F59E0B' : '#D97706',
+              borderRadius: 6,
+              maxBarThickness: 44,
             },
           ],
         },
@@ -248,15 +324,30 @@ document.addEventListener('DOMContentLoaded', () => {
           scales: {
             y: {
               beginAtZero: true,
-              ticks: { callback: (value) => money(value) },
-              grid: { color: 'rgba(127, 127, 127, 0.12)' },
+              ticks: {
+                color: textColor,
+                font: { size: 11 },
+                callback: (value) => money(value),
+              },
+              grid: { color: gridColor },
             },
-            x: { grid: { display: false } },
+            x: {
+              ticks: { color: textColor, font: { size: 12, weight: '600' } },
+              grid: { display: false },
+            },
           },
           plugins: {
             legend: { display: false },
             tooltip: {
-              callbacks: { label: (ctx) => ` ${ctx.dataset.label}: ${money(ctx.parsed.y)}` },
+              backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)',
+              titleColor: '#FFFFFF',
+              bodyColor: '#FFFFFF',
+              padding: 10,
+              boxPadding: 6,
+              cornerRadius: 8,
+              callbacks: {
+                label: (ctx) => ` ${ctx.dataset.label}: ${money(ctx.parsed.y)}`,
+              },
             },
           },
         },
@@ -264,7 +355,13 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (canvas) {
       const host = canvas.parentElement;
       if (host) {
-        const max = Math.max(current.income || 0, current.expenses || 0, previous.income || 0, previous.expenses || 0, 1);
+        const max = Math.max(
+          current.income || 0,
+          current.expenses || 0,
+          previous.income || 0,
+          previous.expenses || 0,
+          1
+        );
         host.replaceChildren(buildColumns(previous, current, max));
       }
     }
@@ -278,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const alerts = result.data.data.alerts || [];
     if (!alerts.length) {
-      UI.renderState(alertsEl, 'empty', { message: 'No alerts this month — all budgets are on track.' });
+      UI.renderState(alertsEl, 'empty', { message: 'No alerts this month — all budgets are safely on track.' });
       return;
     }
 
@@ -288,25 +385,30 @@ document.addEventListener('DOMContentLoaded', () => {
       const item = document.createElement('div');
       item.className = 'notif-item';
 
+      const isOver = alert.alert_type === 'overspent';
       const ico = document.createElement('span');
       ico.className = 'n-ico';
-      ico.innerHTML =
-        alert.alert_type === 'overspent'
-          ? '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg>'
-          : '<svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>';
+      ico.style.color = isOver ? 'var(--danger)' : 'var(--warn)';
+      ico.style.backgroundColor = isOver ? 'var(--danger-100)' : 'var(--warn-100)';
+      ico.style.borderColor = isOver ? 'var(--danger-100)' : 'var(--warn-100)';
+      ico.innerHTML = isOver
+        ? '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg>'
+        : '<svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>';
 
       const body = document.createElement('div');
       body.className = 'n-body';
       const title = document.createElement('div');
       title.className = 'n-title';
       const pill = document.createElement('span');
-      pill.className = 'pill ' + (alert.alert_type === 'overspent' ? 'danger' : 'amber');
-      pill.textContent = alert.alert_type === 'overspent' ? 'Over limit' : 'Near limit';
+      pill.className = 'pill ' + (isOver ? 'danger' : 'amber');
+      pill.textContent = isOver ? 'Over limit' : 'Near limit';
       title.append(document.createTextNode(alert.category_name + ' '), pill);
 
       const text = document.createElement('div');
       text.className = 'n-text';
-      text.textContent = `${alert.message} · ${money(alert.spent_amount)} of ${money(alert.limit_amount)}`;
+      const diff = Math.abs(alert.spent_amount - alert.limit_amount);
+      const diffText = isOver ? `${money(diff)} over budget` : `${money(diff)} remaining`;
+      text.textContent = `${money(alert.spent_amount)} spent of ${money(alert.limit_amount)} limit · ${diffText}`;
 
       body.append(title, text);
       item.append(ico, body);
@@ -332,13 +434,18 @@ document.addEventListener('DOMContentLoaded', () => {
     list.className = 'budget-list';
     budgets.forEach((budget) => {
       const percentage = Math.min(100, Math.max(0, budget.percentage_used || 0));
+      const tone = window.SpendSenseSettings.getCategoryTone({ id: budget.category_id, name: budget.category_name });
       const item = document.createElement('div');
       item.className = 'budget-item';
 
       const meta = document.createElement('div');
       meta.className = 'b-meta';
       const left = document.createElement('span');
-      left.append(document.createTextNode(budget.category_name + ' '));
+      const dot = document.createElement('span');
+      dot.className = 'dot ' + tone.toneName;
+      dot.style.backgroundColor = tone.color;
+      left.append(dot, document.createTextNode(' ' + budget.category_name + ' '));
+
       const pill = document.createElement('span');
       if (budget.is_overspent) {
         pill.className = 'pill danger';
@@ -351,8 +458,18 @@ document.addEventListener('DOMContentLoaded', () => {
         pill.textContent = 'On track';
       }
       left.appendChild(pill);
-      const right = document.createElement('strong');
-      right.textContent = `${money(budget.spent_amount)} of ${money(budget.limit_amount)}`;
+
+      const right = document.createElement('div');
+      right.style.display = 'flex';
+      right.style.flexDirection = 'column';
+      right.style.alignItems = 'flex-end';
+      const value = document.createElement('strong');
+      value.textContent = `${money(budget.spent_amount)} of ${money(budget.limit_amount)}`;
+      const rem = document.createElement('span');
+      rem.className = 'b-remaining' + (budget.is_overspent ? ' over' : '');
+      const diff = Math.abs(budget.remaining_amount);
+      rem.textContent = budget.is_overspent ? `${money(diff)} over limit` : `${money(diff)} left`;
+      right.append(value, rem);
       meta.append(left, right);
 
       const track = document.createElement('div');
@@ -386,8 +503,12 @@ document.addEventListener('DOMContentLoaded', () => {
       api.get('/analytics/budget-status'),
     ]);
 
-    renderSpending(spending.status === 'fulfilled' ? spending.value : null);
-    renderCashflow(cashflow.status === 'fulfilled' ? cashflow.value : null);
+    const cashflowVal = cashflow.status === 'fulfilled' ? cashflow.value : null;
+    const spendingVal = spending.status === 'fulfilled' ? spending.value : null;
+
+    updateTopMetrics(cashflowVal, spendingVal);
+    renderSpending(spendingVal);
+    renderCashflow(cashflowVal);
     renderAlerts(alerts.status === 'fulfilled' ? alerts.value : null);
     renderBudgetStatus(budgetStatus.status === 'fulfilled' ? budgetStatus.value : null);
 
@@ -397,6 +518,43 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   }
+
+  // Refresh charts when theme changes
+  window.addEventListener('spendsense:theme-change', () => {
+    const isDark = document.documentElement.dataset.mode === 'dark';
+    if (spendingChartInstance) {
+      if (spendingChartInstance.data.datasets[0]) {
+        spendingChartInstance.data.datasets[0].borderColor = isDark ? '#151D2A' : '#FFFFFF';
+      }
+      if (spendingChartInstance.options.plugins && spendingChartInstance.options.plugins.tooltip) {
+        spendingChartInstance.options.plugins.tooltip.backgroundColor = isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)';
+      }
+      spendingChartInstance.update();
+    }
+    if (cashflowChartInstance) {
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+      const textColor = isDark ? '#94A3B8' : '#64748B';
+      if (cashflowChartInstance.data.datasets[0]) {
+        cashflowChartInstance.data.datasets[0].backgroundColor = isDark ? '#22C55E' : '#16A34A';
+      }
+      if (cashflowChartInstance.data.datasets[1]) {
+        cashflowChartInstance.data.datasets[1].backgroundColor = isDark ? '#F59E0B' : '#D97706';
+      }
+      if (cashflowChartInstance.options.scales) {
+        if (cashflowChartInstance.options.scales.y) {
+          cashflowChartInstance.options.scales.y.grid.color = gridColor;
+          cashflowChartInstance.options.scales.y.ticks.color = textColor;
+        }
+        if (cashflowChartInstance.options.scales.x) {
+          cashflowChartInstance.options.scales.x.ticks.color = textColor;
+        }
+      }
+      if (cashflowChartInstance.options.plugins && cashflowChartInstance.options.plugins.tooltip) {
+        cashflowChartInstance.options.plugins.tooltip.backgroundColor = isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)';
+      }
+      cashflowChartInstance.update();
+    }
+  });
 
   if (refreshBtn) {
     refreshBtn.addEventListener('click', async () => {

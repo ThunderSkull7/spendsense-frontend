@@ -1,7 +1,29 @@
 /* Income page — refinements on top of the shared design system. */
 
+.grid-main-side {
+  grid-template-columns: minmax(0, 1.4fr) minmax(360px, 1fr);
+  gap: 22px;
+}
+
 [data-income-state] {
-  padding: 4px 0;
+  padding: 8px 0;
+}
+
+.income-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.income-form .field {
+  gap: 7px;
+}
+
+.income-form .field-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.45;
+  margin-top: 2px;
 }
 
 .card-footer.center {
@@ -9,9 +31,26 @@
   justify-content: center;
 }
 
+.pill.recurring {
+  background: var(--primary-100);
+  color: var(--primary);
+  font-weight: 650;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pill.onetime {
+  background: var(--surface-3);
+  color: var(--muted);
+  font-weight: 600;
+}
+
 @media (max-width: 1180px) {
-  /* The form card should not stretch awkwardly once the grid collapses. */
+  .grid-main-side {
+    grid-template-columns: 1fr;
+  }
   .grid-main-side > aside .card-body {
-    padding-bottom: 22px;
+    padding-bottom: 24px;
   }
 }

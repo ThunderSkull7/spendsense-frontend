@@ -1,100 +1,130 @@
-/* Categories page — refinements on top of the shared design system. */
+/* Categories page — modern, compact card design and clean alignment. */
 
 .field-label {
-  font-size: 0.83rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--ink-2);
   display: block;
   margin-bottom: 6px;
 }
 
+.category-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.category-form .field {
+  gap: 7px;
+}
+
 .choice-chips {
-  margin-bottom: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.choice-chips .chip {
+  padding: 6px 13px;
+  font-size: 0.83rem;
 }
 
 [data-category-state] {
-  padding: 4px 0;
+  padding: 8px 0;
 }
 
-/* Grid layout for category tiles */
-[data-category-list] {
+/* Compact, responsive grid for category tiles */
+[data-category-list], .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
   padding: 0;
 }
 
-/* Category tile redesign */
+/* Polished compact category tile */
 .category-tile {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-lg);
+  border-radius: var(--r);
   box-shadow: var(--shadow-sm);
-  padding: 20px;
+  padding: 14px 16px;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-height: 140px;
-  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  align-items: center;
+  gap: 13px;
+  transition: all 0.16s ease;
   position: relative;
 }
 
 .category-tile:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1.5px);
   box-shadow: var(--shadow);
   border-color: var(--border-strong);
 }
 
 .category-tile .c-ico {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 42px;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
   display: grid;
   place-items: center;
   border-radius: 10px;
-  background: var(--primary-100);
-  color: var(--primary);
-  font-weight: 700;
-  font-size: 1.1rem;
-  box-shadow: 0 2px 6px var(--primary-ring);
+  font-weight: 750;
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
 }
 
 .category-tile .c-ico.income {
   background: var(--primary-100);
   color: var(--primary);
+  border-color: var(--primary-100);
 }
 
 .category-tile .c-main {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
   min-width: 0;
+  flex: 1;
 }
 
 .category-tile .c-name {
-  font-size: 0.95rem;
+  font-size: 0.93rem;
   font-weight: 700;
   color: var(--ink);
   line-height: 1.3;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.category-tile .c-meta {
+  display: flex;
+  align-items: center;
 }
 
 .category-tile .pill {
-  margin-top: 4px;
-  align-self: flex-start;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+}
+
+.category-tile .pill.income {
   background: var(--primary-100);
   color: var(--primary);
 }
 
-/* Actions container - always visible and properly positioned */
+.category-tile .pill.expense {
+  background: var(--surface-3);
+  color: var(--muted);
+}
+
+/* Row actions */
 .category-tile .row-actions {
   display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-top: auto;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
+  gap: 6px;
+  margin-left: auto;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .category-tile .row-btn {
@@ -102,10 +132,10 @@
   background: var(--surface);
   color: var(--ink-2);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 7px;
+  padding: 5px 10px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
@@ -113,7 +143,7 @@
 
 .category-tile .row-btn:hover {
   background: var(--surface-2);
-  border-color: var(--border-strong);
+  border-color: var(--muted);
   color: var(--ink);
 }
 
@@ -137,7 +167,14 @@
   color: var(--ink);
 }
 
-/* Loading state */
-.category-loading {
-  padding: 40px 20px;
+@media (max-width: 1180px) {
+  .grid-main-side {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  [data-category-list], .category-grid {
+    grid-template-columns: 1fr;
+  }
 }

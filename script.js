@@ -8,19 +8,67 @@ const API = {
     API_BASE_URL = baseUrl;
   },
 
+  _csrfPromise: null,
+
+  // Fetch CSRF cookie from Laravel Sanctum (deduplicated across concurrent calls)
+  async fetchXSRFToken() {
+    if (this._csrfPromise) return this._csrfPromise;
+    this._csrfPromise = (async () => {
+      try {
+        await fetch(`${API_BASE_URL}/sanctum/csrf-cookie`, {
+          credentials: 'include',
+        });
+        return this.getCsrfToken();
+      } catch (e) {
+        return null;
+      } finally {
+        this._csrfPromise = null;
+      }
+    })();
+    return this._csrfPromise;
+  },
+
+  // Generate a random, backend-valid Idempotency-Key (UUIDv4 or fallback)
+  generateIdempotencyKey() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  },
+
+  // Check if an endpoint requires/enforces idempotency on creation mutations
+  isIdempotentEndpoint(method, endpoint) {
+    if (method !== 'POST') return false;
+    const clean = String(endpoint || '').split('?')[0].replace(/\/+$/, '');
+    return /^\/(expenses|incomes|budgets|savings-goals(\/[0-9]+\/(contributions|corrections))?|recurring-incomes(\/[0-9]+\/occurrences\/[0-9]+\/receive)?|recurring-expenses(\/[0-9]+\/occurrences\/[0-9]+\/pay)?|net-worth(\/[0-9]+\/valuations)?|subscriptions)$/.test(clean);
+  },
+
   // Core fetch helper: sends JSON with credentials (Sanctum cookie-based auth)
   // Automatically fetches and sends XSRF-TOKEN for state-changing requests.
-  async api(method, endpoint, body = null, csrfToken = null) {
+  async api(method, endpoint, body = null, csrfToken = null, isRetry = false, extraHeaders = {}) {
     const url = `${API_BASE_URL}/api${endpoint}`;
+    const headers = { 'Content-Type': 'application/json', ...(extraHeaders || {}) };
+
+    // Auto-attach Idempotency-Key for endpoints that enforce it if not already provided
+    if (this.isIdempotentEndpoint(method, endpoint)) {
+      if (!headers['Idempotency-Key']) {
+        headers['Idempotency-Key'] = this.generateIdempotencyKey();
+      }
+    }
+
+    // Add XSRF-TOKEN header if provided (required for POST/PUT/DELETE on stateful routes)
+    if (csrfToken !== null) {
+      headers['X-XSRF-TOKEN'] = csrfToken;
+    }
     const options = {
       method,
       credentials: 'include', // send Sanctum session cookie
-      headers: { 'Content-Type': 'application/json' },
+      headers,
     };
-    // Add XSRF-TOKEN header if provided (required for POST/PUT/DELETE on stateful routes)
-    if (csrfToken !== null) {
-      options.headers['X-XSRF-TOKEN'] = csrfToken;
-    }
     if (body !== null) {
       options.body = JSON.stringify(body);
     }
@@ -28,11 +76,11 @@ const API = {
 
     // A stale XSRF-TOKEN (e.g. after the session rotates on login) returns 419.
     // Refresh the token once and retry the request before surfacing the error.
-    if (response.status === 419 && csrfToken !== null) {
-      const freshToken = await fetchXSRFToken();
-      if (freshToken && freshToken !== csrfToken) {
-        return this.api(method, endpoint, body, freshToken);
-      }
+    // Note: headers (including any Idempotency-Key) are preserved across the retry.
+    if (response.status === 419 && !isRetry) {
+      await this.fetchXSRFToken();
+      const freshToken = this.getCsrfToken() || csrfToken;
+      return this.api(method, endpoint, body, freshToken, true, headers);
     }
 
     let data;
@@ -45,8 +93,11 @@ const API = {
     if (response.status === 419) {
       data = { message: 'CSRF token mismatch. Please log in again.' };
     }
-    if (response.status === 401 && data.message === 'Unauthenticated.') {
-      data = { message: 'Session expired. Please log in again.', expired: true };
+    if (response.status === 401) {
+      if (endpoint !== '/login' && endpoint !== '/register') {
+        data = { message: 'Session expired. Please log in again.', expired: true };
+        window.dispatchEvent(new CustomEvent('spendsense:session-expired'));
+      }
     }
     return { response, data, status: response.status };
   },
@@ -54,10 +105,18 @@ const API = {
   // Shortcuts for common operations.
   // State-changing requests automatically include the current XSRF-TOKEN so
   // Sanctum's CSRF protection accepts them on stateful routes.
-  async post(endpoint, body) { return this.api('POST', endpoint, body, await this.ensureCsrfToken()); },
-  get(endpoint) { return this.api('GET', endpoint); },
-  async put(endpoint, body) { return this.api('PUT', endpoint, body, await this.ensureCsrfToken()); },
-  async delete(endpoint) { return this.api('DELETE', endpoint, null, await this.ensureCsrfToken()); },
+  async post(endpoint, body, extraHeaders = {}) {
+    return this.api('POST', endpoint, body, await this.ensureCsrfToken(), false, extraHeaders);
+  },
+  get(endpoint, extraHeaders = {}) {
+    return this.api('GET', endpoint, null, null, false, extraHeaders);
+  },
+  async put(endpoint, body, extraHeaders = {}) {
+    return this.api('PUT', endpoint, body, await this.ensureCsrfToken(), false, extraHeaders);
+  },
+  async delete(endpoint, extraHeaders = {}) {
+    return this.api('DELETE', endpoint, null, await this.ensureCsrfToken(), false, extraHeaders);
+  },
 
   // Read the current XSRF-TOKEN cookie value (set by Laravel on stateful responses).
   getCsrfToken() {
@@ -66,15 +125,12 @@ const API = {
   },
 
   // Make sure an XSRF-TOKEN cookie exists before a state-changing request.
-  // fetchXSRFToken (defined below) primes/refreshes the cookie.
-  async ensureCsrfToken() {
-    const existing = this.getCsrfToken();
-    if (existing !== null) return existing;
-    try {
-      return await fetchXSRFToken();
-    } catch (e) {
-      return null;
+  async ensureCsrfToken(force = false) {
+    if (!force) {
+      const existing = this.getCsrfToken();
+      if (existing !== null) return existing;
     }
+    return await this.fetchXSRFToken();
   },
 
   // Authentication helpers
@@ -136,27 +192,10 @@ const API = {
 
 // ---- CSRF management ----
 
-let cachedXSRFToken = null;
-
 // Fetch the XSRF-TOKEN cookie from the /sanctum/csrf-cookie endpoint.
-// The response sets the XSRF-TOKEN cookie, which we then read and cache.
+// Delegates directly to API.fetchXSRFToken() which hits the correct Sanctum path.
 async function fetchXSRFToken() {
-  const csrfResp = await API.get('/sanctum/csrf-cookie');
-  // The XSRF-TOKEN cookie should now be in the jar; read it back from document.cookie.
-  const cookies = document.cookie.match(/(XSRF-TOKEN)=([^;]+)/);
-  if (cookies) {
-    cachedXSRFToken = decodeURIComponent(cookies[2]);
-  } else {
-    // Fallback: try to read from the response headers
-    const setCookie = csrfResp.response.headers['set-cookie'];
-    if (setCookie) {
-      const match = setCookie[0].match(/XSRF-TOKEN=([^;]+)/);
-      if (match) {
-        cachedXSRFToken = decodeURIComponent(match[1]);
-      }
-    }
-  }
-  return cachedXSRFToken;
+  return await API.fetchXSRFToken();
 }
 
 // --- UI Initialization ---

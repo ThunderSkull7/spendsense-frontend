@@ -177,19 +177,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const buildBudgetItem = (budget, progress) => {
     const item = document.createElement('div');
-    item.className = 'budget-item';
+    item.className = 'budget-item budget-card-item';
     item.dataset.budgetId = budget.id;
 
-    const meta = document.createElement('div');
-    meta.className = 'b-meta';
+    const tone = window.SpendSenseSettings.getCategoryTone(budget.category);
 
-    const left = document.createElement('span');
-    left.append(document.createTextNode(budget.category ? budget.category.name : 'Budget'));
-    const month = document.createElement('span');
-    month.className = 'month';
-    month.textContent = '· ' + formatMonthYear(budget.month_year);
-    left.appendChild(document.createTextNode(' '));
-    left.appendChild(month);
+    // Header: Category info on left, actions on right
+    const header = document.createElement('div');
+    header.className = 'budget-card-header';
+
+    const title = document.createElement('div');
+    title.className = 'budget-card-title';
+
+    const dot = document.createElement('span');
+    dot.className = 'dot ' + tone.toneName;
+    dot.style.backgroundColor = tone.color;
+
+    const nameText = document.createElement('span');
+    nameText.textContent = budget.category ? budget.category.name : 'Budget';
+
+    const monthBadge = document.createElement('span');
+    monthBadge.className = 'month-badge';
+    monthBadge.textContent = formatMonthYear(budget.month_year);
+
+    title.append(dot, nameText, monthBadge);
 
     if (progress) {
       const pill = document.createElement('span');
@@ -203,40 +214,74 @@ document.addEventListener('DOMContentLoaded', () => {
         pill.className = 'pill green';
         pill.textContent = 'On track';
       }
-      left.append(document.createTextNode(' '), pill);
+      title.appendChild(pill);
     }
 
-    const right = document.createElement('span');
-    right.className = 'row';
-    const value = document.createElement('strong');
-    value.textContent = progress
-      ? `${money(progress.spent_amount)} of ${money(progress.limit_amount)}`
-      : money(budget.limit_amount);
-    const deleteBtn = document.createElement('button');
-    deleteBtn.type = 'button';
-    deleteBtn.className = 'row-btn danger';
-    deleteBtn.dataset.deleteBudget = '';
-    deleteBtn.dataset.id = budget.id;
-    deleteBtn.textContent = 'Delete';
+    const actions = document.createElement('div');
+    actions.className = 'budget-card-actions';
+
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
     editBtn.className = 'row-btn secondary';
     editBtn.dataset.editBudget = '';
     editBtn.dataset.id = budget.id;
     editBtn.textContent = 'Edit';
-    right.append(value, editBtn, deleteBtn);
 
-    meta.append(left, right);
-    item.appendChild(meta);
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'row-btn danger';
+    deleteBtn.dataset.deleteBudget = '';
+    deleteBtn.dataset.id = budget.id;
+    deleteBtn.textContent = 'Delete';
+
+    actions.append(editBtn, deleteBtn);
+    header.append(title, actions);
+    item.appendChild(header);
 
     if (progress) {
       const percentage = Math.min(100, Math.max(0, progress.percentage_used || 0));
+      const rawPct = Math.round(progress.percentage_used || 0);
+
+      // Progress bar
+      const barContainer = document.createElement('div');
+      barContainer.className = 'budget-card-bar';
       const track = document.createElement('div');
-      track.className = 'progress' + (progress.is_overspent ? ' danger' : percentage >= 80 ? ' warn' : '');
+      const statusClass = progress.is_overspent ? 'danger' : percentage >= 80 ? 'warn' : 'success';
+      track.className = 'progress ' + statusClass;
       const fill = document.createElement('span');
       fill.style.width = Math.max(3, percentage) + '%';
       track.appendChild(fill);
-      item.appendChild(track);
+      barContainer.appendChild(track);
+      item.appendChild(barContainer);
+
+      // Footer: Spending total and remaining
+      const footer = document.createElement('div');
+      footer.className = 'budget-card-footer';
+
+      const spentSpan = document.createElement('span');
+      spentSpan.className = 'spent-text';
+      spentSpan.textContent = `${money(progress.spent_amount)} of ${money(progress.limit_amount)} (${rawPct}%)`;
+
+      const remainingSpan = document.createElement('span');
+      const diff = Math.abs(progress.remaining_amount != null ? progress.remaining_amount : (progress.limit_amount - progress.spent_amount));
+      if (progress.is_overspent) {
+        remainingSpan.className = 'remaining-text over';
+        remainingSpan.textContent = `${money(diff)} over limit`;
+      } else {
+        remainingSpan.className = 'remaining-text left';
+        remainingSpan.textContent = `${money(diff)} remaining`;
+      }
+
+      footer.append(spentSpan, remainingSpan);
+      item.appendChild(footer);
+    } else {
+      const footer = document.createElement('div');
+      footer.className = 'budget-card-footer';
+      const limitSpan = document.createElement('span');
+      limitSpan.className = 'spent-text';
+      limitSpan.textContent = `Monthly limit: ${money(budget.limit_amount)}`;
+      footer.appendChild(limitSpan);
+      item.appendChild(footer);
     }
 
     return item;
@@ -298,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const paginator = budgetsResponse.data.data;
-    const budgets = paginator.data || [];
+    const budgets = Array.isArray(paginator) ? paginator : (paginator && paginator.data) || [];
 
     budgetsById.clear();
     budgets.forEach((budget) => budgetsById.set(String(budget.id), budget));
@@ -308,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusResponse = statusResult.status === 'fulfilled' ? statusResult.value : null;
     if (statusResponse && statusResponse.status === 200 && statusResponse.data && statusResponse.data.data) {
       (statusResponse.data.data.budgets || []).forEach((entry) => {
-        progressMap.set(String(entry.budget_id), entry);
+        progressMap.set(String(entry.budget_id || entry.id), entry);
       });
     }
 

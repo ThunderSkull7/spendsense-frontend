@@ -94,7 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const list = document.createElement('div');
     list.className = 'bar-list';
 
-    items.forEach((item, index) => {
+    items.forEach((item) => {
+      const tone = window.SpendSenseSettings.getCategoryTone({ id: item.category_id, name: item.category_name });
       const row = document.createElement('div');
       row.className = 'bar-row';
 
@@ -102,16 +103,19 @@ document.addEventListener('DOMContentLoaded', () => {
       meta.className = 'bar-meta';
       const label = document.createElement('span');
       const dot = document.createElement('span');
-      dot.className = 'dot ' + barTones[index % barTones.length];
+      dot.className = 'dot ' + tone.toneName;
+      dot.style.backgroundColor = tone.color;
       label.append(dot, document.createTextNode(' ' + item.category_name));
       const value = document.createElement('strong');
-      value.textContent = `${money(item.total_spent)} · ${Math.round((item.total_spent / total) * 100)}%`;
+      const pct = Math.round((item.total_spent / total) * 100);
+      value.textContent = `${money(item.total_spent)} · ${pct}%`;
       meta.append(label, value);
 
       const track = document.createElement('div');
       track.className = 'progress';
       const fill = document.createElement('span');
-      fill.className = barTones[index % barTones.length];
+      fill.className = tone.toneName;
+      fill.style.backgroundColor = tone.color;
       fill.style.width = Math.max(4, Math.round((item.total_spent / max) * 100)) + '%';
       track.appendChild(fill);
 
@@ -186,8 +190,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const legend = document.createElement('div');
     legend.className = 'legend';
     legend.innerHTML =
-      '<span class="legend-item"><span class="dot"></span> Income</span>' +
-      '<span class="legend-item"><span class="dot" style="background: var(--surface-3); border: 1px solid var(--border-strong)"></span> Expenses</span>';
+      '<span class="legend-item"><span class="dot" style="background: var(--success)"></span> Income</span>' +
+      '<span class="legend-item"><span class="dot" style="background: var(--warn)"></span> Expenses</span>';
     comparisonEl.appendChild(legend);
   };
 
@@ -220,13 +224,18 @@ document.addEventListener('DOMContentLoaded', () => {
     list.className = 'budget-list';
     budgets.forEach((budget) => {
       const percentage = Math.min(100, Math.max(0, budget.percentage_used || 0));
+      const tone = window.SpendSenseSettings.getCategoryTone({ id: budget.category_id, name: budget.category_name });
       const item = document.createElement('div');
       item.className = 'budget-item';
 
       const meta = document.createElement('div');
       meta.className = 'b-meta';
       const left = document.createElement('span');
-      left.append(document.createTextNode(budget.category_name + ' '));
+      const dot = document.createElement('span');
+      dot.className = 'dot ' + tone.toneName;
+      dot.style.backgroundColor = tone.color;
+      left.append(dot, document.createTextNode(' ' + budget.category_name + ' '));
+
       const pill = document.createElement('span');
       if (budget.is_overspent) {
         pill.className = 'pill danger';
@@ -239,8 +248,18 @@ document.addEventListener('DOMContentLoaded', () => {
         pill.textContent = 'On track';
       }
       left.appendChild(pill);
-      const right = document.createElement('strong');
-      right.textContent = `${money(budget.spent_amount)} of ${money(budget.limit_amount)}`;
+
+      const right = document.createElement('div');
+      right.style.display = 'flex';
+      right.style.flexDirection = 'column';
+      right.style.alignItems = 'flex-end';
+      const value = document.createElement('strong');
+      value.textContent = `${money(budget.spent_amount)} of ${money(budget.limit_amount)}`;
+      const rem = document.createElement('span');
+      rem.className = 'b-remaining' + (budget.is_overspent ? ' over' : '');
+      const diff = Math.abs(budget.remaining_amount);
+      rem.textContent = budget.is_overspent ? `${money(diff)} over limit` : `${money(diff)} left`;
+      right.append(value, rem);
       meta.append(left, right);
 
       const track = document.createElement('div');
@@ -269,11 +288,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const list = document.createElement('div');
     list.className = 'tx-list';
     rows.slice(0, 6).forEach((row) => {
+      const tone = window.SpendSenseSettings.getCategoryTone(row.category);
       const wrap = document.createElement('div');
       wrap.className = 'tx-row';
 
       const ico = document.createElement('span');
       ico.className = 'tx-ico';
+      ico.style.backgroundColor = tone.bgSubtle || (tone.color + '18');
+      ico.style.color = tone.color;
+      ico.style.borderColor = tone.borderSubtle || (tone.color + '38');
       ico.textContent = (row.category && row.category.name ? row.category.name : 'E').charAt(0).toUpperCase();
 
       const main = document.createElement('div');
