@@ -3,8 +3,8 @@ const settingsForm = document.querySelector('[data-settings-form]');
 const securityForm = document.querySelector('[data-security-form]');
 const currencySelect = document.querySelector('[data-currency-select]');
 const currencyPreview = document.querySelector('[data-currency-preview]');
-const themeColorSelect = document.querySelector('[data-theme-color]');
-const themeModeSelect = document.querySelector('[data-theme-mode]');
+const themeColorSelect = document.querySelector('select#themeColor, select[data-theme-color-select], select[data-theme-color]');
+const themeModeSelect = document.querySelector('select#themeMode, select[data-theme-mode-select], select[data-theme-mode]');
 const settingsMessage = document.querySelector('[data-settings-message]');
 const securityMessage = document.querySelector('[data-security-message]');
 
@@ -28,15 +28,19 @@ if (currencySelect) {
 
 if (themeColorSelect) {
   themeColorSelect.value = (settings && settings.themeColor) ? settings.themeColor() : "green";
-  themeColorSelect.addEventListener("change", () => {
-    settings.applyTheme(themeColorSelect.value, themeModeSelect ? themeModeSelect.value : (settings ? settings.themeMode() : "light"));
+  themeColorSelect.addEventListener("change", (e) => {
+    const color = (e && e.target && e.target.value) || themeColorSelect.value;
+    const mode = themeModeSelect ? themeModeSelect.value : (settings ? settings.themeMode() : "light");
+    settings.applyTheme(color, mode);
   });
 }
 
 if (themeModeSelect) {
   themeModeSelect.value = (settings && settings.themeMode) ? settings.themeMode() : "light";
-  themeModeSelect.addEventListener("change", () => {
-    settings.applyTheme(themeColorSelect ? themeColorSelect.value : (settings ? settings.themeColor() : "green"), themeModeSelect.value);
+  themeModeSelect.addEventListener("change", (e) => {
+    const mode = (e && e.target && e.target.value) || themeModeSelect.value;
+    const color = themeColorSelect ? themeColorSelect.value : (settings ? settings.themeColor() : "green");
+    settings.applyTheme(color, mode);
   });
 }
 
