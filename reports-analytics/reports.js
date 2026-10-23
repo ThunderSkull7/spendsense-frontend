@@ -522,9 +522,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Refresh charts when theme changes
   window.addEventListener('spendsense:theme-change', () => {
     const isDark = document.documentElement.dataset.mode === 'dark';
+    const computed = window.getComputedStyle ? window.getComputedStyle(document.documentElement) : null;
+    const surfaceColor = computed ? computed.getPropertyValue('--surface').trim() : (isDark ? '#151D2A' : '#FFFFFF');
     if (spendingChartInstance) {
       if (spendingChartInstance.data.datasets[0]) {
-        spendingChartInstance.data.datasets[0].borderColor = isDark ? '#151D2A' : '#FFFFFF';
+        spendingChartInstance.data.datasets[0].borderColor = surfaceColor || (isDark ? '#151D2A' : '#FFFFFF');
       }
       if (spendingChartInstance.options.plugins && spendingChartInstance.options.plugins.tooltip) {
         spendingChartInstance.options.plugins.tooltip.backgroundColor = isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)';
