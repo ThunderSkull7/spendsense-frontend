@@ -132,10 +132,36 @@ test('prefix matching is case-insensitive', () => {
   assert.equal(lower['name:groceries'], upper['NAME:Groceries']);
 });
 
+test('exactly four theme palettes are available in settings.html', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'settings', 'settings.html'), 'utf8');
+  const optionsMatch = html.match(/<select[^>]*data-theme-color[^>]*>([\s\S]*?)<\/select>/i);
+  assert.ok(optionsMatch, 'themeColor select element exists');
+  const optionValues = [...optionsMatch[1].matchAll(/value="([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(optionValues, ['green', 'blue', 'red', 'amber']);
+
+  // Verify option labels are simply Green, Blue, Red, Amber
+  const optionTexts = [...optionsMatch[1].matchAll(/<option[^>]*>([^<]+)<\/option>/g)].map((m) => m[1].trim());
+  assert.deepEqual(optionTexts, ['Green', 'Blue', 'Red', 'Amber']);
+
+  // Verify swatches legend has exactly four items
+  const swatchesMatch = html.match(/class="legend theme-swatches-legend"[^>]*>([\s\S]*?)<\/div>/i);
+  assert.ok(swatchesMatch, 'swatches legend exists');
+  const swatchItems = [...swatchesMatch[1].matchAll(/<span class="legend-item">([\s\S]*?)<\/span>/g)];
+  assert.equal(swatchItems.length, 4);
+
+  // Check obsolete theme names are completely removed
+  assert.equal(html.includes('Emerald Slate'), false);
+  assert.equal(html.includes('Ocean Blue'), false);
+  assert.equal(html.includes('Rose Red'), false);
+  assert.equal(html.includes('Amber Warmth'), false);
+  assert.equal(html.includes('Amethyst'), false);
+  assert.equal(html.includes('Clean Light'), false);
+});
+
 test('applyTheme persists color and mode to storage and updates documentElement dataset', () => {
   const { settings, root, storage } = loadSettings();
   
-  const palettes = ['green', 'blue', 'red', 'yellow', 'amethyst', 'clean-light'];
+  const palettes = ['green', 'blue', 'red', 'amber'];
   for (const color of palettes) {
     settings.applyTheme(color, 'dark');
     assert.equal(root.dataset.themeColor, color);
@@ -151,6 +177,22 @@ test('applyTheme persists color and mode to storage and updates documentElement 
   }
 });
 
+test('legacy palette names normalize safely to the four palettes and red selection applies red accents', () => {
+  const { settings, root, storage } = loadSettings();
+
+  // Selecting 'red' (or previously named 'rose') must normalize to 'red'
+  settings.applyTheme('red', 'light');
+  assert.equal(root.dataset.themeColor, 'red');
+  assert.equal(storage.get('spendsenseThemeColor'), 'red');
+
+  // Test legacy alias normalization
+  settings.applyTheme('rose', 'dark');
+  assert.equal(root.dataset.themeColor, 'red');
+
+  settings.applyTheme('yellow', 'light');
+  assert.equal(root.dataset.themeColor, 'amber');
+});
+
 test('styles.css contains fixed viewport height and flex column rules for sidebar', () => {
   const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
   assert.match(css, /\.sidebar\s*\{[^}]*height:\s*100vh;/i);
@@ -163,15 +205,57 @@ test('styles.css contains fixed viewport height and flex column rules for sideba
   assert.match(css, /@media\s*\(\s*max-height:\s*750px\s*\)/i);
 });
 
-test('styles.css contains semantic tokens for all 6 required theme palettes in both light and dark mode', () => {
+test('styles.css contains semantic tokens for exactly the 4 required theme palettes and near-black dark surfaces', () => {
   const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
-  const requiredPalettes = ['green', 'blue', 'red', 'yellow', 'amethyst', 'clean-light'];
+  const requiredPalettes = ['green', 'blue', 'red', 'amber'];
   for (const palette of requiredPalettes) {
     assert.match(css, new RegExp(`:root\\[data-theme-color=["']?${palette}["']?\\]`, 'i'), `missing light mode for ${palette}`);
-    if (palette !== 'clean-light') {
-      assert.match(css, new RegExp(`:root\\[data-mode=["']?dark["']?\\]\\[data-theme-color=["']?${palette}["']?\\]`, 'i'), `missing dark mode for ${palette}`);
-    }
+    assert.match(css, new RegExp(`:root\\[data-mode=["']?dark["']?\\]\\[data-theme-color=["']?${palette}["']?\\]`, 'i'), `missing dark mode for ${palette}`);
   }
+
+  // Obsolete palette selectors should be gone
+  assert.doesNotMatch(css, /:root\[data-theme-color=["']?amethyst["']?\]/i);
+  assert.doesNotMatch(css, /:root\[data-theme-color=["']?clean-light["']?\]/i);
+
+  // Near-black background token verification (#090B0F and surface #14171D)
+  assert.match(css, /--bg:\s*#090B0F;/i, 'dark background must be #090B0F');
+  assert.match(css, /--surface:\s*#14171D;/i, 'dark surface must be #14171D');
+});
+
+test('palette selection persists after refresh and mode switching preserves the selected palette', () => {
+  // Pre-seed storage as if user refreshed or navigated
+  const storageMap = new Map([
+    ['spendsenseThemeColor', 'red'],
+    ['spendsenseThemeMode', 'dark']
+  ]);
+
+  const root = { dataset: {} };
+  const context = {
+    document: { documentElement: root, addEventListener() {}, querySelectorAll() { return []; } },
+    localStorage: {
+      getItem(key) { return storageMap.get(key) || null; },
+      setItem(key, value) { storageMap.set(key, String(value)); }
+    },
+    getComputedStyle() { return { getPropertyValue() { return ''; } }; },
+    NodeFilter: { SHOW_TEXT: 4, FILTER_REJECT: 2, FILTER_ACCEPT: 1 },
+    CustomEvent: class CustomEvent { constructor(type, opt = {}) { this.type = type; this.detail = opt.detail; } }
+  };
+  context.window = context;
+  context.window.dispatchEvent = () => {};
+  context.window.addEventListener = () => {};
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(THEME_JS, 'utf8'), context, { filename: 'theme.js' });
+
+  // 1. Initial render must use saved palette without green flash
+  assert.equal(root.dataset.themeColor, 'red');
+  assert.equal(root.dataset.mode, 'dark');
+
+  // 2. Switching modes must preserve selected palette
+  context.SpendSenseSettings.applyTheme(root.dataset.themeColor, 'light');
+  assert.equal(root.dataset.themeColor, 'red');
+  assert.equal(root.dataset.mode, 'light');
+  assert.equal(storageMap.get('spendsenseThemeColor'), 'red');
+  assert.equal(storageMap.get('spendsenseThemeMode'), 'light');
 });
 
 

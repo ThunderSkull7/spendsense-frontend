@@ -51,8 +51,18 @@
 
   const skipTags = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "OPTION", "TEXTAREA"]);
 
-  const savedColor = safeStorage.getItem(KEYS.color) || "green";
-  const savedMode = safeStorage.getItem(KEYS.mode) || "light";
+  const VALID_PALETTES = new Set(["green", "blue", "red", "amber"]);
+  const normalizePalette = (c) => {
+    const raw = String(c || "").trim().toLowerCase();
+    if (raw === "rose") return "red";
+    if (raw === "yellow") return "amber";
+    if (raw === "emerald" || raw === "clean-light") return "green";
+    return VALID_PALETTES.has(raw) ? raw : "green";
+  };
+
+  const rawSavedColor = safeStorage.getItem(KEYS.color);
+  const savedColor = normalizePalette(rawSavedColor || "green");
+  const savedMode = safeStorage.getItem(KEYS.mode) === "dark" ? "dark" : "light";
   const savedCurrency = safeStorage.getItem(KEYS.currency) || "INR";
 
   const symbolFor = (code) => currencySymbols[code] || currencySymbols.INR;
@@ -87,8 +97,8 @@
   };
 
   const applyTheme = (color, mode) => {
-    const chosenColor = color || safeStorage.getItem(KEYS.color) || "green";
-    const chosenMode = mode || safeStorage.getItem(KEYS.mode) || "light";
+    const chosenColor = normalizePalette(color || safeStorage.getItem(KEYS.color) || "green");
+    const chosenMode = mode ? (mode === "dark" ? "dark" : "light") : (safeStorage.getItem(KEYS.mode) === "dark" ? "dark" : "light");
     root.dataset.themeColor = chosenColor;
     root.dataset.mode = chosenMode;
     safeStorage.setItem(KEYS.color, chosenColor);
@@ -98,7 +108,7 @@
     );
   };
 
-  const themeColor = () => root.dataset.themeColor || safeStorage.getItem(KEYS.color) || "green";
+  const themeColor = () => root.dataset.themeColor || normalizePalette(safeStorage.getItem(KEYS.color) || "green");
   const themeMode = () => root.dataset.mode || safeStorage.getItem(KEYS.mode) || "light";
 
   const applyCurrency = (currency) => {

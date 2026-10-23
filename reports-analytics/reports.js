@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let spendingChartInstance = null;
   let cashflowChartInstance = null;
+  let lastSpendingResult = null;
+  let lastCashflowResult = null;
 
   const monthName = (month, year) =>
     new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
@@ -201,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
             {
               data: items.map((item) => item.total_spent),
               backgroundColor: categoryColors,
-              borderColor: isDark ? '#151D2A' : '#FFFFFF',
+              borderColor: isDark ? '#14171D' : '#FFFFFF',
               borderWidth: 2,
               hoverOffset: 8,
             },
@@ -504,7 +506,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ]);
 
     const cashflowVal = cashflow.status === 'fulfilled' ? cashflow.value : null;
-    const spendingVal = spending.status === 'fulfilled' ? spending.value : null;
+    lastCashflowResult = cashflowVal;
+    lastSpendingResult = spendingVal;
 
     updateTopMetrics(cashflowVal, spendingVal);
     renderSpending(spendingVal);
@@ -523,13 +526,15 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('spendsense:theme-change', () => {
     const isDark = document.documentElement.dataset.mode === 'dark';
     const computed = window.getComputedStyle ? window.getComputedStyle(document.documentElement) : null;
-    const surfaceColor = computed ? computed.getPropertyValue('--surface').trim() : (isDark ? '#151D2A' : '#FFFFFF');
-    if (spendingChartInstance) {
+    const surfaceColor = computed ? computed.getPropertyValue('--surface').trim() : (isDark ? '#14171D' : '#FFFFFF');
+    if (lastSpendingResult) {
+      renderSpending(lastSpendingResult);
+    } else if (spendingChartInstance) {
       if (spendingChartInstance.data.datasets[0]) {
-        spendingChartInstance.data.datasets[0].borderColor = surfaceColor || (isDark ? '#151D2A' : '#FFFFFF');
+        spendingChartInstance.data.datasets[0].borderColor = surfaceColor || (isDark ? '#14171D' : '#FFFFFF');
       }
       if (spendingChartInstance.options.plugins && spendingChartInstance.options.plugins.tooltip) {
-        spendingChartInstance.options.plugins.tooltip.backgroundColor = isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)';
+        spendingChartInstance.options.plugins.tooltip.backgroundColor = isDark ? 'rgba(20, 23, 29, 0.95)' : 'rgba(15, 23, 42, 0.95)';
       }
       spendingChartInstance.update();
     }

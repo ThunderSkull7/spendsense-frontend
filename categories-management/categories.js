@@ -318,5 +318,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  window.addEventListener('spendsense:theme-change', () => {
+    if (listEl && categoriesById.size > 0 && !listEl.hidden) {
+      listEl.replaceChildren();
+      categoriesById.forEach((category) => listEl.appendChild(buildTile(category)));
+    }
+  });
+
   loadCategories();
 });

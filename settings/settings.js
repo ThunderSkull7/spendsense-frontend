@@ -27,16 +27,16 @@ if (currencySelect) {
 }
 
 if (themeColorSelect) {
-  themeColorSelect.value = localStorage.getItem("spendsenseThemeColor") || "green";
+  themeColorSelect.value = (settings && settings.themeColor) ? settings.themeColor() : "green";
   themeColorSelect.addEventListener("change", () => {
-    settings.applyTheme(themeColorSelect.value, themeModeSelect ? themeModeSelect.value : "light");
+    settings.applyTheme(themeColorSelect.value, themeModeSelect ? themeModeSelect.value : (settings ? settings.themeMode() : "light"));
   });
 }
 
 if (themeModeSelect) {
-  themeModeSelect.value = localStorage.getItem("spendsenseThemeMode") || "light";
+  themeModeSelect.value = (settings && settings.themeMode) ? settings.themeMode() : "light";
   themeModeSelect.addEventListener("change", () => {
-    settings.applyTheme(themeColorSelect ? themeColorSelect.value : "green", themeModeSelect.value);
+    settings.applyTheme(themeColorSelect ? themeColorSelect.value : (settings ? settings.themeColor() : "green"), themeModeSelect.value);
   });
 }
 
