@@ -258,4 +258,67 @@ test('palette selection persists after refresh and mode switching preserves the 
   assert.equal(storageMap.get('spendsenseThemeMode'), 'light');
 });
 
+test('settings.js queries select element, not documentElement when root has data-theme-color', () => {
+  const SETTINGS_JS = path.join(__dirname, '..', 'settings', 'settings.js');
+  const storage = new Map();
+  const root = {
+    tagName: 'HTML',
+    dataset: { themeColor: 'green', mode: 'light' },
+    getAttribute(attr) { return attr === 'data-theme-color' ? 'green' : null; },
+    hasAttribute(attr) { return attr === 'data-theme-color' || attr === 'data-mode'; }
+  };
+  
+  const selectColor = {
+    tagName: 'SELECT',
+    id: 'themeColor',
+    value: 'green',
+    listeners: {},
+    addEventListener(evt, handler) { this.listeners[evt] = handler; },
+    dispatchEvent(evt) { if (this.listeners[evt.type]) this.listeners[evt.type](evt); }
+  };
+  const selectMode = {
+    tagName: 'SELECT',
+    id: 'themeMode',
+    value: 'light',
+    listeners: {},
+    addEventListener(evt, handler) { this.listeners[evt] = handler; },
+    dispatchEvent(evt) { if (this.listeners[evt.type]) this.listeners[evt.type](evt); }
+  };
+
+  const documentStub = {
+    documentElement: root,
+    querySelector(selector) {
+      if (selector.includes('themeColor')) return selectColor;
+      if (selector.includes('themeMode')) return selectMode;
+      return null;
+    },
+    querySelectorAll() { return []; },
+    addEventListener() {}
+  };
+
+  const context = {
+    document: documentStub,
+    localStorage: {
+      getItem(k) { return storage.get(k) || null; },
+      setItem(k, v) { storage.set(k, String(v)); }
+    },
+    console,
+    CustomEvent: class CustomEvent { constructor(t, opt = {}) { this.type = t; this.detail = opt.detail; } }
+  };
+  context.window = context;
+  context.window.dispatchEvent = () => {};
+  context.window.addEventListener = () => {};
+
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(THEME_JS, 'utf8'), context);
+  vm.runInContext(fs.readFileSync(SETTINGS_JS, 'utf8'), context);
+
+  // When user changes the select to 'red':
+  selectColor.value = 'red';
+  selectColor.dispatchEvent({ type: 'change', target: selectColor });
+
+  assert.equal(root.dataset.themeColor, 'red');
+  assert.equal(storage.get('spendsenseThemeColor'), 'red');
+});
+
 
