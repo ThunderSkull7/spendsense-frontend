@@ -31,6 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
     new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'short' });
 
   let monthResolved = false;
+  let lastBreakdownResult = null;
+  let lastComparisonResult = null;
+  let lastBudgetsResult = null;
+  let lastTransactionsResult = null;
 
   const setMonthLabels = (month, year) => {
     monthResolved = true;
@@ -348,10 +352,15 @@ document.addEventListener('DOMContentLoaded', () => {
       renderStatError(statEls.net);
     }
 
-    renderBreakdown(breakdown.status === 'fulfilled' ? breakdown.value : null);
-    renderComparison(comparison.status === 'fulfilled' ? comparison.value : null);
-    renderBudgets(budgetStatus.status === 'fulfilled' ? budgetStatus.value : null);
-    renderTransactions(transactions.status === 'fulfilled' ? transactions.value : null);
+    lastBreakdownResult = breakdown.status === 'fulfilled' ? breakdown.value : null;
+    lastComparisonResult = comparison.status === 'fulfilled' ? comparison.value : null;
+    lastBudgetsResult = budgetStatus.status === 'fulfilled' ? budgetStatus.value : null;
+    lastTransactionsResult = transactions.status === 'fulfilled' ? transactions.value : null;
+
+    renderBreakdown(lastBreakdownResult);
+    renderComparison(lastComparisonResult);
+    renderBudgets(lastBudgetsResult);
+    renderTransactions(lastTransactionsResult);
 
     if (!monthResolved) {
       monthLabels.forEach((el) => {
@@ -359,6 +368,12 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   }
+
+  window.addEventListener('spendsense:theme-change', () => {
+    if (lastBreakdownResult) renderBreakdown(lastBreakdownResult);
+    if (lastComparisonResult) renderComparison(lastComparisonResult);
+    if (lastBudgetsResult) renderBudgets(lastBudgetsResult);
+  });
 
   if (refreshButton) {
     refreshButton.addEventListener('click', async () => {
