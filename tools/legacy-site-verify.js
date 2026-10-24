@@ -10,4 +10,8 @@ if(!h.includes('class="category-form"'))fail.push('Category form missing');
 if(!h.includes('data-category-choice="expense"')||!h.includes('data-category-choice="income"'))fail.push('Expense/Income selector missing');
 if(!j.includes("api.post('/categories', payload)"))fail.push('Category create API missing');
 if(!j.includes("api.put(`/categories/${editingCategoryId}`, payload)"))fail.push('Category update API missing');
+if(!j.includes('category.is_default !== false'))fail.push('Category default/custom distinction missing');
+if(!j.includes("Shared default categories cannot be edited"))fail.push('Category default edit protection missing');
+if(!j.includes("Shared default categories cannot be deleted"))fail.push('Category default delete protection missing');
+if(!h.includes('Shared defaults are managed by SpendSense'))fail.push('Category ownership guidance missing');
 if(fail.length){console.error(fail.join('\n'));process.exitCode=1;}else console.log('Legacy site verification passed: 14 pages, one Reports item, no Goals/Bills/separate Insights, category CRUD present.');

@@ -20,6 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelEditBtn = document.querySelector('[data-cancel-edit]');
   let editingCategoryId = null;
   const categoriesById = new Map();
+  // New APIs send is_default. During a backend-first rollout, a missing flag is
+  // treated as shared/read-only rather than accidentally exposing old global
+  // categories to edit and delete actions.
+  const isSharedDefault = (category) => category.is_default !== false;
 
   const setMessage = (text, type) => {
     if (!messageDiv) return;
@@ -89,6 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const enterEditMode = (category) => {
     if (!form) return;
+    if (isSharedDefault(category)) {
+      UI.showToast('Shared default categories cannot be edited.', 'error');
+      return;
+    }
     editingCategoryId = category.id;
     if (nameInput) nameInput.value = category.name || '';
     setType(category.type);
@@ -109,8 +117,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- Quick-name chips: predefined suggestions vs. "Other" ---
-  const incomeNames = new Set(['Salary', 'Freelance']);
+  // --- Quick-name chips: custom-category examples vs. "Other" ---
+  // These deliberately avoid the shared default names, which cannot be
+  // created again as private categories.
   quickNameChips.forEach((chip) => {
     chip.addEventListener('click', () => {
       const name = chip.dataset.quickName;
@@ -125,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Predefined suggestion: fill the input and leave custom mode.
         nameInput.value = name;
         setCustomCategoryMode(false);
-        setType(incomeNames.has(name) ? 'income' : 'expense');
+        setType('expense');
         nameInput.focus();
       }
     });
@@ -194,6 +203,8 @@ document.addEventListener('DOMContentLoaded', () => {
     tile.dataset.categoryId = category.id;
 
     const isIncome = category.type === 'income';
+    const isDefault = isSharedDefault(category);
+    tile.dataset.categoryKind = isDefault ? 'default' : 'custom';
     const tone = window.SpendSenseSettings.getCategoryTone(category);
 
     const icon = document.createElement('span');
@@ -213,27 +224,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const pill = document.createElement('span');
     pill.className = 'pill ' + (isIncome ? 'income' : 'expense');
     pill.textContent = isIncome ? 'Income' : 'Expense';
-    meta.appendChild(pill);
+    const ownershipPill = document.createElement('span');
+    ownershipPill.className = 'pill ' + (isDefault ? 'shared' : 'private');
+    ownershipPill.textContent = isDefault ? 'Shared default' : 'Private';
+    ownershipPill.title = isDefault
+      ? 'Available to every account and cannot be edited or deleted'
+      : 'Only visible to you';
+    meta.append(pill, ownershipPill);
     main.append(name, meta);
 
     const actions = document.createElement('div');
     actions.className = 'row-actions';
-    const deleteBtn = document.createElement('button');
-    deleteBtn.type = 'button';
-    deleteBtn.className = 'row-btn danger';
-    deleteBtn.dataset.deleteCategory = '';
-    deleteBtn.dataset.id = category.id;
-    deleteBtn.title = 'Delete category';
-    deleteBtn.textContent = 'Delete';
-    const editBtn = document.createElement('button');
-    editBtn.type = 'button';
-    editBtn.className = 'row-btn secondary';
-    editBtn.dataset.editCategory = '';
-    editBtn.dataset.id = category.id;
-    editBtn.title = 'Edit category';
-    editBtn.textContent = 'Edit';
+    if (isDefault) {
+      const locked = document.createElement('span');
+      locked.className = 'row-note';
+      locked.textContent = 'Locked';
+      locked.title = 'Shared default categories cannot be edited or deleted';
+      actions.appendChild(locked);
+    } else {
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'row-btn danger';
+      deleteBtn.dataset.deleteCategory = '';
+      deleteBtn.dataset.id = category.id;
+      deleteBtn.title = 'Delete your private category';
+      deleteBtn.textContent = 'Delete';
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'row-btn secondary';
+      editBtn.dataset.editCategory = '';
+      editBtn.dataset.id = category.id;
+      editBtn.title = 'Edit your private category';
+      editBtn.textContent = 'Edit';
 
-    actions.append(editBtn, deleteBtn);
+      actions.append(editBtn, deleteBtn);
+    }
+
     tile.append(icon, main, actions);
     return tile;
   };
@@ -242,7 +268,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!summaryEl) return;
     const expenseCount = categories.filter((c) => c.type === 'expense').length;
     const incomeCount = categories.filter((c) => c.type === 'income').length;
-    summaryEl.textContent = `${categories.length} categories · ${expenseCount} expense · ${incomeCount} income`;
+    const defaultCount = categories.filter(isSharedDefault).length;
+    const privateCount = categories.length - defaultCount;
+    summaryEl.textContent = `${categories.length} total · ${defaultCount} shared · ${privateCount} private · ${expenseCount} expense · ${incomeCount} income`;
   };
 
   if (listEl) {
@@ -261,7 +289,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const button = event.target.closest('[data-delete-category]');
       if (!button) return;
 
-      if (!window.confirm('Delete this category? Categories used by expenses or budgets cannot be deleted.')) return;
+      const category = categoriesById.get(String(button.dataset.id));
+      if (!category || isSharedDefault(category)) {
+        UI.showToast('Shared default categories cannot be deleted.', 'error');
+        return;
+      }
+
+      if (!window.confirm('Delete this private category? Categories used by expenses, budgets, schedules or subscriptions cannot be deleted.')) return;
 
       button.disabled = true;
       try {
@@ -302,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
       categories.forEach((category) => categoriesById.set(String(category.id), category));
 
       if (!categories.length) {
-        showState('empty', { message: 'No categories yet — add your first one.' });
+        showState('empty', { message: 'No categories available.' });
         return;
       }
 
