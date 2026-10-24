@@ -15,6 +15,45 @@
   color: var(--danger);
 }
 
+/* Card hierarchy & distinct styling for financial overview */
+.stat-card.stat-card-income {
+  border-top-color: var(--success);
+}
+
+.stat-card.stat-card-income .stat-icon {
+  background: var(--success-100);
+  color: var(--success);
+}
+
+.stat-card.stat-card-expenses {
+  border-top-color: var(--warn);
+}
+
+.stat-card.stat-card-expenses .stat-icon {
+  background: var(--warn-100);
+  color: var(--warn);
+}
+
+.stat-card.stat-card-net {
+  background: linear-gradient(180deg, var(--surface) 0%, color-mix(in srgb, var(--surface) 96%, var(--primary) 4%) 100%);
+  border-top-color: var(--primary);
+  border-color: color-mix(in srgb, var(--border) 80%, var(--primary) 20%);
+}
+
+.stat-card.stat-card-net .stat-icon {
+  background: var(--primary-100);
+  color: var(--primary);
+}
+
+.stat-card.stat-card-budget {
+  border-top-color: var(--blue);
+}
+
+.stat-card.stat-card-budget .stat-icon {
+  background: var(--blue-100);
+  color: var(--blue);
+}
+
 /* Category share bars reuse the shared progress component. */
 .progress > span.teal { background: var(--teal); }
 .progress > span.amber { background: var(--amber); }

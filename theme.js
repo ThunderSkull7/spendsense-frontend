@@ -387,11 +387,19 @@
     };
   };
 
-  // --- App shell behaviour (sidebar, theme toggle, session chip, logout) ---
+  // --- App shell behaviour (sidebar, theme toggle, account dropdown, session chip, logout) ---
   const updateShellUser = () => {
-    const user = window.SpendSenseAPI && window.SpendSenseAPI.user;
+    let user = window.SpendSenseAPI && window.SpendSenseAPI.user;
+    if (!user && typeof localStorage !== "undefined") {
+      try {
+        const cached = localStorage.getItem("spendsense_user");
+        if (cached) user = JSON.parse(cached);
+      } catch (e) {}
+    }
     const name = user && user.name ? user.name : "Account";
     const email = user && user.email ? user.email : "Signed-in session";
+    const initial = (name.trim().charAt(0) || "S").toUpperCase();
+
     document.querySelectorAll("[data-user-name], #user-name").forEach((el) => {
       el.textContent = name;
     });
@@ -399,7 +407,165 @@
       el.textContent = email;
     });
     document.querySelectorAll("[data-user-avatar]").forEach((el) => {
-      el.textContent = (name.trim().charAt(0) || "S").toUpperCase();
+      el.textContent = initial;
+    });
+  };
+
+  const ensureTopbarAccountMenu = () => {
+    const actions = document.querySelector(".topbar-actions");
+    if (!actions || actions.querySelector("[data-account-menu]")) return;
+
+    const menu = document.createElement("div");
+    menu.className = "account-menu";
+    menu.setAttribute("data-account-menu", "");
+    menu.innerHTML = `
+      <button class="account-trigger" type="button" aria-haspopup="menu" aria-expanded="false" id="account-menu-trigger" aria-label="Account menu">
+        <span class="user-avatar" data-user-avatar>S</span>
+        <span class="account-name" data-user-name>Account</span>
+        <svg class="dropdown-chevron" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <div class="account-dropdown" role="menu" aria-labelledby="account-menu-trigger" hidden>
+        <div class="dropdown-header">
+          <div class="dropdown-profile-badge">
+            <span class="user-avatar lg" data-user-avatar>S</span>
+            <div class="dropdown-profile-info">
+              <span class="dropdown-profile-title">Signed in as</span>
+              <strong class="dropdown-profile-name" data-user-name>Account</strong>
+              <span class="dropdown-profile-email" data-user-email>Signed-in session</span>
+            </div>
+          </div>
+        </div>
+        <div class="dropdown-divider" role="separator"></div>
+        <div class="dropdown-nav" role="none">
+          <a class="dropdown-link" href="../settings/settings.html#profile" role="menuitem">
+            <span class="dropdown-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+              </svg>
+            </span>
+            <span class="dropdown-label">My Profile</span>
+          </a>
+          <a class="dropdown-link" href="../settings/settings.html" role="menuitem">
+            <span class="dropdown-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </span>
+            <span class="dropdown-label">Settings</span>
+          </a>
+          <a class="dropdown-link" href="../settings/settings.html#security" role="menuitem">
+            <span class="dropdown-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </span>
+            <span class="dropdown-label">Security &amp; Password</span>
+          </a>
+          <a class="dropdown-link" href="../support/support.html" role="menuitem">
+            <span class="dropdown-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 1 1 3.8 2.6c-.8.3-1 .9-1 1.6v.4"/><path d="M12 17.2v.01"/>
+              </svg>
+            </span>
+            <span class="dropdown-label">Help &amp; Support</span>
+          </a>
+        </div>
+        <div class="dropdown-divider" role="separator"></div>
+        <div class="dropdown-footer" role="none">
+          <button class="dropdown-link dropdown-logout" type="button" role="menuitem" data-logout>
+            <span class="dropdown-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </span>
+            <span class="dropdown-label">Log out</span>
+          </button>
+        </div>
+      </div>
+    `;
+    actions.appendChild(menu);
+  };
+
+  const initAccountDropdowns = () => {
+    ensureTopbarAccountMenu();
+
+    const menus = document.querySelectorAll("[data-account-menu], [data-account-dropdown]");
+    menus.forEach((menu) => {
+      const trigger = menu.querySelector(".account-trigger, [data-account-trigger], #account-menu-trigger");
+      const dropdown = menu.querySelector(".account-dropdown, [data-account-menu-panel]");
+      if (!trigger || !dropdown) return;
+
+      const openDropdown = () => {
+        dropdown.removeAttribute("hidden");
+        trigger.setAttribute("aria-expanded", "true");
+      };
+
+      const closeDropdown = () => {
+        dropdown.setAttribute("hidden", "true");
+        trigger.setAttribute("aria-expanded", "false");
+      };
+
+      const toggleDropdown = () => {
+        const isHidden = dropdown.hasAttribute("hidden");
+        if (isHidden) openDropdown();
+        else closeDropdown();
+      };
+
+      trigger.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleDropdown();
+      });
+
+      menu.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          closeDropdown();
+          trigger.focus();
+        } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          const items = Array.from(dropdown.querySelectorAll('a[role="menuitem"], button[role="menuitem"]'));
+          if (!items.length) return;
+          e.preventDefault();
+          if (dropdown.hasAttribute("hidden")) {
+            openDropdown();
+            items[0].focus();
+            return;
+          }
+          const activeIndex = items.indexOf(document.activeElement);
+          if (e.key === "ArrowDown") {
+            const next = activeIndex < items.length - 1 ? activeIndex + 1 : 0;
+            items[next].focus();
+          } else {
+            const prev = activeIndex > 0 ? activeIndex - 1 : items.length - 1;
+            items[prev].focus();
+          }
+        } else if (e.key === "Home" && !dropdown.hasAttribute("hidden")) {
+          const items = dropdown.querySelectorAll('a[role="menuitem"], button[role="menuitem"]');
+          if (items.length) { e.preventDefault(); items[0].focus(); }
+        } else if (e.key === "End" && !dropdown.hasAttribute("hidden")) {
+          const items = dropdown.querySelectorAll('a[role="menuitem"], button[role="menuitem"]');
+          if (items.length) { e.preventDefault(); items[items.length - 1].focus(); }
+        } else if (e.key === "Tab" && !dropdown.hasAttribute("hidden")) {
+          // If tabbing away from the dropdown, close it cleanly
+          setTimeout(() => {
+            if (!menu.contains(document.activeElement)) {
+              closeDropdown();
+            }
+          }, 0);
+        }
+      });
+    });
+
+    document.addEventListener("click", (e) => {
+      document.querySelectorAll(".account-dropdown:not([hidden])").forEach((dropdown) => {
+        const menu = dropdown.closest("[data-account-menu], [data-account-dropdown]");
+        if (menu && !menu.contains(e.target)) {
+          dropdown.setAttribute("hidden", "true");
+          const trigger = menu.querySelector(".account-trigger, [data-account-trigger], #account-menu-trigger");
+          if (trigger) trigger.setAttribute("aria-expanded", "false");
+        }
+      });
     });
   };
 
@@ -439,18 +605,20 @@
       });
     });
 
-    document.querySelectorAll("[data-logout]").forEach((button) => {
-      button.addEventListener("click", async () => {
-        button.disabled = true;
-        try {
-          if (window.SpendSenseAPI) await window.SpendSenseAPI.logout();
-        } catch (e) {
-          /* even if the request fails, return to the landing page */
-        }
-        window.location.href = button.dataset.logoutHref || "../index.html";
-      });
+    // Delegated logout handler: supports static and dynamically added logout buttons
+    document.addEventListener("click", async (e) => {
+      const button = e.target.closest("[data-logout]");
+      if (!button) return;
+      button.disabled = true;
+      try {
+        if (window.SpendSenseAPI) await window.SpendSenseAPI.logout();
+      } catch (err) {
+        /* even if the request fails, return to the landing page */
+      }
+      window.location.href = button.dataset.logoutHref || "../index.html";
     });
 
+    initAccountDropdowns();
     updateShellUser();
     window.addEventListener("spendsense:auth-change", updateShellUser);
     applyMoneySymbols();

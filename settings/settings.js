@@ -10,6 +10,42 @@ const securityMessage = document.querySelector('[data-security-message]');
 
 const settings = window.SpendSenseSettings;
 
+// Populate profile from authenticated session
+const nameInput = document.querySelector('#name');
+const emailInput = document.querySelector('#email');
+const populateUserProfile = () => {
+  let user = window.SpendSenseAPI && window.SpendSenseAPI.getUser ? window.SpendSenseAPI.getUser() : null;
+  if (!user && typeof localStorage !== 'undefined') {
+    try {
+      const cached = localStorage.getItem('spendsense_user');
+      if (cached) user = JSON.parse(cached);
+    } catch (e) {}
+  }
+  if (user) {
+    if (nameInput && user.name) nameInput.value = user.name;
+    if (emailInput && user.email) emailInput.value = user.email;
+  }
+};
+populateUserProfile();
+window.addEventListener('spendsense:auth-change', populateUserProfile);
+
+// Handle hash navigation
+const handleHash = () => {
+  if (typeof window === 'undefined' || !window.location) return;
+  const hash = window.location.hash;
+  if (hash === '#security') {
+    const sec = document.querySelector('#security');
+    if (sec && typeof sec.scrollIntoView === 'function') sec.scrollIntoView({ behavior: 'smooth' });
+  } else if (hash === '#profile') {
+    const prof = document.querySelector('#profile');
+    if (prof && typeof prof.scrollIntoView === 'function') prof.scrollIntoView({ behavior: 'smooth' });
+  }
+};
+if (typeof window !== 'undefined' && window.location && window.location.hash) handleHash();
+if (typeof window !== 'undefined' && window.addEventListener) {
+  window.addEventListener('hashchange', handleHash);
+}
+
 const renderCurrencyPreview = () => {
   if (!currencySelect || !currencyPreview) return;
   const symbol = settings.currencySymbols[currencySelect.value] || "₹";

@@ -17,6 +17,34 @@ const API = {
       }
     }
     API_BASE_URL = resolved;
+
+    // Load any cached session user immediately for zero-flicker display
+    if (!this.user && typeof localStorage !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('spendsense_user');
+        if (cached) this.user = JSON.parse(cached);
+      } catch (e) {}
+    }
+
+    // Hydrate authenticated user session from backend
+    this.hydrateSession();
+  },
+
+  async hydrateSession() {
+    if (!API_BASE_URL) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/user`, { credentials: 'include' });
+      if (res.ok) {
+        const user = await res.json();
+        if (user && user.id) {
+          this.setUser(user);
+        }
+      } else if (res.status === 401) {
+        if (this.user) this.setUser(null);
+      }
+    } catch (e) {
+      // Offline / network failure - maintain existing state
+    }
   },
 
   _csrfPromise: null,
@@ -154,6 +182,7 @@ const API = {
   },
 
   async logout() {
+    this.setUser(null);
     const { status } = await this.post('/logout');
     return { success: status === 200 };
   },
@@ -172,16 +201,31 @@ const API = {
 
   setUser(user) {
     API.user = user;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        if (user) {
+          localStorage.setItem('spendsense_user', JSON.stringify(user));
+        } else {
+          localStorage.removeItem('spendsense_user');
+        }
+      } catch (e) {}
+    }
     window.dispatchEvent(new CustomEvent('spendsense:auth-change'));
     return user;
   },
 
   // Check if user has a session in memory (persistent across API calls on this page)
   isAuthenticated() {
-    return !!API.user;
+    return !!(API.user || this.getUser());
   },
 
   getUser() {
+    if (!API.user && typeof localStorage !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('spendsense_user');
+        if (cached) API.user = JSON.parse(cached);
+      } catch (e) {}
+    }
     return API.user || null;
   },
 
