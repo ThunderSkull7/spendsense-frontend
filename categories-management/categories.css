@@ -18,6 +18,17 @@
   gap: 7px;
 }
 
+.category-note {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .choice-chips {
   display: flex;
   flex-wrap: wrap;
@@ -101,6 +112,8 @@
 .category-tile .c-meta {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
 }
 
 .category-tile .pill {
@@ -116,6 +129,28 @@
 .category-tile .pill.expense {
   background: var(--surface-3);
   color: var(--muted);
+}
+
+.category-tile .pill.shared {
+  background: var(--primary-100);
+  color: var(--primary);
+}
+
+.category-tile .pill.private {
+  background: var(--surface-3);
+  color: var(--ink-2);
+  border: 1px solid var(--border);
+}
+
+.category-tile[data-category-kind="default"] {
+  background: var(--surface-2);
+}
+
+.category-tile .row-note {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* Row actions */

@@ -79,25 +79,24 @@
           <aside class="card">
             <div class="card-head">
               <div>
-                <h2 class="card-title">New category</h2>
-                <p class="card-sub">Group expenses or income</p>
+                <h2 class="card-title">New private category</h2>
+                <p class="card-sub">Create a custom category only you can use</p>
               </div>
             </div>
             <div class="card-body">
               <form class="category-form" novalidate>
+                <p class="category-note">
+                  Shared defaults are managed by SpendSense and cannot be edited or deleted. Add a private category for anything else.
+                </p>
                 <div class="field">
                   <label for="categoryName">Category name</label>
                   <input id="categoryName" name="name" type="text" placeholder="e.g. Groceries" maxlength="255" required />
                 </div>
 
-                <div class="choice-chips" role="group" aria-label="Common categories">
-                  <button class="chip" type="button" data-quick-name="Food">Food</button>
+                <div class="choice-chips" role="group" aria-label="Private category examples">
                   <button class="chip" type="button" data-quick-name="Groceries">Groceries</button>
                   <button class="chip" type="button" data-quick-name="Rent">Rent</button>
-                  <button class="chip" type="button" data-quick-name="Transport">Transport</button>
                   <button class="chip" type="button" data-quick-name="Utilities">Utilities</button>
-                  <button class="chip" type="button" data-quick-name="Salary">Salary</button>
-                  <button class="chip" type="button" data-quick-name="Freelance">Freelance</button>
                   <button class="chip" type="button" data-quick-name="Other">Other</button>
                 </div>
 

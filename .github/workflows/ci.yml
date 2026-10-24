@@ -1,29 +1,90 @@
 name: Frontend CI and Cloudflare Deployment
+
 on:
   push:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
+
+permissions:
+  contents: read
+
 jobs:
   frontend-tests:
-    name: Legacy frontend regression tests
+    name: Frontend tests and build verification
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: frontend-tests-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - run: node tools/legacy-site-verify.js
+          node-version: '24'
+
+      - name: Syntax-check frontend JavaScript
+        run: |
+          set -euo pipefail
+          find . -path ./.git -prune -o -name '*.js' -print0 | while IFS= read -r -d '' file; do
+            node --check "$file"
+          done
+
+      - name: Run Node unit, orchestration and Worker tests
+        run: >-
+          node --test
+          tests/api-client.test.js
+          tests/date-format.test.js
+          tests/theme-colors.test.js
+          tests/reports-orchestration.test.js
+          tests/worker-proxy.test.js
+
+      - name: Run browser regression tests
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: >-
+          node --test
+          tests/theme-browser.test.js
+          tests/reports-browser.test.js
+          tests/categories-browser.test.js
+
+      - name: Run legacy site verification
+        run: node tools/legacy-site-verify.js
+
+      - name: Verify production build preparation
+        run: >-
+          node deploy/prepare-frontend-deploy.js
+          --api-base-url https://spendsensehq.pages.dev
+          --destination "${{ runner.temp }}/spendsense-build-check"
+          --force
+
   deploy-frontend:
     name: Deploy Frontend to Cloudflare Pages
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    needs: frontend-tests
+    # Production deploys are main-only. Manual runs on other branches still
+    # execute the test job but are not allowed to publish.
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Configure required reviewers on this environment to add an explicit
+    # approval gate for every production deployment.
+    environment:
+      name: production
+      url: https://spendsensehq.pages.dev
+    concurrency:
+      group: frontend-production-deploy
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
+
       - name: Verify deployment secrets
         env:
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
@@ -35,15 +96,17 @@ jobs:
             if [ -z "${!var}" ]; then missing+=("$var"); fi
           done
           if [ ${#missing[@]} -gt 0 ]; then echo "Missing secrets: ${missing[*]}"; exit 1; fi
+
       - name: Prepare frontend deploy
-        run: |
-          node deploy/prepare-frontend-deploy.js --api-base-url "${{ secrets.API_BASE_URL }}" --destination "${{ runner.temp }}/spendsense-dist" --force
+        run: >-
+          node deploy/prepare-frontend-deploy.js
+          --api-base-url "${{ secrets.API_BASE_URL }}"
+          --destination "${{ runner.temp }}/spendsense-dist"
+          --force
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy ${{ runner.temp }}/spendsense-dist --project-name=spendsensehq --branch=main
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
