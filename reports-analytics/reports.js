@@ -99,8 +99,19 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ---------- Top Metrics Update ----------
-  const updateTopMetrics = (cashflowData, spendingData) => {
-    if (!cashflowData || !cashflowData.data || !cashflowData.data.data) return;
+  const updateTopMetrics = (cashflowData) => {
+    if (!cashflowData || !cashflowData.data || !cashflowData.data.data) {
+      if (statIncomeEl) statIncomeEl.textContent = '—';
+      if (statIncomeFootEl) statIncomeFootEl.textContent = 'Could not load';
+      if (statExpensesEl) statExpensesEl.textContent = '—';
+      if (statExpensesFootEl) statExpensesFootEl.textContent = 'Could not load';
+      if (statNetEl) {
+        statNetEl.textContent = '—';
+        statNetEl.className = 'stat-value';
+      }
+      if (statNetFootEl) statNetFootEl.textContent = 'Could not load';
+      return;
+    }
     const current = cashflowData.data.data.current_month || {};
     const previous = cashflowData.data.data.previous_month || {};
 
@@ -148,12 +159,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // Keep track of active request sequence to discard stale responses
+  let currentLoadId = 0;
+  let isLoadingAll = false;
+
   // ---------- Spending by category ----------
-  const renderSpending = (result) => {
+  const renderSpending = (result, retryFn) => {
     if (!result || result.status !== 200 || !result.data || !result.data.data) {
       showChartState(spendingState, spendingChartBox, 'error', {
         message: 'Could not load spending data.',
-        retry: loadAll,
+        retry: typeof retryFn === 'function' ? retryFn : () => loadSection('spending'),
       });
       return;
     }
@@ -190,52 +205,63 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    const canvas = document.querySelector('#spendingChart');
-    if (window.Chart && canvas) {
-      if (spendingChartInstance) spendingChartInstance.destroy();
-      const isDark = document.documentElement.dataset.mode === 'dark';
+    let canvas = document.querySelector('#spendingChart');
+    const chartBox = spendingChartBox ? spendingChartBox.querySelector('.chart-box') : null;
 
-      spendingChartInstance = new window.Chart(canvas, {
-        type: 'doughnut',
-        data: {
-          labels: items.map((item) => item.category_name),
-          datasets: [
-            {
-              data: items.map((item) => item.total_spent),
-              backgroundColor: categoryColors,
-              borderColor: isDark ? '#14171D' : '#FFFFFF',
-              borderWidth: 2,
-              hoverOffset: 8,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '64%',
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)',
-              titleColor: '#FFFFFF',
-              bodyColor: '#FFFFFF',
-              padding: 10,
-              boxPadding: 6,
-              cornerRadius: 8,
-              callbacks: {
-                label: (ctx) => {
-                  const val = ctx.parsed;
-                  const pct = Math.round((val / total) * 100);
-                  return ` ${ctx.label}: ${money(val)} (${pct}%)`;
+    if (window.Chart) {
+      if (!canvas && chartBox) {
+        chartBox.replaceChildren();
+        canvas = document.createElement('canvas');
+        canvas.id = 'spendingChart';
+        canvas.setAttribute('aria-label', 'Spending by category doughnut chart');
+        canvas.setAttribute('role', 'img');
+        chartBox.appendChild(canvas);
+      }
+      if (canvas) {
+        if (spendingChartInstance) spendingChartInstance.destroy();
+        const isDark = document.documentElement.dataset.mode === 'dark';
+
+        spendingChartInstance = new window.Chart(canvas, {
+          type: 'doughnut',
+          data: {
+            labels: items.map((item) => item.category_name),
+            datasets: [
+              {
+                data: items.map((item) => item.total_spent),
+                backgroundColor: categoryColors,
+                borderColor: isDark ? '#14171D' : '#FFFFFF',
+                borderWidth: 2,
+                hoverOffset: 8,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '64%',
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)',
+                titleColor: '#FFFFFF',
+                bodyColor: '#FFFFFF',
+                padding: 10,
+                boxPadding: 6,
+                cornerRadius: 8,
+                callbacks: {
+                  label: (ctx) => {
+                    const val = ctx.parsed;
+                    const pct = Math.round((val / total) * 100);
+                    return ` ${ctx.label}: ${money(val)} (${pct}%)`;
+                  },
                 },
               },
             },
           },
-        },
-      });
-    } else if (canvas) {
-      const host = canvas.parentElement;
-      if (host) host.replaceChildren(buildBars(items));
+        });
+      }
+    } else if (chartBox) {
+      chartBox.replaceChildren(buildBars(items));
     }
   };
 
@@ -276,11 +302,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return chart;
   };
 
-  const renderCashflow = (result) => {
+  const renderCashflow = (result, retryFn) => {
     if (!result || result.status !== 200 || !result.data || !result.data.data) {
       showChartState(cashflowState, cashflowChartBox, 'error', {
         message: 'Could not load cash flow data.',
-        retry: loadAll,
+        retry: typeof retryFn === 'function' ? retryFn : () => loadSection('cashflow'),
       });
       return;
     }
@@ -289,90 +315,102 @@ document.addEventListener('DOMContentLoaded', () => {
     const previous = payload.previous_month || {};
     showChart(cashflowState, cashflowChartBox);
 
-    const canvas = document.querySelector('#cashflowChart');
-    if (window.Chart && canvas) {
-      if (cashflowChartInstance) cashflowChartInstance.destroy();
-      const isDark = document.documentElement.dataset.mode === 'dark';
-      const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
-      const textColor = isDark ? '#94A3B8' : '#64748B';
+    let canvas = document.querySelector('#cashflowChart');
+    const chartBox = cashflowChartBox ? cashflowChartBox.querySelector('.chart-box') : null;
 
-      cashflowChartInstance = new window.Chart(canvas, {
-        type: 'bar',
-        data: {
-          labels: [
-            shortMonthLabel(previous.month, previous.year),
-            shortMonthLabel(current.month, current.year),
-          ],
-          datasets: [
-            {
-              label: 'Income',
-              data: [previous.income || 0, current.income || 0],
-              backgroundColor: isDark ? '#22C55E' : '#16A34A',
-              borderRadius: 6,
-              maxBarThickness: 44,
-            },
-            {
-              label: 'Expenses',
-              data: [previous.expenses || 0, current.expenses || 0],
-              backgroundColor: isDark ? '#F59E0B' : '#D97706',
-              borderRadius: 6,
-              maxBarThickness: 44,
-            },
-          ],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                color: textColor,
-                font: { size: 11 },
-                callback: (value) => money(value),
-              },
-              grid: { color: gridColor },
-            },
-            x: {
-              ticks: { color: textColor, font: { size: 12, weight: '600' } },
-              grid: { display: false },
-            },
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: {
-              backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)',
-              titleColor: '#FFFFFF',
-              bodyColor: '#FFFFFF',
-              padding: 10,
-              boxPadding: 6,
-              cornerRadius: 8,
-              callbacks: {
-                label: (ctx) => ` ${ctx.dataset.label}: ${money(ctx.parsed.y)}`,
-              },
-            },
-          },
-        },
-      });
-    } else if (canvas) {
-      const host = canvas.parentElement;
-      if (host) {
-        const max = Math.max(
-          current.income || 0,
-          current.expenses || 0,
-          previous.income || 0,
-          previous.expenses || 0,
-          1
-        );
-        host.replaceChildren(buildColumns(previous, current, max));
+    if (window.Chart) {
+      if (!canvas && chartBox) {
+        chartBox.replaceChildren();
+        canvas = document.createElement('canvas');
+        canvas.id = 'cashflowChart';
+        canvas.setAttribute('aria-label', 'Income versus expenses bar chart');
+        canvas.setAttribute('role', 'img');
+        chartBox.appendChild(canvas);
       }
+      if (canvas) {
+        if (cashflowChartInstance) cashflowChartInstance.destroy();
+        const isDark = document.documentElement.dataset.mode === 'dark';
+        const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+        const textColor = isDark ? '#94A3B8' : '#64748B';
+
+        cashflowChartInstance = new window.Chart(canvas, {
+          type: 'bar',
+          data: {
+            labels: [
+              shortMonthLabel(previous.month, previous.year),
+              shortMonthLabel(current.month, current.year),
+            ],
+            datasets: [
+              {
+                label: 'Income',
+                data: [previous.income || 0, current.income || 0],
+                backgroundColor: isDark ? '#22C55E' : '#16A34A',
+                borderRadius: 6,
+                maxBarThickness: 44,
+              },
+              {
+                label: 'Expenses',
+                data: [previous.expenses || 0, current.expenses || 0],
+                backgroundColor: isDark ? '#F59E0B' : '#D97706',
+                borderRadius: 6,
+                maxBarThickness: 44,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  color: textColor,
+                  font: { size: 11 },
+                  callback: (value) => money(value),
+                },
+                grid: { color: gridColor },
+              },
+              x: {
+                ticks: { color: textColor, font: { size: 12, weight: '600' } },
+                grid: { display: false },
+              },
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)',
+                titleColor: '#FFFFFF',
+                bodyColor: '#FFFFFF',
+                padding: 10,
+                boxPadding: 6,
+                cornerRadius: 8,
+                callbacks: {
+                  label: (ctx) => ` ${ctx.dataset.label}: ${money(ctx.parsed.y)}`,
+                },
+              },
+            },
+          },
+        });
+      }
+    } else if (chartBox) {
+      const max = Math.max(
+        current.income || 0,
+        current.expenses || 0,
+        previous.income || 0,
+        previous.expenses || 0,
+        1
+      );
+      chartBox.replaceChildren(buildColumns(previous, current, max));
     }
   };
 
   // ---------- Budget alerts ----------
-  const renderAlerts = (result) => {
+  const renderAlerts = (result, retryFn) => {
     if (!result || result.status !== 200 || !result.data || !result.data.data) {
-      UI.renderState(alertsEl, 'error', { message: 'Could not load budget alerts.', retry: loadAll });
+      UI.renderState(alertsEl, 'error', {
+        message: 'Could not load budget alerts.',
+        retry: typeof retryFn === 'function' ? retryFn : () => loadSection('alerts'),
+      });
       return;
     }
     const alerts = result.data.data.alerts || [];
@@ -421,9 +459,12 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ---------- Budget progress ----------
-  const renderBudgetStatus = (result) => {
+  const renderBudgetStatus = (result, retryFn) => {
     if (!result || result.status !== 200 || !result.data || !result.data.data) {
-      UI.renderState(budgetStatusEl, 'error', { message: 'Could not load budget progress.', retry: loadAll });
+      UI.renderState(budgetStatusEl, 'error', {
+        message: 'Could not load budget progress.',
+        retry: typeof retryFn === 'function' ? retryFn : () => loadSection('budgets'),
+      });
       return;
     }
     const budgets = result.data.data.budgets || [];
@@ -486,9 +527,55 @@ document.addEventListener('DOMContentLoaded', () => {
     budgetStatusEl.replaceChildren(list);
   };
 
-  // ---------- Load everything ----------
+  // ---------- Load individual section with independent rendering ----------
+  async function loadSection(sectionKey) {
+    const loadId = currentLoadId;
+    try {
+      if (sectionKey === 'spending') {
+        showChartState(spendingState, spendingChartBox, 'loading', { message: 'Loading chart…' });
+        const res = await api.get('/analytics/spending-by-category');
+        if (loadId !== currentLoadId) return;
+        lastSpendingResult = res.status === 200 ? res : null;
+        renderSpending(lastSpendingResult, () => loadSection('spending'));
+      } else if (sectionKey === 'cashflow') {
+        showChartState(cashflowState, cashflowChartBox, 'loading', { message: 'Loading chart…' });
+        const res = await api.get('/analytics/month-comparison');
+        if (loadId !== currentLoadId) return;
+        lastCashflowResult = res.status === 200 ? res : null;
+        updateTopMetrics(lastCashflowResult);
+        renderCashflow(lastCashflowResult, () => loadSection('cashflow'));
+      } else if (sectionKey === 'alerts') {
+        UI.renderState(alertsEl, 'loading', { message: 'Loading alerts…' });
+        const res = await api.get('/analytics/budget-alerts');
+        if (loadId !== currentLoadId) return;
+        renderAlerts(res.status === 200 ? res : null, () => loadSection('alerts'));
+      } else if (sectionKey === 'budgets') {
+        UI.renderState(budgetStatusEl, 'loading', { message: 'Loading budgets…' });
+        const res = await api.get('/analytics/budget-status');
+        if (loadId !== currentLoadId) return;
+        renderBudgetStatus(res.status === 200 ? res : null, () => loadSection('budgets'));
+      }
+    } catch (e) {
+      if (loadId !== currentLoadId) return;
+      if (sectionKey === 'spending') {
+        renderSpending(null, () => loadSection('spending'));
+      } else if (sectionKey === 'cashflow') {
+        updateTopMetrics(null);
+        renderCashflow(null, () => loadSection('cashflow'));
+      } else if (sectionKey === 'alerts') {
+        renderAlerts(null, () => loadSection('alerts'));
+      } else if (sectionKey === 'budgets') {
+        renderBudgetStatus(null, () => loadSection('budgets'));
+      }
+    }
+  }
+
+  // ---------- Load everything concurrently ----------
   const setLoading = () => {
     monthResolved = false;
+    if (statIncomeFootEl && statIncomeFootEl.textContent !== 'Error loading data') statIncomeFootEl.textContent = 'Loading…';
+    if (statExpensesFootEl && statExpensesFootEl.textContent !== 'Error loading data') statExpensesFootEl.textContent = 'Loading…';
+    if (statNetFootEl && statNetFootEl.textContent !== 'Error loading data') statNetFootEl.textContent = 'Loading…';
     showChartState(spendingState, spendingChartBox, 'loading', { message: 'Loading chart…' });
     showChartState(cashflowState, cashflowChartBox, 'loading', { message: 'Loading chart…' });
     UI.renderState(alertsEl, 'loading', { message: 'Loading alerts…' });
@@ -496,29 +583,83 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   async function loadAll() {
+    if (isLoadingAll) return;
+    isLoadingAll = true;
+    const thisLoadId = ++currentLoadId;
     setLoading();
 
-    const [spending, cashflow, alerts, budgetStatus] = await Promise.allSettled([
-      api.get('/analytics/spending-by-category'),
-      api.get('/analytics/month-comparison'),
-      api.get('/analytics/budget-alerts'),
-      api.get('/analytics/budget-status'),
-    ]);
+    // Fetch all independent endpoints concurrently and render each as soon as it arrives
+    const spendingTask = api.get('/analytics/spending-by-category').then(
+      (res) => {
+        if (thisLoadId !== currentLoadId) return null;
+        lastSpendingResult = res && res.status === 200 ? res : null;
+        renderSpending(lastSpendingResult, () => loadSection('spending'));
+        return lastSpendingResult;
+      },
+      () => {
+        if (thisLoadId !== currentLoadId) return null;
+        lastSpendingResult = null;
+        renderSpending(null, () => loadSection('spending'));
+        return null;
+      }
+    );
 
-    const cashflowVal = cashflow.status === 'fulfilled' ? cashflow.value : null;
-    lastCashflowResult = cashflowVal;
-    lastSpendingResult = spendingVal;
+    const cashflowTask = api.get('/analytics/month-comparison').then(
+      (res) => {
+        if (thisLoadId !== currentLoadId) return null;
+        lastCashflowResult = res && res.status === 200 ? res : null;
+        updateTopMetrics(lastCashflowResult);
+        renderCashflow(lastCashflowResult, () => loadSection('cashflow'));
+        return lastCashflowResult;
+      },
+      () => {
+        if (thisLoadId !== currentLoadId) return null;
+        lastCashflowResult = null;
+        updateTopMetrics(null);
+        renderCashflow(null, () => loadSection('cashflow'));
+        return null;
+      }
+    );
 
-    updateTopMetrics(cashflowVal, spendingVal);
-    renderSpending(spendingVal);
-    renderCashflow(cashflowVal);
-    renderAlerts(alerts.status === 'fulfilled' ? alerts.value : null);
-    renderBudgetStatus(budgetStatus.status === 'fulfilled' ? budgetStatus.value : null);
+    const alertsTask = api.get('/analytics/budget-alerts').then(
+      (res) => {
+        if (thisLoadId !== currentLoadId) return null;
+        const val = res && res.status === 200 ? res : null;
+        renderAlerts(val, () => loadSection('alerts'));
+        return val;
+      },
+      () => {
+        if (thisLoadId !== currentLoadId) return null;
+        renderAlerts(null, () => loadSection('alerts'));
+        return null;
+      }
+    );
 
-    if (!monthResolved) {
-      monthLabels.forEach((el) => {
-        if (el.textContent === 'Loading…') el.textContent = 'This month';
-      });
+    const budgetStatusTask = api.get('/analytics/budget-status').then(
+      (res) => {
+        if (thisLoadId !== currentLoadId) return null;
+        const val = res && res.status === 200 ? res : null;
+        renderBudgetStatus(val, () => loadSection('budgets'));
+        return val;
+      },
+      () => {
+        if (thisLoadId !== currentLoadId) return null;
+        renderBudgetStatus(null, () => loadSection('budgets'));
+        return null;
+      }
+    );
+
+    try {
+      await Promise.allSettled([spendingTask, cashflowTask, alertsTask, budgetStatusTask]);
+    } finally {
+      if (thisLoadId === currentLoadId) {
+        isLoadingAll = false;
+        if (!monthResolved) {
+          monthLabels.forEach((el) => {
+            if (el.textContent === 'Loading…') el.textContent = 'This month';
+          });
+        }
+      }
     }
   }
 
@@ -528,7 +669,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const computed = window.getComputedStyle ? window.getComputedStyle(document.documentElement) : null;
     const surfaceColor = computed ? computed.getPropertyValue('--surface').trim() : (isDark ? '#14171D' : '#FFFFFF');
     if (lastSpendingResult) {
-      renderSpending(lastSpendingResult);
+      renderSpending(lastSpendingResult, () => loadSection('spending'));
     } else if (spendingChartInstance) {
       if (spendingChartInstance.data.datasets[0]) {
         spendingChartInstance.data.datasets[0].borderColor = surfaceColor || (isDark ? '#14171D' : '#FFFFFF');
@@ -565,13 +706,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (refreshBtn) {
     refreshBtn.addEventListener('click', async () => {
+      if (refreshBtn.disabled || isLoadingAll) return;
       refreshBtn.disabled = true;
       const original = refreshBtn.textContent;
       refreshBtn.textContent = 'Refreshing…';
-      await loadAll();
-      refreshBtn.disabled = false;
-      refreshBtn.textContent = original;
-      UI.showToast('Reports refreshed', 'success');
+      try {
+        await loadAll();
+        UI.showToast('Reports refreshed', 'success');
+      } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.textContent = original;
+      }
     });
   }
 
