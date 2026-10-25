@@ -40,6 +40,8 @@ jobs:
           tests/theme-colors.test.js
           tests/reports-orchestration.test.js
           tests/worker-proxy.test.js
+          tests/transactions-client.test.js
+          tests/analytics-period.test.js
 
       - name: Run browser regression tests
         env:
@@ -49,6 +51,10 @@ jobs:
           tests/theme-browser.test.js
           tests/reports-browser.test.js
           tests/categories-browser.test.js
+          tests/account-settings-browser.test.js
+          tests/transactions-browser.test.js
+          tests/reports-period-browser.test.js
+          tests/responsive-layout.test.js
 
       - name: Run legacy site verification
         run: node tools/legacy-site-verify.js

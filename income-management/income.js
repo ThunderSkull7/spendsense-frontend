@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
           form.reset();
           resetDateInput();
           exitEditMode();
-          loadIncomes(false);
+          loadIncomes();
         } else {
           setMessage(errorDetail(data, editingIncomeId ? 'Failed to update income.' : 'Failed to save income.'), 'error');
         }
@@ -174,22 +174,111 @@ document.addEventListener('DOMContentLoaded', () => {
   const stateEl = document.querySelector('[data-income-state]');
   const summaryEl = document.querySelector('[data-income-summary]');
   const loadMoreBtn = document.querySelector('[data-income-load-more]');
+  const searchInput = document.querySelector('[data-income-search]');
+  const startDateInput = document.querySelector('[data-income-from]');
+  const endDateInput = document.querySelector('[data-income-to]');
+  const sortButtons = Array.from(document.querySelectorAll('[data-sort-field]'));
+  const clearFiltersBtn = document.querySelector('[data-clear-filters]');
+  const filterNote = document.querySelector('[data-filter-note]');
 
-  let nextPage = 1;
-  let lastPage = 1;
-  let total = 0;
-  let loaded = 0;
+  const transactions = window.SpendSenseTransactions;
+  const PAGE_SIZE = 15; // Matches the existing paginated API page size.
+  const FILTER_STORAGE_KEY = 'spendsense.income.filters.v1';
+
+  const state = {
+    items: [],
+    total: 0,
+    visibleCount: PAGE_SIZE,
+    sortKey: 'date-desc',
+    filters: transactions ? transactions.emptyFilters() : { search: '', startDate: '', endDate: '' },
+    invalidRange: false,
+  };
   const incomeById = new Map();
 
-  const updateSummary = () => {
-    if (summaryEl) summaryEl.textContent = total ? `Showing ${loaded} of ${total} entries` : '';
+  const inferFilterNote = () => {
+    if (!state.invalidRange) return '';
+    return 'End date must be on or after start date. Date filtering is off until the range is valid.';
   };
 
-  const setLoadMore = (visible) => {
-    if (!loadMoreBtn) return;
-    loadMoreBtn.hidden = !visible;
-    const footer = loadMoreBtn.closest('.card-footer');
-    if (footer) footer.hidden = !visible;
+  const setErrorNote = (message) => {
+    if (!filterNote) return;
+    filterNote.textContent = message || '';
+    filterNote.hidden = !message;
+  };
+
+  // Keep the active filters while the user is editing, so returning to this
+  // history preserves the same view.
+  const saveFilterState = () => {
+    if (!window.sessionStorage) return;
+    try {
+      window.sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({
+        filters: state.filters,
+        sortKey: state.sortKey,
+      }));
+    } catch (err) {
+      // Storage being unavailable must not break filtering.
+    }
+  };
+
+  const loadStoredFilterState = () => {
+    if (!window.sessionStorage || !transactions) return;
+    try {
+      const raw = window.sessionStorage.getItem(FILTER_STORAGE_KEY);
+      const saved = raw ? JSON.parse(raw) : null;
+      if (saved && typeof saved === 'object') {
+        if (saved.filters && typeof saved.filters === 'object') {
+          state.filters = {
+            search: typeof saved.filters.search === 'string' ? saved.filters.search : '',
+            startDate: typeof saved.filters.startDate === 'string' ? saved.filters.startDate : '',
+            endDate: typeof saved.filters.endDate === 'string' ? saved.filters.endDate : '',
+          };
+        }
+        if (typeof saved.sortKey === 'string') state.sortKey = saved.sortKey;
+      }
+    } catch (err) {
+      // Ignore malformed saved state and fall back to defaults.
+    }
+  };
+
+  const readEffectiveFilters = () => {
+    const filters = { ...state.filters };
+    if (state.invalidRange) {
+      filters.startDate = '';
+      filters.endDate = '';
+    }
+    return filters;
+  };
+
+  const computeRows = () => {
+    if (!transactions) return [];
+    const rows = transactions.filterTransactions(state.items, readEffectiveFilters(), {
+      dateField: 'income_date',
+      searchFields: ['source', 'notes'],
+    });
+    return transactions.sortTransactions(rows, state.sortKey, 'income_date');
+  };
+
+  const applyStateToControls = () => {
+    if (searchInput) searchInput.value = state.filters.search;
+    if (startDateInput) startDateInput.value = state.filters.startDate;
+    if (endDateInput) endDateInput.value = state.filters.endDate;
+    sortButtons.forEach((btn) => {
+      const field = btn.dataset.sortField;
+      const active = state.sortKey.startsWith(field);
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      const descending = state.sortKey.endsWith('-desc');
+      btn.setAttribute('aria-label', `Sort by ${field} ${descending ? 'newest first' : 'oldest first'}`);
+      const labelNode = btn.querySelector('[data-sort-label]');
+      if (labelNode) labelNode.textContent = `${field === 'date' ? 'Date' : 'Amount'} ${descending ? '↓' : '↑'}`;
+    });
+    state.invalidRange = Boolean(
+      state.filters.startDate
+      && state.filters.endDate
+      && state.filters.endDate < state.filters.startDate
+    );
+    setErrorNote(inferFilterNote());
+    if (clearFiltersBtn) clearFiltersBtn.hidden = !transactions.hasActiveFilters(state.filters);
   };
 
   const showState = (type, options) => {
@@ -203,6 +292,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const showTable = () => {
     if (stateEl) stateEl.hidden = true;
     if (tableWrap) tableWrap.hidden = false;
+  };
+
+  const emptyMessage = () => {
+    if (!transactions.hasActiveFilters(readEffectiveFilters())) {
+      return 'No income logged yet. Add your first entry.';
+    }
+    return 'No income matches these filters. Try clearing a filter or widening the date range.';
   };
 
   const buildRow = (item) => {
@@ -270,6 +366,86 @@ document.addEventListener('DOMContentLoaded', () => {
     return row;
   };
 
+  const renderRows = (items) => {
+    rowsBody.replaceChildren();
+    items.forEach((item) => rowsBody.appendChild(buildRow(item)));
+  };
+
+  const updateSummary = (visibleCount, totalCount) => {
+    if (!summaryEl) return;
+    const filtersActive = transactions.hasActiveFilters(readEffectiveFilters());
+    const noun = filtersActive ? 'matching entries' : 'entries';
+    if (!totalCount) {
+      summaryEl.textContent = '';
+      return;
+    }
+    summaryEl.textContent = `Showing ${visibleCount} of ${totalCount} ${noun}`;
+  };
+
+  const render = () => {
+    const sorted = computeRows();
+    state.total = state.items.length;
+    const visible = sorted.slice(0, state.visibleCount);
+    if (visible.length) {
+      renderRows(visible);
+      showTable();
+    } else {
+      showState('empty', { message: emptyMessage() });
+    }
+
+    updateSummary(visible.length, sorted.length);
+    if (loadMoreBtn) {
+      loadMoreBtn.hidden = visible.length >= sorted.length;
+      loadMoreBtn.disabled = false;
+      loadMoreBtn.textContent = 'Load more';
+      const footer = loadMoreBtn.closest('.card-footer');
+      if (footer) footer.hidden = !visible.length || visible.length >= sorted.length;
+    }
+  };
+
+  const refreshFromControls = () => {
+    if (searchInput) state.filters.search = searchInput.value;
+    if (startDateInput) state.filters.startDate = startDateInput.value;
+    if (endDateInput) state.filters.endDate = endDateInput.value;
+    applyStateToControls();
+    state.visibleCount = PAGE_SIZE;
+    saveFilterState();
+    render();
+  };
+
+  loadStoredFilterState();
+  applyStateToControls();
+
+  if (searchInput) searchInput.addEventListener('input', refreshFromControls);
+  if (startDateInput) startDateInput.addEventListener('change', refreshFromControls);
+  if (endDateInput) endDateInput.addEventListener('change', refreshFromControls);
+
+  sortButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const field = btn.dataset.sortField;
+      const isSameField = state.sortKey.startsWith(field);
+      state.sortKey = isSameField && state.sortKey.endsWith('-desc')
+        ? `${field}-asc`
+        : `${field}-desc`;
+      applyStateToControls();
+      saveFilterState();
+      render();
+    });
+  });
+
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener('click', () => {
+      state.filters = transactions.emptyFilters();
+      if (searchInput) searchInput.value = '';
+      if (startDateInput) startDateInput.value = '';
+      if (endDateInput) endDateInput.value = '';
+      state.visibleCount = PAGE_SIZE;
+      applyStateToControls();
+      saveFilterState();
+      render();
+    });
+  }
+
   if (table) {
     table.addEventListener('click', async (event) => {
       const editButton = event.target.closest('[data-edit-income]');
@@ -292,15 +468,11 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const { data, status } = await api.delete(`/incomes/${button.dataset.id}`);
         if (status === 204) {
-          const row = button.closest('tr');
-          if (row) row.remove();
-          incomeById.delete(String(button.dataset.id));
-          loaded = Math.max(0, loaded - 1);
-          total = Math.max(0, total - 1);
-          updateSummary();
-          if (!rowsBody.querySelector('tr')) {
-            showState('empty', { message: 'No income logged yet. Add your first entry.' });
-          }
+          const id = String(button.dataset.id);
+          state.items = state.items.filter((item) => String(item.id) !== id);
+          incomeById.delete(id);
+          saveFilterState();
+          render();
           UI.showToast('Income deleted', 'success');
         } else {
           button.disabled = false;
@@ -313,79 +485,55 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  async function loadIncomes(append = false) {
-    if (!append) {
-      nextPage = 1;
-      lastPage = 1;
-      total = 0;
-      loaded = 0;
-      setLoadMore(false);
-      showState('loading', { message: 'Loading income…' });
-    }
-
+  // Load the full income dataset from the existing paginated API so filters,
+  // search, and sorting apply to a complete, consistent snapshot.
+  async function loadIncomes() {
+    showState('loading', { message: 'Loading income…' });
     try {
-      const { data, status } = await api.get(`/incomes?page=${nextPage}`);
-
-      if (status !== 200 || !data || !data.data) {
-        if (!append && summaryEl) summaryEl.textContent = '';
-        showState('error', {
-          message: (data && data.message) || 'Could not load income entries.',
-          retry: () => loadIncomes(false),
-        });
-        return;
+      const firstPage = await api.get('/incomes?page=1');
+      if (!firstPage || firstPage.status !== 200 || !firstPage.data || !firstPage.data.data) {
+        throw new Error((firstPage.data && firstPage.data.message) || 'Could not load income entries.');
       }
 
-      const paginator = data.data;
-      const items = paginator.data || [];
-      total = paginator.total || items.length;
-      lastPage = paginator.last_page || 1;
-
-      if (!append && !items.length) {
-        updateSummary();
-        showState('empty', { message: 'No income logged yet. Add your first entry.' });
-        return;
+      const paginator = firstPage.data.data;
+      const firstItems = Array.isArray(paginator.data) ? paginator.data : [];
+      const lastPage = paginator.last_page || 1;
+      const pageRequests = [];
+      for (let page = 2; page <= lastPage; page += 1) {
+        pageRequests.push(api.get(`/incomes?page=${page}`));
+      }
+      const otherPages = await Promise.all(pageRequests);
+      const missingPage = otherPages.find(
+        (response) => !response || response.status !== 200 || !response.data || !response.data.data
+      );
+      if (missingPage) {
+        throw new Error((missingPage.data && missingPage.data.message) || 'Could not load all income entries.');
       }
 
-      if (!append) {
-        rowsBody.replaceChildren();
-        incomeById.clear();
-      }
-      items.forEach((item) => {
-        incomeById.set(String(item.id), item);
-        rowsBody.appendChild(buildRow(item));
-      });
-      loaded += items.length;
-
-      showTable();
-      updateSummary();
-
-      setLoadMore(nextPage < lastPage);
-      if (loadMoreBtn) {
-        loadMoreBtn.disabled = false;
-        loadMoreBtn.textContent = 'Load more';
-      }
+      state.items = otherPages.reduce(
+        (accumulated, response) => accumulated.concat(response.data.data.data || []),
+        firstItems
+      );
+      incomeById.clear();
+      state.items.forEach((item) => incomeById.set(String(item.id), item));
+      state.total = state.items.length;
+      state.visibleCount = PAGE_SIZE;
+      applyStateToControls();
+      render();
     } catch (err) {
-      if (loadMoreBtn) {
-        loadMoreBtn.disabled = false;
-        loadMoreBtn.textContent = 'Load more';
-      }
-      if (!append && summaryEl) summaryEl.textContent = '';
       showState('error', {
-        message: 'Could not reach the API. ' + (err.message || ''),
-        retry: () => loadIncomes(false),
+        message: err && err.message ? err.message : 'Could not reach the API to load income entries.',
+        retry: () => loadIncomes(),
       });
     }
   }
 
   if (loadMoreBtn) {
     loadMoreBtn.addEventListener('click', () => {
-      if (nextPage >= lastPage) return;
-      nextPage += 1;
-      loadMoreBtn.disabled = true;
-      loadMoreBtn.textContent = 'Loading…';
-      loadIncomes(true);
+      state.visibleCount = Math.min(state.items.length, state.visibleCount + PAGE_SIZE);
+      render();
     });
   }
 
-  loadIncomes(false);
+  loadIncomes();
 });

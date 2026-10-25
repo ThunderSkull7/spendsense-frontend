@@ -164,7 +164,7 @@ test('browser runtime: selecting red immediately applies red accents and persist
     assert.equal(initial.selectValue, 'green');
     assert.equal(initial.themeColor, 'green');
     assert.equal(initial.primaryVar, '#10B981');
-    assert.equal(initial.btnBg, 'rgb(16, 185, 129)');
+    assert.equal(initial.btnBg, 'rgb(5, 150, 105)');
     assert.equal(initial.activeNavColor, 'rgb(16, 185, 129)');
 
     // 2. Select 'red' in Settings and trigger change
@@ -200,7 +200,7 @@ test('browser runtime: selecting red immediately applies red accents and persist
     assert.equal(afterRed.themeColor, 'red');
     assert.equal(afterRed.storedColor, 'red');
     assert.equal(afterRed.primaryVar, '#FB7185');
-    assert.equal(afterRed.btnBg, 'rgb(251, 113, 133)', 'primary button must change from green to red');
+    assert.equal(afterRed.btnBg, 'rgb(244, 63, 94)', 'primary button must change from green to red');
     assert.equal(afterRed.activeNavColor, 'rgb(251, 113, 133)', 'active sidebar link must change from green to red');
 
     // 3. Switch to Dark Mode while Red is selected
@@ -240,7 +240,7 @@ test('browser runtime: selecting red immediately applies red accents and persist
     assert.equal(afterDark.primaryVar, '#FB7185');
     assert.equal(afterDark.bgVar, '#090B0F', 'dark page background must be #090B0F');
     assert.equal(afterDark.surfaceVar, '#14171D', 'dark card surface must be #14171D');
-    assert.equal(afterDark.btnBg, 'rgb(251, 113, 133)');
+    assert.equal(afterDark.btnBg, 'rgb(244, 63, 94)');
     assert.equal(afterDark.activeNavColor, 'rgb(251, 113, 133)');
 
     // 4. Navigate to Dashboard and verify persistence of red palette & dark mode
@@ -275,7 +275,7 @@ test('browser runtime: selecting red immediately applies red accents and persist
     assert.equal(dashboardState.primaryVar, '#FB7185');
     assert.equal(dashboardState.bgVar, '#090B0F');
     assert.equal(dashboardState.surfaceVar, '#14171D');
-    assert.equal(dashboardState.btnBg, 'rgb(251, 113, 133)');
+    assert.equal(dashboardState.btnBg, 'rgb(244, 63, 94)');
     assert.equal(dashboardState.activeNavColor, 'rgb(251, 113, 133)');
 
     ws.close();

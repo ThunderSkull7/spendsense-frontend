@@ -176,6 +176,41 @@ const API = {
     return user;
   },
 
+  _sessionUserPromise: null,
+
+  // Load the authenticated user from the existing session cookie. This is
+  // intentionally a plain GET: the account menu and Settings page need a
+  // best-effort identity hydration without turning an expired session into a
+  // global session-expired event on pages that may already be showing fallback
+  // content. Concurrent callers share one request.
+  async loadSessionUser({ force = false } = {}) {
+    if (!force && this.user) return this.user;
+    if (this._sessionUserPromise) return this._sessionUserPromise;
+
+    this._sessionUserPromise = (async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/user`, {
+          method: 'GET',
+          credentials: 'include',
+          headers: { Accept: 'application/json' },
+        });
+
+        if (!response.ok) return null;
+
+        const data = await response.json();
+        const user = data && data.user ? data.user : data;
+        if (user && user.id != null) return this.setUser(user);
+        return null;
+      } catch (e) {
+        return null;
+      } finally {
+        this._sessionUserPromise = null;
+      }
+    })();
+
+    return this._sessionUserPromise;
+  },
+
   // Check if user has a session in memory (persistent across API calls on this page)
   isAuthenticated() {
     return !!API.user;
@@ -215,6 +250,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Read API base URL from meta tag
   const metaBase = document.querySelector('meta[name="api-base-url"]');
   if (metaBase) API.init(metaBase.content);
+
+  // Hydrate the authenticated identity for the shared account control. The
+  // call is best-effort and shows neutral fallbacks when no session/user data
+  // is available.
+  if (document.querySelector('.topbar')) {
+    API.loadSessionUser();
+  }
 
   // --- Landing page navigation toggle (small screens) ---
   const navToggle = document.querySelector('.nav-toggle');

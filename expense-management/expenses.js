@@ -353,38 +353,117 @@ document.addEventListener('DOMContentLoaded', () => {
   const summaryEl = document.querySelector('[data-list-summary]');
   const loadMoreBtn = document.querySelector('[data-load-more]');
   const filterSelect = document.querySelector('[data-category-filter]');
+  const searchInput = document.querySelector('[data-expense-search]');
+  const startDateInput = document.querySelector('[data-expense-from]');
+  const endDateInput = document.querySelector('[data-expense-to]');
+  const sortButtons = Array.from(document.querySelectorAll('[data-sort-field]'));
+  const clearFiltersBtn = document.querySelector('[data-clear-filters]');
+  const filterNote = document.querySelector('[data-filter-note]');
 
-  let nextPage = 1;
-  let lastPage = 1;
-  let total = 0;
-  let loaded = 0;
+  const transactions = window.SpendSenseTransactions;
+  const PAGE_SIZE = 15; // Matches the existing paginated API page size.
+  const FILTER_STORAGE_KEY = 'spendsense.expenses.filters.v1';
 
-  const updateSummary = () => {
-    if (summaryEl) summaryEl.textContent = total ? `Showing ${loaded} of ${total} expenses` : '';
+  const state = {
+    items: [],
+    total: 0,
+    visibleCount: PAGE_SIZE,
+    sortKey: 'date-desc',
+    filters: transactions ? transactions.emptyFilters() : { search: '', startDate: '', endDate: '', categoryId: '' },
+    invalidRange: false,
   };
 
-  const setLoadMore = (visible) => {
-    if (!loadMoreBtn) return;
-    loadMoreBtn.hidden = !visible;
-    const footer = loadMoreBtn.closest('.card-footer');
-    if (footer) footer.hidden = !visible;
+  const inferFilterNote = () => {
+    if (!state.invalidRange) return '';
+    return 'End date must be on or after start date. Date filtering is off until the range is valid.';
   };
 
-  const showState = (type, options) => {
-    if (tableWrap) tableWrap.hidden = true;
-    if (stateEl) {
-      stateEl.hidden = false;
-      UI.renderState(stateEl, type, options);
+  const setErrorNote = (message) => {
+    if (!filterNote) return;
+    filterNote.textContent = message || '';
+    filterNote.hidden = !message;
+  };
+
+  // Preserve the active filters while navigating to edit pages, so returning
+  // to the list restores the same view after saving or cancelling.
+  const saveFilterState = () => {
+    if (!window.sessionStorage) return;
+    try {
+      window.sessionStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify({
+        filters: state.filters,
+        sortKey: state.sortKey,
+      }));
+    } catch (err) {
+      // Storage being unavailable must not break filtering.
     }
   };
 
-  const showTable = () => {
-    if (stateEl) stateEl.hidden = true;
-    if (tableWrap) tableWrap.hidden = false;
+  const loadStoredFilterState = () => {
+    if (!window.sessionStorage || !transactions) return;
+    try {
+      const raw = window.sessionStorage.getItem(FILTER_STORAGE_KEY);
+      const saved = raw ? JSON.parse(raw) : null;
+      if (saved && typeof saved === 'object') {
+        if (saved.filters && typeof saved.filters === 'object') {
+          state.filters = {
+            search: typeof saved.filters.search === 'string' ? saved.filters.search : '',
+            startDate: typeof saved.filters.startDate === 'string' ? saved.filters.startDate : '',
+            endDate: typeof saved.filters.endDate === 'string' ? saved.filters.endDate : '',
+            categoryId: saved.filters.categoryId == null ? '' : String(saved.filters.categoryId),
+          };
+        }
+        if (typeof saved.sortKey === 'string') state.sortKey = saved.sortKey;
+      }
+    } catch (err) {
+      // Ignore malformed saved state and fall back to defaults.
+    }
   };
 
-  const showEmpty = () =>
-    showState('empty', { message: 'No expenses yet. Log your first expense to see it here.' });
+  const readEffectiveFilters = () => {
+    const filters = { ...state.filters };
+    if (state.invalidRange) {
+      // Never silently pretend an invalid date range filtered to a clean,
+      // empty result: instead, leave date filtering off until the range is
+      // corrected, and the page shows the reason in the persisted note.
+      filters.startDate = '';
+      filters.endDate = '';
+    }
+    return filters;
+  };
+
+  const computeRows = () => {
+    if (!transactions) return [];
+    const rows = transactions.filterTransactions(state.items, readEffectiveFilters(), {
+      dateField: 'expense_date',
+      categoryField: 'category_id',
+      searchFields: ['description', 'category.name'],
+    });
+    return transactions.sortTransactions(rows, state.sortKey, 'expense_date');
+  };
+
+  const applyStateToControls = () => {
+    if (searchInput) searchInput.value = state.filters.search;
+    if (startDateInput) startDateInput.value = state.filters.startDate;
+    if (endDateInput) endDateInput.value = state.filters.endDate;
+    if (filterSelect) filterSelect.value = state.filters.categoryId;
+    sortButtons.forEach((btn) => {
+      const field = btn.dataset.sortField;
+      const active = state.sortKey.startsWith(field);
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      const descending = state.sortKey.endsWith('-desc');
+      btn.setAttribute('aria-label', `Sort by ${field} ${descending ? 'newest first' : 'oldest first'}`);
+      const labelNode = btn.querySelector('[data-sort-label]');
+      if (labelNode) labelNode.textContent = `${field === 'date' ? 'Date' : 'Amount'} ${descending ? '↓' : '↑'}`;
+    });
+    state.invalidRange = Boolean(
+      state.filters.startDate
+      && state.filters.endDate
+      && state.filters.endDate < state.filters.startDate
+    );
+    setErrorNote(inferFilterNote());
+    if (clearFiltersBtn) clearFiltersBtn.hidden = !transactions.hasActiveFilters(state.filters);
+  };
 
   const buildRow = (item) => {
     const row = document.createElement('tr');
@@ -453,18 +532,72 @@ document.addEventListener('DOMContentLoaded', () => {
     return row;
   };
 
-  const renderRows = (items, append) => {
-    if (!append) rowsBody.replaceChildren();
-    items.forEach((item) => rowsBody.appendChild(buildRow(item)));
-    loaded += items.length;
+  const showState = (type, options) => {
+    if (tableWrap) tableWrap.hidden = true;
+    if (stateEl) {
+      stateEl.hidden = false;
+      UI.renderState(stateEl, type, options);
+    }
   };
 
-  const applyFilter = () => {
-    if (!filterSelect) return;
-    const selected = filterSelect.value;
-    rowsBody.querySelectorAll('tr').forEach((row) => {
-      row.hidden = selected !== '' && row.dataset.category !== selected;
-    });
+  const showTable = () => {
+    if (stateEl) stateEl.hidden = true;
+    if (tableWrap) tableWrap.hidden = false;
+  };
+
+  const emptyMessage = () => {
+    if (!transactions.hasActiveFilters(readEffectiveFilters())) {
+      return 'No expenses yet. Log your first expense to see it here.';
+    }
+    return 'No expenses match these filters. Try clearing a filter or widening the date range.';
+  };
+
+  const renderRows = (items) => {
+    rowsBody.replaceChildren();
+    items.forEach((item) => rowsBody.appendChild(buildRow(item)));
+  };
+
+  const updateSummary = (visibleCount, totalCount) => {
+    if (!summaryEl) return;
+    const filtersActive = transactions.hasActiveFilters(readEffectiveFilters());
+    const noun = filtersActive ? 'matching expenses' : 'expenses';
+    if (!totalCount) {
+      summaryEl.textContent = '';
+      return;
+    }
+    summaryEl.textContent = `Showing ${visibleCount} of ${totalCount} ${noun}`;
+  };
+
+  const render = () => {
+    const sorted = computeRows();
+    state.total = state.items.length;
+    const visible = sorted.slice(0, state.visibleCount);
+    if (visible.length) {
+      renderRows(visible);
+      showTable();
+    } else {
+      showState('empty', { message: emptyMessage() });
+    }
+
+    updateSummary(visible.length, sorted.length);
+    if (loadMoreBtn) {
+      loadMoreBtn.hidden = visible.length >= sorted.length;
+      loadMoreBtn.disabled = false;
+      loadMoreBtn.textContent = 'Load more';
+      const footer = loadMoreBtn.closest('.card-footer');
+      if (footer) footer.hidden = !visible.length || visible.length >= sorted.length;
+    }
+  };
+
+  const refreshFromControls = () => {
+    if (searchInput) state.filters.search = searchInput.value;
+    if (startDateInput) state.filters.startDate = startDateInput.value;
+    if (endDateInput) state.filters.endDate = endDateInput.value;
+    if (filterSelect) state.filters.categoryId = filterSelect.value;
+    applyStateToControls();
+    state.visibleCount = PAGE_SIZE;
+    saveFilterState();
+    render();
   };
 
   // Populate the category filter (expense categories only).
@@ -476,14 +609,57 @@ document.addEventListener('DOMContentLoaded', () => {
       option.textContent = category.name;
       filterSelect.appendChild(option);
     });
+
+    const selected = state.filters.categoryId;
+    if (selected && !filterSelect.querySelector(`option[value="${selected}"]`)) {
+      state.filters.categoryId = '';
+      if (filterNote) {
+        setErrorNote('Category filter cleared — that category is no longer available.');
+      }
+    }
+    applyStateToControls();
   });
 
-  if (filterSelect) filterSelect.addEventListener('change', applyFilter);
+  loadStoredFilterState();
+  applyStateToControls();
+
+  if (searchInput) searchInput.addEventListener('input', refreshFromControls);
+  if (startDateInput) startDateInput.addEventListener('change', refreshFromControls);
+  if (endDateInput) endDateInput.addEventListener('change', refreshFromControls);
+  if (filterSelect) filterSelect.addEventListener('change', refreshFromControls);
+
+  sortButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const field = btn.dataset.sortField;
+      const isSameField = state.sortKey.startsWith(field);
+      state.sortKey = isSameField && state.sortKey.endsWith('-desc')
+        ? `${field}-asc`
+        : `${field}-desc`;
+      applyStateToControls();
+      saveFilterState();
+      render();
+    });
+  });
+
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener('click', () => {
+      state.filters = transactions.emptyFilters();
+      if (searchInput) searchInput.value = '';
+      if (startDateInput) startDateInput.value = '';
+      if (endDateInput) endDateInput.value = '';
+      if (filterSelect) filterSelect.value = '';
+      state.visibleCount = PAGE_SIZE;
+      applyStateToControls();
+      saveFilterState();
+      render();
+    });
+  }
 
   if (table) {
     table.addEventListener('click', async (event) => {
       const editButton = event.target.closest('[data-edit-expense]');
       if (editButton) {
+        saveFilterState();
         window.location.href = `add-expense.html?edit=${encodeURIComponent(editButton.dataset.id)}`;
         return;
       }
@@ -497,12 +673,10 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const { data, status } = await api.delete(`/expenses/${button.dataset.id}`);
         if (status === 204) {
-          const row = button.closest('tr');
-          if (row) row.remove();
-          loaded = Math.max(0, loaded - 1);
-          total = Math.max(0, total - 1);
-          updateSummary();
-          if (!rowsBody.querySelector('tr')) showEmpty();
+          const id = String(button.dataset.id);
+          state.items = state.items.filter((item) => String(item.id) !== id);
+          saveFilterState();
+          render();
           UI.showToast('Expense deleted', 'success');
         } else {
           button.disabled = false;
@@ -515,71 +689,54 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  async function loadExpenses(append = false) {
-    if (!append) {
-      nextPage = 1;
-      lastPage = 1;
-      total = 0;
-      loaded = 0;
-      setLoadMore(false);
-      showState('loading', { message: 'Loading expenses…' });
-    }
-
+  // Load the full expense dataset from the existing paginated API, so client
+  // filters, search, and sorting never mislead the user about records that
+  // have not been fetched yet.
+  async function loadExpenses() {
+    showState('loading', { message: 'Loading expenses…' });
     try {
-      const { data, status } = await api.get(`/expenses?page=${nextPage}`);
-
-      if (status !== 200 || !data || !data.data) {
-        if (!append && summaryEl) summaryEl.textContent = '';
-        showState('error', {
-          message: (data && data.message) || 'Could not load expenses.',
-          retry: () => loadExpenses(false),
-        });
-        return;
+      const firstPage = await api.get('/expenses?page=1');
+      if (!firstPage || firstPage.status !== 200 || !firstPage.data || !firstPage.data.data) {
+        throw new Error((firstPage.data && firstPage.data.message) || 'Could not load expenses.');
       }
 
-      const paginator = data.data;
-      const items = paginator.data || [];
-      total = paginator.total || items.length;
-      lastPage = paginator.last_page || 1;
-
-      if (!append && !items.length) {
-        updateSummary();
-        showEmpty();
-        return;
+      const paginator = firstPage.data.data;
+      const firstItems = Array.isArray(paginator.data) ? paginator.data : [];
+      const lastPage = paginator.last_page || 1;
+      const pageRequests = [];
+      for (let page = 2; page <= lastPage; page += 1) {
+        pageRequests.push(api.get(`/expenses?page=${page}`));
+      }
+      const otherPages = await Promise.all(pageRequests);
+      const missingPage = otherPages.find(
+        (response) => !response || response.status !== 200 || !response.data || !response.data.data
+      );
+      if (missingPage) {
+        throw new Error((missingPage.data && missingPage.data.message) || 'Could not load all expenses.');
       }
 
-      renderRows(items, append);
-      applyFilter();
-      showTable();
-      updateSummary();
-
-      setLoadMore(nextPage < lastPage);
-      if (loadMoreBtn) {
-        loadMoreBtn.disabled = false;
-        loadMoreBtn.textContent = 'Load more';
-      }
+      state.items = otherPages.reduce(
+        (accumulated, response) => accumulated.concat(response.data.data.data || []),
+        firstItems
+      );
+      state.total = state.items.length;
+      state.visibleCount = PAGE_SIZE;
+      applyStateToControls();
+      render();
     } catch (err) {
-      if (loadMoreBtn) {
-        loadMoreBtn.disabled = false;
-        loadMoreBtn.textContent = 'Load more';
-      }
-      if (!append && summaryEl) summaryEl.textContent = '';
       showState('error', {
-        message: 'Could not reach the API. ' + (err.message || ''),
-        retry: () => loadExpenses(false),
+        message: err && err.message ? err.message : 'Could not reach the API to load expenses.',
+        retry: () => loadExpenses(),
       });
     }
   }
 
   if (loadMoreBtn) {
     loadMoreBtn.addEventListener('click', () => {
-      if (nextPage >= lastPage) return;
-      nextPage += 1;
-      loadMoreBtn.disabled = true;
-      loadMoreBtn.textContent = 'Loading…';
-      loadExpenses(true);
+      state.visibleCount = Math.min(state.items.length, state.visibleCount + PAGE_SIZE);
+      render();
     });
   }
 
-  loadExpenses(false);
+  loadExpenses();
 });

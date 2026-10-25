@@ -16,6 +16,61 @@
   font-variant-numeric: tabular-nums;
 }
 
+.settings-form input[readonly] {
+  background: var(--surface-2);
+  color: var(--muted);
+  cursor: default;
+}
+
+.settings-unavailable {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r);
+  background: var(--surface-2);
+}
+
+.settings-unavailable-icon {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.settings-unavailable-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.settings-unavailable h3 {
+  font-size: 0.95rem;
+  margin-bottom: 5px;
+}
+
+.settings-unavailable p {
+  font-size: 0.86rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.settings-unavailable .link {
+  display: inline-block;
+  margin-top: 9px;
+  font-size: 0.86rem;
+}
+
 @media (max-width: 1180px) {
   .grid-2 {
     grid-template-columns: 1fr;

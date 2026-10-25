@@ -46,9 +46,39 @@
         <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
         <div class="topbar-titles">
           <span class="topbar-title">Reports &amp; analytics</span>
-          <span class="topbar-sub" data-month-label>Loading…</span>
+          <span class="topbar-sub" data-month-label data-period-label>Loading…</span>
         </div>
         <div class="topbar-actions">
+          <form class="period-controls" data-period-controls aria-label="Choose reporting period">
+            <div class="period-field">
+              <label for="period-month">Month</label>
+              <select id="period-month" data-period-month aria-label="Reporting month">
+                <option value="1">Jan</option>
+                <option value="2">Feb</option>
+                <option value="3">Mar</option>
+                <option value="4">Apr</option>
+                <option value="5">May</option>
+                <option value="6">Jun</option>
+                <option value="7">Jul</option>
+                <option value="8">Aug</option>
+                <option value="9">Sep</option>
+                <option value="10">Oct</option>
+                <option value="11">Nov</option>
+                <option value="12">Dec</option>
+              </select>
+            </div>
+            <div class="period-field narrow">
+              <label for="period-year">Year</label>
+              <select id="period-year" data-period-year aria-label="Reporting year">
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+                <option value="2022">2022</option>
+                <option value="2021">2021</option>
+              </select>
+            </div>
+          </form>
           <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
           <button class="btn secondary sm" type="button" data-reports-refresh>Refresh</button>
         </div>
@@ -97,7 +127,10 @@
                 <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading chart…</p></div>
               </div>
               <div data-spending-chart hidden>
-                <div class="chart-box"><canvas id="spendingChart" aria-label="Spending by category doughnut chart" role="img"></canvas></div>
+                <div class="chart-box">
+                  <canvas id="spendingChart" aria-label="Spending by category doughnut chart" aria-describedby="spendingSummary" role="img"></canvas>
+                </div>
+                <p class="chart-summary sr-only" id="spendingSummary" data-spending-summary></p>
                 <div class="legend mt-2" data-spending-legend></div>
               </div>
             </div>
@@ -115,8 +148,11 @@
                 <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading chart…</p></div>
               </div>
               <div data-cashflow-chart hidden>
-                <div class="chart-box"><canvas id="cashflowChart" aria-label="Income versus expenses bar chart" role="img"></canvas></div>
-                <div class="legend mt-2" style="justify-content: center;">
+                <div class="chart-box">
+                  <canvas id="cashflowChart" aria-label="Income versus expenses bar chart" aria-describedby="cashflowSummary" role="img"></canvas>
+                </div>
+                <p class="chart-summary sr-only" id="cashflowSummary" data-cashflow-summary></p>
+                <div class="legend mt-2" data-cashflow-legend>
                   <span class="legend-item"><span class="dot" style="background: var(--success)"></span> Income</span>
                   <span class="legend-item"><span class="dot" style="background: var(--warn)"></span> Expenses</span>
                 </div>
@@ -156,6 +192,7 @@
     </div>
 
     <script src="../script.js"></script>
+    <script src="../analytics-period.js"></script>
     <script src="reports.js"></script>
   </body>
 </html>

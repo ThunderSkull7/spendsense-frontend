@@ -60,13 +60,48 @@
               <h2 class="card-title">All expenses</h2>
               <p class="card-sub" data-list-summary>Loading…</p>
             </div>
-            <label class="filter-field">
-              <span class="sr-only">Filter by category</span>
-              <select data-category-filter aria-label="Filter by category">
+          </div>
+
+          <div class="filter-toolbar" data-expense-filters role="search" aria-label="Filter expenses">
+            <div class="filter-field search-field">
+              <label for="expense-search">Search</label>
+              <input id="expense-search" data-expense-search type="search"
+                placeholder="Search descriptions, categories…" autocomplete="off" />
+            </div>
+
+            <div class="filter-field">
+              <label for="expense-category-filter">Category</label>
+              <select id="expense-category-filter" data-category-filter aria-label="Filter by category">
                 <option value="">All categories</option>
               </select>
-            </label>
+            </div>
+
+            <div class="filter-field narrow">
+              <label for="expense-from">From</label>
+              <input id="expense-from" data-expense-from type="date" />
+            </div>
+
+            <div class="filter-field narrow">
+              <label for="expense-to">To</label>
+              <input id="expense-to" data-expense-to type="date" />
+            </div>
+
+            <div class="sort-controls" aria-label="Sort expenses">
+              <span class="sr-only">Sort by</span>
+              <button type="button" class="sort-btn" data-sort-field="date">
+                <span data-sort-label>Date ↓</span>
+              </button>
+              <button type="button" class="sort-btn" data-sort-field="amount">
+                <span data-sort-label>Amount ↓</span>
+              </button>
+            </div>
+
+            <div class="filter-actions">
+              <button type="button" class="btn ghost sm" data-clear-filters hidden>Clear filters</button>
+            </div>
           </div>
+
+          <p class="filter-note" data-filter-note role="status" aria-live="polite" hidden></p>
 
           <div data-expense-state>
             <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading expenses…</p></div>
@@ -80,7 +115,7 @@
                   <th class="cell-wrap">Description</th>
                   <th class="col-tight">Category</th>
                   <th class="num col-tight">Amount</th>
-                  <th class="col-tight"></th>
+                  <th class="col-tight text-right">Actions</th>
                 </tr>
               </thead>
               <tbody data-expense-rows></tbody>
@@ -95,6 +130,7 @@
     </div>
 
     <script src="../script.js"></script>
+    <script src="../transactions-client.js"></script>
     <script src="expenses.js"></script>
   </body>
 </html>
