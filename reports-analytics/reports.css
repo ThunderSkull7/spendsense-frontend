@@ -16,40 +16,71 @@
 
 .period-controls {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  align-items: flex-end;
+  gap: 0 10px;
 }
 
 .period-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 112px;
+}
+
+.period-field.narrow {
+  min-width: 92px;
+  flex: 0 0 auto;
 }
 
 .period-field label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
+  line-height: 1;
+  margin-bottom: 2px;
 }
 
 .period-field select {
+  height: 36px;
   min-height: 36px;
-  padding: 6px 10px;
+  padding: 0 28px 0 10px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r);
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: 0.84rem;
+  background-position: right 10px center;
+}
+
+/* Share one bottom baseline across Month/Year selects, theme toggle,
+   Refresh button, and the account trigger so the header reads as one row. */
+.topbar-actions {
+  align-items: flex-end;
+  gap: 10px;
 }
 
 @media (max-width: 760px) {
+  /* Let the header wrap so period/refresh/account controls drop to their own
+     row instead of colliding with the title or overflowing. */
+  .topbar {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .topbar-actions {
+    flex-wrap: wrap;
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-end;
+    gap: 8px;
+  }
   .period-controls {
     width: 100%;
   }
-  .period-field {
+  .period-field, .period-field.narrow {
     flex: 1 1 0;
+    min-width: 0;
   }
   .period-field select {
     width: 100%;

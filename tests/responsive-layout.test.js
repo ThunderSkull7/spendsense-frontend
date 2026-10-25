@@ -244,6 +244,50 @@ test('authenticated pages have no horizontal overflow at required widths and the
     await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));`);
     const closed = await evaluate(`return document.body.classList.contains('sidebar-open');`);
     assert.equal(closed, false, 'Escape should close the mobile drawer');
+
+    // Reports header: period selectors, theme toggle, Refresh, and the account
+    // trigger must share one bottom baseline at desktop width without overflow.
+    await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
+    await send('Page.navigate', { url: `http://127.0.0.1:${port}/reports-analytics/reports.html` });
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const baseline = await evaluate(`
+      const bottoms = ['[data-period-month]', '[data-period-year]', '[data-theme-toggle]', '[data-reports-refresh]', '[data-account-trigger]']
+        .map((sel) => {
+          const el = document.querySelector(sel);
+          return el ? Math.round(el.getBoundingClientRect().bottom) : null;
+        })
+        .filter((v) => v !== null);
+      return { bottoms, overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+    `);
+    assert.ok(
+      Math.max(...baseline.bottoms) - Math.min(...baseline.bottoms) <= 2,
+      `reports header controls should share a bottom baseline (bottoms=${JSON.stringify(baseline.bottoms)})`
+    );
+    assert.ok(baseline.overflow <= 1, 'reports header should not overflow at 1280px');
+
+    // Transaction pages: filter toolbar and table inherit the card's resting
+    // horizontal padding instead of hugging the card edges.
+    for (const txnPage of ['expense-management/expenses.html', 'income-management/income.html']) {
+      await send('Page.navigate', { url: `http://127.0.0.1:${port}/${txnPage}` });
+      const waitStart = Date.now();
+      while (Date.now() - waitStart < 8000) {
+        const ready = await evaluate(`return Boolean(document.querySelector('.filter-toolbar'));`);
+        if (ready === true) break;
+        await new Promise((resolve) => setTimeout(resolve, 150));
+      }
+      const spacing = await evaluate(`
+        const toolbar = document.querySelector('[data-expense-filters]') || document.querySelector('[data-income-filters]');
+        return {
+          className: toolbar ? toolbar.className : null,
+          toolbarPaddingLeft: toolbar ? parseFloat(getComputedStyle(toolbar).paddingLeft) : null,
+          href: location.href
+        };
+      `);
+      assert.ok(
+        spacing.toolbarPaddingLeft !== null && spacing.toolbarPaddingLeft >= 16,
+        `${txnPage}: filter toolbar should have resting horizontal padding (class=${spacing.className}, pad=${spacing.toolbarPaddingLeft}px at ${spacing.href})`
+      );
+    }
   } finally {
     if (ws) ws.close();
     await new Promise((resolve) => { chrome.on('exit', resolve); chrome.kill(); });
