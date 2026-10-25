@@ -9,9 +9,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const UI = window.SpendSenseUI;
   const api = window.SpendSenseAPI;
   const money = (value) => UI.formatMoney(value);
+  const periodHelper = window.SpendSensePeriod;
 
   const monthLabels = document.querySelectorAll('[data-month-label]');
+  const periodLabels = document.querySelectorAll('[data-period-label]');
   const refreshBtn = document.querySelector('[data-reports-refresh]');
+  const periodMonthEl = document.querySelector('[data-period-month]');
+  const periodYearEl = document.querySelector('[data-period-year]');
 
   const statIncomeEl = document.querySelector('[data-stat-income]');
   const statIncomeFootEl = document.querySelector('[data-stat-income-foot]');
@@ -23,8 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const spendingState = document.querySelector('[data-spending-state]');
   const spendingChartBox = document.querySelector('[data-spending-chart]');
   const spendingLegend = document.querySelector('[data-spending-legend]');
+  const spendingSummaryEl = document.querySelector('[data-spending-summary]');
   const cashflowState = document.querySelector('[data-cashflow-state]');
   const cashflowChartBox = document.querySelector('[data-cashflow-chart]');
+  const cashflowSummaryEl = document.querySelector('[data-cashflow-summary]');
+  const cashflowLegend = document.querySelector('[data-cashflow-legend]');
   const alertsEl = document.querySelector('[data-alerts]');
   const budgetStatusEl = document.querySelector('[data-budget-status]');
 
@@ -32,6 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let cashflowChartInstance = null;
   let lastSpendingResult = null;
   let lastCashflowResult = null;
+  let reportingPeriod = periodHelper ? periodHelper.readPeriod() : { month: new Date().getMonth() + 1, year: new Date().getFullYear() };
 
   const monthName = (month, year) =>
     new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
@@ -46,7 +54,15 @@ document.addEventListener('DOMContentLoaded', () => {
     monthLabels.forEach((el) => {
       el.textContent = monthName(month, year);
     });
+    if (periodLabels.length) {
+      periodLabels.forEach((el) => {
+        el.textContent = monthName(month, year);
+      });
+    }
   };
+
+  const spendPeriodQuery = (endpoint) =>
+    periodHelper ? periodHelper.query(endpoint, reportingPeriod) : `${endpoint}?month=${reportingPeriod.month}&year=${reportingPeriod.year}`;
 
   const showChartState = (stateEl, chartBox, type, options) => {
     if (chartBox) chartBox.hidden = true;
@@ -54,11 +70,19 @@ document.addEventListener('DOMContentLoaded', () => {
       stateEl.hidden = false;
       UI.renderState(stateEl, type, options);
     }
+    setSummary(spendingSummaryEl, '');
+    setSummary(cashflowSummaryEl, '');
   };
 
   const showChart = (stateEl, chartBox) => {
     if (stateEl) stateEl.hidden = true;
     if (chartBox) chartBox.hidden = false;
+  };
+
+  const setSummary = (el, text) => {
+    if (!el) return;
+    el.textContent = text || '';
+    el.hidden = !text;
   };
 
   // ---------- CSS bar fallback (also used for fallback when Chart.js unavailable) ----------
@@ -191,6 +215,16 @@ document.addEventListener('DOMContentLoaded', () => {
       return tone.color;
     });
 
+    if (spendingSummaryEl) {
+      const periodLabel = payload.month && payload.year
+        ? monthName(payload.month, payload.year)
+        : (periodHelper ? periodHelper.label(reportingPeriod) : monthName(reportingPeriod.month, reportingPeriod.year));
+      const summaryText = items
+        .map((item) => `${item.category_name}: ${money(item.total_spent)} (${Math.round((item.total_spent / total) * 100)}%)`)
+        .join('. ');
+      setSummary(spendingSummaryEl, `Spending by category for ${periodLabel}: ${summaryText}.`);
+    }
+
     if (spendingLegend) {
       spendingLegend.replaceChildren();
       items.forEach((item, index) => {
@@ -314,6 +348,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const current = payload.current_month || {};
     const previous = payload.previous_month || {};
     showChart(cashflowState, cashflowChartBox);
+
+    if (cashflowSummaryEl) {
+      const currentLabel = current.month && current.year
+        ? monthName(current.month, current.year)
+        : (periodHelper ? periodHelper.label(reportingPeriod) : monthName(reportingPeriod.month, reportingPeriod.year));
+      const previousLabel = previous.month && previous.year
+        ? monthName(previous.month, previous.year)
+        : '';
+      setSummary(cashflowSummaryEl, `Income versus expenses for ${currentLabel}: income ${money(current.income || 0)}, expenses ${money(current.expenses || 0)}, net cash flow ${money(current.net || 0)}.` + (previousLabel ? ` Previous month ${previousLabel}: income ${money(previous.income || 0)}, expenses ${money(previous.expenses || 0)}, net cash flow ${money(previous.net || 0)}.` : ''));
+    }
+
+    // Chart.js legend is disabled in favor of an accessible text legend that
+    // expresses both the semantic meaning and the exact amounts.
+    if (cashflowLegend) {
+      cashflowLegend.replaceChildren();
+      const legendItems = [
+        ['Income', current.income || 0],
+        ['Expenses', current.expenses || 0],
+      ];
+      legendItems.forEach(([label, value]) => {
+        const item = document.createElement('span');
+        item.className = 'legend-item';
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        dot.style.backgroundColor = label === 'Income' ? 'var(--success)' : 'var(--warn)';
+        item.append(dot, document.createTextNode(` ${label} ${money(value)}`));
+        cashflowLegend.appendChild(item);
+      });
+    }
 
     let canvas = document.querySelector('#cashflowChart');
     const chartBox = cashflowChartBox ? cashflowChartBox.querySelector('.chart-box') : null;
@@ -533,25 +596,24 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       if (sectionKey === 'spending') {
         showChartState(spendingState, spendingChartBox, 'loading', { message: 'Loading chart…' });
-        const res = await api.get('/analytics/spending-by-category');
-        if (loadId !== currentLoadId) return;
+        const res = await api.get(spendPeriodQuery('/analytics/spending-by-category'));        if (loadId !== currentLoadId) return;
         lastSpendingResult = res.status === 200 ? res : null;
         renderSpending(lastSpendingResult, () => loadSection('spending'));
       } else if (sectionKey === 'cashflow') {
         showChartState(cashflowState, cashflowChartBox, 'loading', { message: 'Loading chart…' });
-        const res = await api.get('/analytics/month-comparison');
+        const res = await api.get(spendPeriodQuery('/analytics/month-comparison'));
         if (loadId !== currentLoadId) return;
         lastCashflowResult = res.status === 200 ? res : null;
         updateTopMetrics(lastCashflowResult);
         renderCashflow(lastCashflowResult, () => loadSection('cashflow'));
       } else if (sectionKey === 'alerts') {
         UI.renderState(alertsEl, 'loading', { message: 'Loading alerts…' });
-        const res = await api.get('/analytics/budget-alerts');
+        const res = await api.get(spendPeriodQuery('/analytics/budget-alerts'));
         if (loadId !== currentLoadId) return;
         renderAlerts(res.status === 200 ? res : null, () => loadSection('alerts'));
       } else if (sectionKey === 'budgets') {
         UI.renderState(budgetStatusEl, 'loading', { message: 'Loading budgets…' });
-        const res = await api.get('/analytics/budget-status');
+        const res = await api.get(spendPeriodQuery('/analytics/budget-status'));
         if (loadId !== currentLoadId) return;
         renderBudgetStatus(res.status === 200 ? res : null, () => loadSection('budgets'));
       }
@@ -589,7 +651,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setLoading();
 
     // Fetch all independent endpoints concurrently and render each as soon as it arrives
-    const spendingTask = api.get('/analytics/spending-by-category').then(
+    const spendingTask = api.get(spendPeriodQuery('/analytics/spending-by-category')).then(
       (res) => {
         if (thisLoadId !== currentLoadId) return null;
         lastSpendingResult = res && res.status === 200 ? res : null;
@@ -604,7 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     );
 
-    const cashflowTask = api.get('/analytics/month-comparison').then(
+    const cashflowTask = api.get(spendPeriodQuery('/analytics/month-comparison')).then(
       (res) => {
         if (thisLoadId !== currentLoadId) return null;
         lastCashflowResult = res && res.status === 200 ? res : null;
@@ -621,7 +683,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     );
 
-    const alertsTask = api.get('/analytics/budget-alerts').then(
+    const alertsTask = api.get(spendPeriodQuery('/analytics/budget-alerts')).then(
       (res) => {
         if (thisLoadId !== currentLoadId) return null;
         const val = res && res.status === 200 ? res : null;
@@ -635,7 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     );
 
-    const budgetStatusTask = api.get('/analytics/budget-status').then(
+    const budgetStatusTask = api.get(spendPeriodQuery('/analytics/budget-status')).then(
       (res) => {
         if (thisLoadId !== currentLoadId) return null;
         const val = res && res.status === 200 ? res : null;
@@ -718,6 +780,27 @@ document.addEventListener('DOMContentLoaded', () => {
         refreshBtn.textContent = original;
       }
     });
+  }
+
+  const applyPeriodSelection = () => {
+    if (!periodMonthEl || !periodYearEl) return;
+    const nextPeriod = periodHelper
+      ? periodHelper.normalizePeriod({ month: periodMonthEl.value, year: periodYearEl.value })
+      : null;
+    if (!nextPeriod) return;
+    reportingPeriod = nextPeriod;
+    if (periodHelper) periodHelper.savePeriod(reportingPeriod);
+    // Reload all analytics sections, including the top metrics, so the
+    // reporting period stays consistent across cards, charts, and summaries.
+    loadAll();
+  };
+
+  if (periodMonthEl) periodMonthEl.addEventListener('change', applyPeriodSelection);
+  if (periodYearEl) periodYearEl.addEventListener('change', applyPeriodSelection);
+
+  if (periodMonthEl && periodYearEl) {
+    periodMonthEl.value = String(reportingPeriod.month);
+    periodYearEl.value = String(reportingPeriod.year);
   }
 
   loadAll();

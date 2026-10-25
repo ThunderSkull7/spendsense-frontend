@@ -62,6 +62,40 @@
               </div>
             </div>
 
+            <div class="filter-toolbar" data-income-filters role="search" aria-label="Filter income">
+              <div class="filter-field search-field">
+                <label for="income-search">Search</label>
+                <input id="income-search" data-income-search type="search"
+                  placeholder="Search sources, notes…" autocomplete="off" />
+              </div>
+
+              <div class="filter-field narrow">
+                <label for="income-from">From</label>
+                <input id="income-from" data-income-from type="date" />
+              </div>
+
+              <div class="filter-field narrow">
+                <label for="income-to">To</label>
+                <input id="income-to" data-income-to type="date" />
+              </div>
+
+              <div class="sort-controls" aria-label="Sort income">
+                <span class="sr-only">Sort by</span>
+                <button type="button" class="sort-btn" data-sort-field="date">
+                  <span data-sort-label>Date ↓</span>
+                </button>
+                <button type="button" class="sort-btn" data-sort-field="amount">
+                  <span data-sort-label>Amount ↓</span>
+                </button>
+              </div>
+
+              <div class="filter-actions">
+                <button type="button" class="btn ghost sm" data-clear-filters hidden>Clear filters</button>
+              </div>
+            </div>
+
+            <p class="filter-note" data-filter-note role="status" aria-live="polite" hidden></p>
+
             <div data-income-state>
               <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading income…</p></div>
             </div>
@@ -144,6 +178,7 @@
     </div>
 
     <script src="../script.js"></script>
+    <script src="../transactions-client.js"></script>
     <script src="income.js"></script>
   </body>
 </html>

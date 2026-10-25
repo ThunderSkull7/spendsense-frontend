@@ -282,3 +282,47 @@ test('concurrent mutations generate independent idempotency keys', async () => {
   assert.equal(uniqueKeys.size, 3, 'all concurrent requests received distinct keys');
 });
 
+test('loadSessionUser hydrates the shell user and deduplicates concurrent requests', async () => {
+  let profileCalls = 0;
+  let requestedUrl = '';
+  const { api, events } = loadClient({
+    fetchImpl: async (url) => {
+      if (String(url).endsWith('/api/user')) {
+        profileCalls += 1;
+        requestedUrl = String(url);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        return jsonResponse(200, {
+          user: { id: 7, name: 'Asha Rao', email: 'asha@example.com' },
+        });
+      }
+      return jsonResponse(404, { message: 'Not found' });
+    },
+  });
+  api.init('http://127.0.0.1:8002');
+
+  const [first, second] = await Promise.all([
+    api.loadSessionUser(),
+    api.loadSessionUser(),
+  ]);
+
+  assert.equal(profileCalls, 1, 'concurrent identity loads share one request');
+  assert.equal(requestedUrl, 'http://127.0.0.1:8002/api/user');
+  assert.equal(first.name, 'Asha Rao');
+  assert.equal(second.name, 'Asha Rao');
+  assert.equal(api.getUser().email, 'asha@example.com');
+  assert.deepEqual(events, ['spendsense:auth-change']);
+});
+
+test('loadSessionUser leaves neutral fallbacks when the session is absent', async () => {
+  const { api, events } = loadClient({
+    fetchImpl: async () => jsonResponse(401, { message: 'Unauthenticated.' }),
+  });
+  api.init('http://127.0.0.1:8002');
+
+  const user = await api.loadSessionUser();
+
+  assert.equal(user, null);
+  assert.equal(api.getUser(), null);
+  assert.deepEqual(events, [], 'identity hydration must not trigger a global session-expired event');
+});
+

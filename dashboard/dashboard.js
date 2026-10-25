@@ -8,8 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const UI = window.SpendSenseUI;
   const api = window.SpendSenseAPI;
   const money = (value) => UI.formatMoney(value);
+  const periodHelper = window.SpendSensePeriod;
 
   const refreshButton = document.querySelector('[data-refresh]');
+  const periodLabels = document.querySelectorAll('[data-period-label]');
   const statEls = {
     income: document.querySelector('[data-stat="income"]'),
     expenses: document.querySelector('[data-stat="expenses"]'),
@@ -18,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const breakdownEl = document.querySelector('[data-breakdown]');
   const comparisonEl = document.querySelector('[data-comparison]');
+  const comparisonSummaryEl = document.querySelector('[data-comparison-summary]');
   const budgetsEl = document.querySelector('[data-budgets]');
   const transactionsEl = document.querySelector('[data-transactions]');
   const monthLabels = document.querySelectorAll('[data-month-label]');
@@ -35,13 +38,22 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastComparisonResult = null;
   let lastBudgetsResult = null;
   let lastTransactionsResult = null;
+  let reportingPeriod = periodHelper ? periodHelper.readPeriod() : { month: new Date().getMonth() + 1, year: new Date().getFullYear() };
 
   const setMonthLabels = (month, year) => {
     monthResolved = true;
     monthLabels.forEach((el) => {
       el.textContent = monthName(month, year);
     });
+    if (periodLabels.length) {
+      periodLabels.forEach((el) => {
+        el.textContent = monthName(month, year);
+      });
+    }
   };
+
+  const spendPeriodQuery = (endpoint) =>
+    periodHelper ? periodHelper.query(endpoint, reportingPeriod) : `${endpoint}?month=${reportingPeriod.month}&year=${reportingPeriod.year}`;
 
   const renderStat = (el, { value, foot = '', tone = '' }) => {
     if (!el) return;
@@ -140,6 +152,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const previous = payload.previous_month || {};
     const change = payload.change_percentage || {};
     const max = Math.max(current.income || 0, current.expenses || 0, previous.income || 0, previous.expenses || 0, 1);
+
+    if (comparisonSummaryEl) {
+      const currentLabel = current.month && current.year ? monthName(current.month, current.year) : 'This month';
+      const previousLabel = previous.month && previous.year ? monthName(previous.month, previous.year) : 'Last month';
+      comparisonSummaryEl.textContent = `${currentLabel}: income ${money(current.income || 0)}, expenses ${money(current.expenses || 0)}, net cash flow ${money(current.net || 0)}. ${previousLabel}: income ${money(previous.income || 0)}, expenses ${money(previous.expenses || 0)}, net cash flow ${money(previous.net || 0)}.`;
+      comparisonSummaryEl.hidden = false;
+    }
 
     comparisonEl.replaceChildren();
 
@@ -327,10 +346,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setLoading();
 
     const [cashFlow, breakdown, comparison, budgetStatus, transactions] = await Promise.allSettled([
-      api.get('/analytics/cash-flow'),
-      api.get('/analytics/spending-by-category'),
-      api.get('/analytics/month-comparison'),
-      api.get('/analytics/budget-status'),
+      api.get(spendPeriodQuery('/analytics/cash-flow')),
+      api.get(spendPeriodQuery('/analytics/spending-by-category')),
+      api.get(spendPeriodQuery('/analytics/month-comparison')),
+      api.get(spendPeriodQuery('/analytics/budget-status')),
       api.get('/expenses'),
     ]);
 
@@ -339,12 +358,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (cf && cf.status === 200 && cf.data && cf.data.data) {
       const data = cf.data.data;
       setMonthLabels(data.month, data.year);
-      renderStat(statEls.income, { value: money(data.total_income), foot: 'Total logged income this month' });
-      renderStat(statEls.expenses, { value: money(data.total_expenses), foot: 'Total logged spending this month' });
+      const periodLabel = data.month && data.year ? monthName(data.month, data.year) : 'This month';
+      renderStat(statEls.income, { value: money(data.total_income), foot: `Total logged income for ${periodLabel}` });
+      renderStat(statEls.expenses, { value: money(data.total_expenses), foot: `Total logged spending for ${periodLabel}` });
       renderStat(statEls.net, {
         value: money(data.net_cash_flow),
         tone: data.net_cash_flow > 0 ? 'pos' : data.net_cash_flow < 0 ? 'neg' : '',
-        foot: 'Income minus expenses',
+        foot: `Income minus expenses for ${periodLabel}`,
       });
     } else {
       renderStatError(statEls.income);

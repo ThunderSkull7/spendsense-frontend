@@ -388,10 +388,143 @@
   };
 
   // --- App shell behaviour (sidebar, theme toggle, session chip, logout) ---
+  const accountMenuMarkup = `
+    <div class="account-menu" data-account-menu>
+      <button class="account-trigger" id="account-menu-trigger" type="button" data-account-trigger aria-haspopup="menu" aria-expanded="false" aria-controls="account-menu-panel" aria-label="Account menu">
+        <span class="account-avatar" data-user-avatar aria-hidden="true">S</span>
+        <svg class="account-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="account-panel" id="account-menu-panel" data-account-panel role="menu" aria-labelledby="account-menu-trigger" hidden>
+        <div class="account-panel-head">
+          <span class="account-avatar account-avatar-lg" data-user-avatar aria-hidden="true">S</span>
+          <span class="account-identity">
+            <strong data-user-name>Account</strong>
+            <small data-user-email>Email unavailable</small>
+          </span>
+        </div>
+        <div class="account-menu-items">
+          <a class="account-menu-link" href="../settings/settings.html" role="menuitem" data-account-link>
+            <span class="account-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="8" cy="17" r="2"/></svg></span>
+            <span>Settings</span>
+          </a>
+          <a class="account-menu-link" href="../notifications/notifications.html" role="menuitem" data-account-link>
+            <span class="account-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>
+            <span>Notifications</span>
+          </a>
+          <a class="account-menu-link" href="../support/support.html" role="menuitem" data-account-link>
+            <span class="account-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 1 1 3.8 2.6c-.8.3-1 .9-1 1.6v.4"/><path d="M12 17.2v.01"/></svg></span>
+            <span>Support</span>
+          </a>
+        </div>
+        <div class="account-menu-separator" role="separator"></div>
+        <button class="account-menu-link account-logout" type="button" role="menuitem" data-logout data-account-logout>
+          <span class="account-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span>
+          <span>Log out</span>
+        </button>
+      </div>
+    </div>`;
+
+  const initialsFor = (value) => {
+    const parts = String(value || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "S";
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
+  };
+
+  const initAccountMenu = () => {
+    const actions = document.querySelector(".topbar-actions");
+    if (!actions || actions.querySelector("[data-account-menu]")) return null;
+
+    actions.insertAdjacentHTML("beforeend", accountMenuMarkup);
+    const menu = actions.querySelector("[data-account-menu]");
+    const trigger = menu.querySelector("[data-account-trigger]");
+    const panel = menu.querySelector("[data-account-panel]");
+    const items = () => Array.from(panel.querySelectorAll('[role="menuitem"]'));
+
+    const open = (position = "first") => {
+      if (!panel.hidden) return;
+      panel.hidden = false;
+      trigger.setAttribute("aria-expanded", "true");
+      const options = items();
+      const target = position === "last" ? options[options.length - 1] : options[0];
+      if (target) target.focus();
+    };
+
+    const close = (restoreFocus = false) => {
+      if (panel.hidden) return;
+      panel.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+      if (restoreFocus) trigger.focus();
+    };
+
+    trigger.addEventListener("click", () => {
+      if (panel.hidden) open();
+      else close();
+    });
+
+    trigger.addEventListener("keydown", (event) => {
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        open(event.key === "ArrowUp" ? "last" : "first");
+      }
+    });
+
+    panel.addEventListener("keydown", (event) => {
+      const options = items();
+      const index = options.indexOf(document.activeElement);
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close(true);
+        return;
+      }
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        const direction = event.key === "ArrowDown" ? 1 : -1;
+        const next = (index + direction + options.length) % options.length;
+        if (options[next]) options[next].focus();
+        return;
+      }
+      if (event.key === "Home" || event.key === "End") {
+        event.preventDefault();
+        const target = event.key === "Home" ? options[0] : options[options.length - 1];
+        if (target) target.focus();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !panel.hidden) {
+        event.preventDefault();
+        close(true);
+      }
+    });
+
+    document.addEventListener("pointerdown", (event) => {
+      if (!panel.hidden && !menu.contains(event.target)) close();
+    });
+
+    menu.addEventListener("focusout", (event) => {
+      if (!panel.hidden && !menu.contains(event.relatedTarget)) close();
+    });
+
+    panel.querySelectorAll("[data-account-link], [data-account-logout]").forEach((item) => {
+      item.addEventListener("click", () => close());
+    });
+
+    return menu;
+  };
+
   const updateShellUser = () => {
     const user = window.SpendSenseAPI && window.SpendSenseAPI.user;
-    const name = user && user.name ? user.name : "Account";
-    const email = user && user.email ? user.email : "Signed-in session";
+    const rawName = user && typeof user.name === "string" ? user.name.trim() : "";
+    const rawEmail = user && typeof user.email === "string" ? user.email.trim() : "";
+    const name = rawName || "Account";
+    const email = rawEmail || "Email unavailable";
+    const identityLabel = rawName || rawEmail;
+    const avatar = rawName
+      ? initialsFor(rawName)
+      : (rawEmail ? rawEmail.charAt(0).toUpperCase() : "S");
+
     document.querySelectorAll("[data-user-name], #user-name").forEach((el) => {
       el.textContent = name;
     });
@@ -399,7 +532,12 @@
       el.textContent = email;
     });
     document.querySelectorAll("[data-user-avatar]").forEach((el) => {
-      el.textContent = (name.trim().charAt(0) || "S").toUpperCase();
+      el.textContent = avatar;
+    });
+    document.querySelectorAll("[data-account-trigger]").forEach((el) => {
+      const label = identityLabel ? `Account menu for ${identityLabel}` : "Account menu";
+      el.setAttribute("aria-label", label);
+      el.setAttribute("title", label);
     });
   };
 
@@ -419,6 +557,14 @@
       });
     }
     if (overlay) overlay.addEventListener("click", closeSidebar);
+    // Escape should close the mobile navigation drawer and restore focus to
+    // the toggle so keyboard users are not left navigating hidden content.
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && body.classList.contains("sidebar-open")) {
+        closeSidebar();
+        if (sidebarToggle) sidebarToggle.focus();
+      }
+    });
     window.addEventListener("resize", () => {
       if (window.innerWidth > 1080) closeSidebar();
     });
@@ -438,6 +584,8 @@
         syncLabel();
       });
     });
+
+    initAccountMenu();
 
     document.querySelectorAll("[data-logout]").forEach((button) => {
       button.addEventListener("click", async () => {

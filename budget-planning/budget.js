@@ -118,17 +118,37 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ---------- Create budget ----------
+  let submittingBudget = false;
+
   if (form) {
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
+
+      // Guard against duplicate submissions while the request is in flight.
+      if (submittingBudget) return;
+      submittingBudget = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.setAttribute('aria-busy', 'true');
+        submitBtn.dataset.saving = 'true';
+      }
+
+      const finish = () => {
+        submittingBudget = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.removeAttribute('aria-busy');
+          delete submitBtn.dataset.saving;
+        }
+      };
 
       const categoryId = parseInt(categorySelect.value, 10);
       const limit = parseFloat(limitInput.value);
       const monthYear = monthInput.value; // "YYYY-MM" (backend month_year contract)
 
-      if (isNaN(limit) || limit <= 0) return setMessage('Please enter a valid limit.', 'error');
-      if (isNaN(categoryId)) return setMessage('Please select a category.', 'error');
-      if (!monthYear) return setMessage('Please pick a month.', 'error');
+      if (isNaN(limit) || limit <= 0) { finish(); return setMessage('Please enter a valid limit.', 'error'); }
+      if (isNaN(categoryId)) { finish(); return setMessage('Please select a category.', 'error'); }
+      if (!monthYear) { finish(); return setMessage('Please pick a month.', 'error'); }
 
       setMessage(editingBudgetId ? 'Updating budget…' : 'Saving budget…');
 
@@ -155,6 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } catch (err) {
         setMessage('Error saving budget. ' + (err.message || ''), 'error');
+      } finally {
+        finish();
       }
     });
   }
