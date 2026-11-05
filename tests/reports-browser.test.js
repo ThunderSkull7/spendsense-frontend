@@ -120,6 +120,9 @@ function createMockReportsServer(rootDir, endpointHandlers = {}) {
 test('browser runtime: reports page reaches completed state without errors', async (t) => {
   const chromePath = findChrome();
   if (!chromePath) {
+    if (process.env.CI) {
+      assert.fail('Chrome executable required in CI environment but not found');
+    }
     t.skip('Chrome binary not found');
     return;
   }
@@ -244,6 +247,9 @@ test('browser runtime: reports page reaches completed state without errors', asy
 test('browser runtime: failing section does not block other sections', async (t) => {
   const chromePath = findChrome();
   if (!chromePath) {
+    if (process.env.CI) {
+      assert.fail('Chrome executable required in CI environment but not found');
+    }
     t.skip('Chrome binary not found');
     return;
   }

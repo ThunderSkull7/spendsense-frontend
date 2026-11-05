@@ -281,7 +281,19 @@ export default {
       proxyInit.duplex = 'half';
     }
 
-    const response = await fetch(new Request(targetUrl.toString(), proxyInit));
+    let response;
+    try {
+      response = await fetch(new Request(targetUrl.toString(), proxyInit));
+    } catch (error) {
+      return new Response(JSON.stringify({ error: 'Bad Gateway', message: error.message || 'Upstream request failed' }), {
+        status: 502,
+        statusText: 'Bad Gateway',
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders(requestOrigin)
+        }
+      });
+    }
 
     // Preserve backend response headers, including Set-Cookie, and add the
     // same-origin CORS headers used by the browser-facing Pages host.

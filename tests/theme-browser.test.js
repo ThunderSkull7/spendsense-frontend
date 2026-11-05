@@ -62,6 +62,9 @@ function createStaticServer(rootDir) {
 test('browser runtime: selecting red immediately applies red accents and persists across dark mode & dashboard navigation', async (t) => {
   const chromePath = findChrome();
   if (!chromePath) {
+    if (process.env.CI) {
+      assert.fail('Chrome executable required in CI environment but not found');
+    }
     t.skip('Chrome executable not found on this system, skipping browser test');
     return;
   }

@@ -110,6 +110,9 @@ function createMockServer(rootDir, handlers = {}) {
 test('reports analytics keep one reporting period and render accessible chart summaries', async (t) => {
   const chromePath = findChrome();
   if (!chromePath) {
+    if (process.env.CI) {
+      assert.fail('Chrome executable required in CI environment but not found');
+    }
     t.skip('Chrome executable not found; skipping browser test');
     return;
   }

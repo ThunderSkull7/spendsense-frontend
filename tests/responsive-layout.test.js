@@ -147,6 +147,9 @@ const VIEWPORTS = [360, 390, 768, 1280];
 test('authenticated pages have no horizontal overflow at required widths and themes', async (t) => {
   const chromePath = findChrome();
   if (!chromePath) {
+    if (process.env.CI) {
+      assert.fail('Chrome executable required in CI environment but not found');
+    }
     t.skip('Chrome executable not found; skipping browser test');
     return;
   }
