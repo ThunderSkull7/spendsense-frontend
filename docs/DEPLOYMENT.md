@@ -106,4 +106,5 @@ Deployments use the official `cloudflare/wrangler-action@v4`:
 
 Cloudflare Pages provides instant atomic versioning for every deployment:
 1. **Instant Rollback via Dashboard:** In the Cloudflare Dashboard under **Workers & Pages > spendsensehq > Deployments**, select any previous successful deployment and click **Rollback to this deployment**.
-2. **Git Rollback:** Reverting the commit on `main` automatically triggers the CI workflow, runs the test suite, prepares a clean distribution, and redeploys the previous stable state within ~1 minute.
+2. **Git Rollback:** Reverting the commit on `main` automatically triggers the CI workflow, runs the automated test suites, prepares a clean distribution, and redeploys the previous stable state via Cloudflare Pages once CI verification passes.
+
