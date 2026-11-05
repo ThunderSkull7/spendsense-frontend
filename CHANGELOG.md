@@ -9,18 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
----
-
-## [0.2.0] - 2026-11-05
-
 ### Added
 - **Multi-Palette Theme System:**
-  - Implemented 4 cohesive theme palettes (Slate, Emerald, Indigo, Amber) with light/dark modes and near-black dark surfaces (PR #2, PR #3).
+  - Implemented 4 cohesive theme palettes (Green, Blue, Red, Amber) with light/dark modes and near-black dark surfaces (PR #2, PR #3).
   - Centralized theme synchronization in `theme.js` persisting choices across sessions.
 - **Contributor Experience & Governance Infrastructure:**
   - Added practical [CONTRIBUTING.md](CONTRIBUTING.md) guide detailing vanilla JS patterns, Node test runner commands, headless Chrome requirements, and branch/commit conventions.
   - Added responsible disclosure [SECURITY.md](SECURITY.md) policy with confidential reporting pathways.
-  - Added [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) based on Contributor Covenant v2.1 with clear maintenance contact routing.
+  - Added [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) based on Contributor Covenant v2.1 with maintenance contact routing.
   - Added structured GitHub Issue Forms for bug reports (`bug_report.yml`) and feature requests (`feature_request.yml`).
   - Added standardized [Pull Request template](.github/pull_request_template.md).
 - **Automated Test Discovery & CI Hardening:**
@@ -50,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [0.1.0] - 2026-10-24
+
+> **Note:** `0.1.0` designates the initial historical development baseline commit (`2586369`) established during core implementation. It represents an internal development milestone rather than a published GitHub Release tag.
 
 ### Added
 - **Core Multi-Page Interface:**
