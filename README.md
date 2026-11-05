@@ -86,7 +86,7 @@ The checked-in HTML page set includes 14 pages. Feature behavior and available a
 ## Design and interaction
 
 - Responsive layouts are implemented in the shared styles and page-specific stylesheets.
-- The shared theme module supports light and dark modes and four accent palettes: Green, Blue, Red, and Amber (corresponding to values `green`, `blue`, `red`, and `amber`).
+- The shared theme module supports Light and Dark theme modes with a teal accent.
 - Currency and date formatting are centralized in the shared settings module.
 - Shared API and transaction client modules keep common browser interactions consistent.
 
