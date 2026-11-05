@@ -4,6 +4,9 @@ The browser-based interface for **SpendSense**, a personal-finance application t
 
 <p>
   <a href="https://spendsensehq.pages.dev"><img src="https://img.shields.io/badge/Live%20app-SpendSense-0f766e?style=for-the-badge" alt="Live app"></a>
+  <a href="https://github.com/ThunderSkull7/spendsense-frontend/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ThunderSkull7/spendsense-frontend/ci.yml?branch=main&style=for-the-badge&logo=github-actions&logoColor=white&label=CI" alt="CI Status"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/Release-Unreleased-yellow?style=for-the-badge" alt="Release status: Unreleased"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="MIT License"></a>
   <img src="https://img.shields.io/badge/Frontend-Vanilla%20JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=222" alt="Vanilla JavaScript">
   <img src="https://img.shields.io/badge/Styling-HTML%20%2B%20CSS-E34F26?style=for-the-badge&logo=html5&logoColor=white" alt="HTML and CSS">
   <img src="https://img.shields.io/badge/Hosting-Cloudflare%20Pages-F38020?style=for-the-badge&logo=cloudflare&logoColor=white" alt="Cloudflare Pages">
@@ -17,12 +20,16 @@ The browser-based interface for **SpendSense**, a personal-finance application t
 | Resource | Link |
 |---|---|
 | Live application | https://spendsensehq.pages.dev |
-| Backend source | [ThunderSkull7/spendsense-backend](https://github.com/ThunderSkull7/spendsense-backend) |
-| Frontend source | [ThunderSkull7/spendsense-frontend](https://github.com/ThunderSkull7/spendsense-frontend) |
+| Backend repository | [ThunderSkull7/spendsense-backend](https://github.com/ThunderSkull7/spendsense-backend) |
+| Frontend repository | [ThunderSkull7/spendsense-frontend](https://github.com/ThunderSkull7/spendsense-frontend) |
 | Architecture guide | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | Development guide | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) |
 | Deployment guide | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
-| Frontend CI | [GitHub Actions](https://github.com/ThunderSkull7/spendsense-frontend/actions) |
+| Release & versioning | [docs/RELEASES.md](docs/RELEASES.md) |
+| Changelog | [CHANGELOG.md](CHANGELOG.md) |
+| Contributor guide | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Security policy | [SECURITY.md](SECURITY.md) |
+| Code of conduct | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) |
 | Issues and feature requests | [GitHub Issues](https://github.com/ThunderSkull7/spendsense-frontend/issues) |
 
 ## Visual showcase
@@ -79,7 +86,7 @@ The checked-in HTML page set includes 14 pages. Feature behavior and available a
 ## Design and interaction
 
 - Responsive layouts are implemented in the shared styles and page-specific stylesheets.
-- The shared theme module supports light and dark modes and four accent palettes: green, blue, red, and amber.
+- The shared theme module supports light and dark modes and four accent palettes: Green, Blue, Red, and Amber (corresponding to values `green`, `blue`, `red`, and `amber`).
 - Currency and date formatting are centralized in the shared settings module.
 - Shared API and transaction client modules keep common browser interactions consistent.
 
@@ -148,23 +155,36 @@ Follow the backend repository's setup instructions. By default, the frontend HTM
 
 ### 3. Serve the frontend
 
-For example, using Python:
+Start any standard static HTTP server from the repository root:
 
-```bash
-python -m http.server 5500
-```
+- **Using Node `npx serve`:**
+  ```bash
+  npx serve -l 8000 .
+  ```
+- **Using Python 3:**
+  ```bash
+  python -m http.server 8000
+  ```
 
-Open `http://localhost:5500` in your browser. Ensure the backend's Sanctum stateful-domain and CORS configuration includes the local frontend origin used by your development setup.
+Open `http://127.0.0.1:8000` in your browser. Ensure the backend's Sanctum stateful-domain and CORS configuration includes the local frontend origin used by your development setup.
 
 ### 4. Run frontend tests
 
-The repository uses Node's built-in test runner. Run the existing test files explicitly:
+SpendSense uses the native Node.js test runner orchestrated via `tools/run-tests.js`:
 
 ```bash
-node --test tests/*.test.js
-```
+# Run Node unit, orchestration, and Worker proxy tests
+node tools/run-tests.js --suite=node
 
-The browser regression tests may require a Chrome/Chromium installation and the environment expected by the individual tests. Consult the CI workflow for the authoritative automated test commands.
+# Run headless Chrome browser regression tests
+node tools/run-tests.js --suite=browser
+
+# Run the complete test suite (all test files sequentially)
+node tools/run-tests.js --suite=all
+
+# Verify site structure
+node tools/legacy-site-verify.js
+```
 
 ### 5. Prepare a production deployment copy
 
@@ -199,22 +219,19 @@ Review the generated directory before deploying. Do not put credentials or secre
 └── styles.css             # Shared styles
 ```
 
-## Testing and CI
+## CI and deployment pipeline
 
-The repository includes Node test files covering API client behavior, date formatting, theme behavior, report orchestration, transaction flows, responsive layout, and the Worker proxy. The CI workflow is the source of truth for the commands currently executed on GitHub Actions.
+GitHub Actions workflows are maintained under `.github/workflows/ci.yml`. On every push and pull request to `main`, the CI pipeline executes:
+1. **JavaScript Syntax Verification:** Validates ES module syntax across all modules.
+2. **Node Unit & Worker Tests:** Runs automated test discovery covering API client retries, date conversions, theme tokens, and Pages Worker routing.
+3. **Headless Chrome Browser Tests:** Launches headless Chrome via Chrome DevTools Protocol to assert layout responsiveness and interaction integrity.
+4. **Deploy Preparation Verification:** Verifies `deploy/prepare-frontend-deploy.js` creates deployable builds with production origin rewrites while preserving source files.
 
-Check the [Actions tab](https://github.com/ThunderSkull7/spendsense-frontend/actions) for current workflow status. A workflow definition or local test file alone should not be interpreted as proof that the latest CI run passed.
+Check the [Actions tab](https://github.com/ThunderSkull7/spendsense-frontend/actions) for real-time status.
 
 ## Contributing
 
-Contributions are welcome. Please open an issue before substantial changes and include:
-
-- The problem being solved and expected behavior.
-- Screenshots for user-facing changes, including relevant viewport sizes.
-- Regression tests for behavior changes.
-- Notes about API contract or deployment implications.
-
-Never include real user financial data, credentials, or production environment files in commits or issue attachments.
+Contributions and technical feedback are welcome! Please review our [Contributing Guide](CONTRIBUTING.md), [Security Policy](SECURITY.md), and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting pull requests or opening issues.
 
 ## License
 
