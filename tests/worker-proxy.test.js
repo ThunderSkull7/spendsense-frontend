@@ -273,6 +273,322 @@ test('worker delegates static asset requests to env.ASSETS.fetch', async () => {
   }
 });
 
+
+test('worker routes POST /api/transactions with headers, body, and idempotency key preserved', async () => {
+  const worker = loadWorkerModule();
+  let receivedMethod = '';
+  let receivedUrl = '';
+  let receivedHeaders = null;
+  let receivedBody = '';
+
+  const mockEnv = {
+    ASSETS: { fetch: async () => { throw new Error('ASSETS should not be called'); } },
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (req) => {
+    receivedMethod = req.method;
+    receivedUrl = req.url;
+    receivedHeaders = req.headers;
+    receivedBody = await req.text();
+    return new Response(JSON.stringify({ id: 99, amount: 250 }), {
+      status: 201,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  };
+
+  try {
+    const payload = JSON.stringify({ amount: 250, description: 'Lunch', category_id: 2 });
+    const request = new Request('https://spendsensehq.pages.dev/api/transactions', {
+      method: 'POST',
+      headers: {
+        Origin: 'https://spendsensehq.pages.dev',
+        'Content-Type': 'application/json',
+        'Idempotency-Key': 'idem-test-key-12345',
+        'X-XSRF-TOKEN': 'xsrf-token-sample',
+        Cookie: 'spendsense_session=sessionval; XSRF-TOKEN=xsrf-token-sample',
+        Host: 'spendsensehq.pages.dev',
+      },
+      body: payload,
+    });
+
+    const response = await worker.fetch(request, mockEnv);
+    assert.equal(receivedMethod, 'POST');
+    assert.equal(receivedUrl, 'https://spendsense-api-t0up.onrender.com/api/transactions');
+    assert.equal(receivedBody, payload);
+    assert.equal(receivedHeaders.get('idempotency-key'), 'idem-test-key-12345');
+    assert.equal(receivedHeaders.get('x-xsrf-token'), 'xsrf-token-sample');
+    assert.equal(receivedHeaders.get('cookie'), 'spendsense_session=sessionval; XSRF-TOKEN=xsrf-token-sample');
+    assert.equal(receivedHeaders.get('host'), null, 'host header must be stripped from proxy request');
+    assert.equal(response.status, 201);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('worker routes PUT and DELETE mutations with method and header preservation', async () => {
+  const worker = loadWorkerModule();
+  const mockEnv = {
+    ASSETS: { fetch: async () => { throw new Error('ASSETS should not be called'); } },
+  };
+
+  const originalFetch = globalThis.fetch;
+  let lastMethod = '';
+  let lastUrl = '';
+
+  globalThis.fetch = async (req) => {
+    lastMethod = req.method;
+    lastUrl = req.url;
+    return new Response(JSON.stringify({ status: 'ok' }), { status: 200 });
+  };
+
+  try {
+    const putReq = new Request('https://spendsensehq.pages.dev/api/categories/5', {
+      method: 'PUT',
+      headers: {
+        Origin: 'https://spendsensehq.pages.dev',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'Groceries' }),
+    });
+    const putRes = await worker.fetch(putReq, mockEnv);
+    assert.equal(lastMethod, 'PUT');
+    assert.equal(lastUrl, 'https://spendsense-api-t0up.onrender.com/api/categories/5');
+    assert.equal(putRes.status, 200);
+
+    const deleteReq = new Request('https://spendsensehq.pages.dev/api/transactions/42', {
+      method: 'DELETE',
+      headers: { Origin: 'https://spendsensehq.pages.dev' },
+    });
+    const deleteRes = await worker.fetch(deleteReq, mockEnv);
+    assert.equal(lastMethod, 'DELETE');
+    assert.equal(lastUrl, 'https://spendsense-api-t0up.onrender.com/api/transactions/42');
+    assert.equal(deleteRes.status, 200);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('worker routes complex query parameters and preserves URL encoding', async () => {
+  const worker = loadWorkerModule();
+  const mockEnv = {
+    ASSETS: { fetch: async () => { throw new Error('ASSETS should not be called'); } },
+  };
+
+  const originalFetch = globalThis.fetch;
+  let targetUrl = '';
+  globalThis.fetch = async (req) => {
+    targetUrl = req.url;
+    return new Response(JSON.stringify([]), { status: 200 });
+  };
+
+  try {
+    const complexQuery = 'from=2026-01-01&to=2026-01-31&category=Food%20%26%20Dining&sort=desc';
+    const request = new Request(`https://spendsensehq.pages.dev/api/reports?${complexQuery}`);
+    await worker.fetch(request, mockEnv);
+
+    assert.equal(
+      targetUrl,
+      `https://spendsense-api-t0up.onrender.com/api/reports?${complexQuery}`
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('worker allows localhost and 127.0.0.1 development origins with port', async () => {
+  const worker = loadWorkerModule();
+  const mockEnv = {
+    ASSETS: { fetch: async () => { throw new Error('ASSETS should not be called'); } },
+  };
+
+  const devOrigins = ['http://localhost:3000', 'http://127.0.0.1:8080', 'http://localhost'];
+  for (const devOrigin of devOrigins) {
+    const req = new Request('https://spendsensehq.pages.dev/api/user', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: devOrigin,
+        'Access-Control-Request-Method': 'GET',
+      },
+    });
+    const res = await worker.fetch(req, mockEnv);
+    assert.equal(res.status, 204);
+    assert.equal(res.headers.get('Access-Control-Allow-Origin'), devOrigin);
+    assert.equal(res.headers.get('Access-Control-Allow-Credentials'), 'true');
+  }
+});
+
+test('worker rejects malicious origin lookalikes and falls back to PAGES_ORIGIN', async () => {
+  const worker = loadWorkerModule();
+  const mockEnv = {
+    ASSETS: { fetch: async () => { throw new Error('ASSETS should not be called'); } },
+  };
+
+  const maliciousOrigins = [
+    'https://spendsensehq.pages.dev.attacker.com',
+    'https://notspendsensehq.pages.dev',
+    'http://spendsensehq.pages.dev',
+    'https://evil.example.org',
+  ];
+
+  for (const malicious of maliciousOrigins) {
+    const req = new Request('https://spendsensehq.pages.dev/api/user', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: malicious,
+        'Access-Control-Request-Method': 'GET',
+      },
+    });
+    const res = await worker.fetch(req, mockEnv);
+    assert.equal(res.status, 204);
+    assert.equal(
+      res.headers.get('Access-Control-Allow-Origin'),
+      'https://spendsensehq.pages.dev',
+      `Origin ${malicious} must be rejected in favor of production origin`
+    );
+  }
+});
+
+test('worker handles requests without Origin header safely', async () => {
+  const worker = loadWorkerModule();
+  const mockEnv = {
+    ASSETS: { fetch: async () => { throw new Error('ASSETS should not be called'); } },
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ ok: true }), { status: 200 });
+
+  try {
+    const req = new Request('https://spendsensehq.pages.dev/api/categories');
+    const res = await worker.fetch(req, mockEnv);
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('Access-Control-Allow-Origin'), 'https://spendsensehq.pages.dev');
+    assert.equal(res.headers.get('Vary'), 'Origin');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('worker preserves upstream 502 Bad Gateway response with CORS headers', async () => {
+  const worker = loadWorkerModule();
+  const mockEnv = {
+    ASSETS: { fetch: async () => { throw new Error('ASSETS should not be called'); } },
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    new Response(JSON.stringify({ message: 'Render service waking up' }), {
+      status: 502,
+      statusText: 'Bad Gateway',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+  try {
+    const req = new Request('https://spendsensehq.pages.dev/api/expenses', {
+      headers: { Origin: 'https://spendsensehq.pages.dev' },
+    });
+    const res = await worker.fetch(req, mockEnv);
+    assert.equal(res.status, 502);
+    assert.equal(res.headers.get('Access-Control-Allow-Origin'), 'https://spendsensehq.pages.dev');
+    const data = await res.json();
+    assert.equal(data.message, 'Render service waking up');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('worker handles upstream network failure gracefully and returns 502 Bad Gateway with CORS headers', async () => {
+  const worker = loadWorkerModule();
+  const mockEnv = {
+    ASSETS: { fetch: async () => { throw new Error('ASSETS should not be called'); } },
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    throw new TypeError('fetch failed: Connection refused');
+  };
+
+  try {
+    const req = new Request('https://spendsensehq.pages.dev/api/expenses', {
+      headers: { Origin: 'https://spendsensehq.pages.dev' },
+    });
+    const res = await worker.fetch(req, mockEnv);
+    assert.equal(res.status, 502);
+    assert.equal(res.headers.get('Access-Control-Allow-Origin'), 'https://spendsensehq.pages.dev');
+    const data = await res.json();
+    assert.equal(data.error, 'Bad Gateway');
+    assert.match(data.message, /fetch failed/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('worker delegates non-allowlisted /user/* subpaths to static assets', async () => {
+  const worker = loadWorkerModule();
+  let assetFetchCalled = false;
+  let requestedAssetPath = '';
+
+  const mockEnv = {
+    ASSETS: {
+      fetch: async (req) => {
+        assetFetchCalled = true;
+        requestedAssetPath = new URL(req.url).pathname;
+        return new Response('Not Found', { status: 404 });
+      },
+    },
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    throw new Error('Upstream backend must not be called for non-allowlisted /user/* path');
+  };
+
+  try {
+    const req = new Request('https://spendsensehq.pages.dev/user/settings');
+    const res = await worker.fetch(req, mockEnv);
+    assert.equal(assetFetchCalled, true);
+    assert.equal(requestedAssetPath, '/user/settings');
+    assert.equal(res.status, 404);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('worker delegates arbitrary non-API root paths to static assets', async () => {
+  const worker = loadWorkerModule();
+  let assetFetchCalled = false;
+  let requestedAssetPath = '';
+
+  const mockEnv = {
+    ASSETS: {
+      fetch: async (req) => {
+        assetFetchCalled = true;
+        requestedAssetPath = new URL(req.url).pathname;
+        return new Response('OK', { status: 200 });
+      },
+    },
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    throw new Error('Upstream backend must not be called for static paths');
+  };
+
+  try {
+    const paths = ['/styles.css', '/theme.js', '/favicon.ico', '/budget-planning/budget.html'];
+    for (const p of paths) {
+      assetFetchCalled = false;
+      const req = new Request(`https://spendsensehq.pages.dev${p}`);
+      const res = await worker.fetch(req, mockEnv);
+      assert.equal(assetFetchCalled, true);
+      assert.equal(requestedAssetPath, p);
+      assert.equal(res.status, 200);
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test('prepare-frontend-deploy safely supports in-tree destination without recursion or source corruption', () => {
   const { execFileSync } = require('child_process');
   const fs = require('fs');
