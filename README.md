@@ -19,6 +19,9 @@ The browser-based interface for **SpendSense**, a personal-finance application t
 | Live application | https://spendsensehq.pages.dev |
 | Backend source | [ThunderSkull7/spendsense-backend](https://github.com/ThunderSkull7/spendsense-backend) |
 | Frontend source | [ThunderSkull7/spendsense-frontend](https://github.com/ThunderSkull7/spendsense-frontend) |
+| Architecture guide | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| Development guide | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) |
+| Deployment guide | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) |
 | Frontend CI | [GitHub Actions](https://github.com/ThunderSkull7/spendsense-frontend/actions) |
 | Issues and feature requests | [GitHub Issues](https://github.com/ThunderSkull7/spendsense-frontend/issues) |
 
