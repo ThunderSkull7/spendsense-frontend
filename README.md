@@ -22,9 +22,37 @@ The browser-based interface for **SpendSense**, a personal-finance application t
 | Frontend CI | [GitHub Actions](https://github.com/ThunderSkull7/spendsense-frontend/actions) |
 | Issues and feature requests | [GitHub Issues](https://github.com/ThunderSkull7/spendsense-frontend/issues) |
 
-## Screenshots
+## Visual showcase
 
-Product screenshots will be added to `docs/screenshots/` after the local captures have been reviewed and committed. Until then, try the [live application](https://spendsensehq.pages.dev) for the current interface.
+The SpendSense interface provides a calm, responsive personal finance workspace designed for both desktop and mobile viewports.
+
+### Desktop experience
+
+#### Financial dashboard
+![SpendSense desktop financial dashboard showing monthly income, expenses, net flow summary cards, spending by category progress bars, and recent activity](docs/screenshots/dashboard-desktop.png)
+
+*The dashboard brings monthly cash flow, category-level spending progress, and recent transactions into a single view with Indian Rupee (₹ INR) currency formatting and customizable layout widgets.*
+
+#### Expense management & tracking
+![SpendSense desktop expenses interface displaying transaction history table with categories, dates, amounts, and action controls](docs/screenshots/expenses-desktop.png)
+
+*A clean ledger interface for filtering, searching, and reviewing categorized expenses with soft-delete safety, trash/restore operations, and pagination.*
+
+#### Financial reports & period analytics
+![SpendSense desktop reports and analytics view displaying monthly cash-flow breakdown, category distribution, and export options](docs/screenshots/reports-desktop.png)
+
+*Detailed financial analytics providing month-over-month comparisons, budget status tracking, spending trends, and streaming CSV exports.*
+
+---
+
+### Mobile responsiveness
+
+SpendSense is fully responsive across tablet and mobile form factors, featuring touch-optimized navigation, collapsible sidebars, and adaptive financial cards.
+
+| Mobile dashboard | Mobile transaction management |
+|:---:|:---:|
+| ![SpendSense mobile dashboard showing monthly summary metrics, category budget bars, and navigation menu on 390px viewport](docs/screenshots/dashboard-mobile.png) | ![SpendSense mobile transactions view displaying expense records and quick action buttons on 390px viewport](docs/screenshots/transactions-mobile.png) |
+| **Mobile dashboard**<br>Touch-friendly cards with instant monthly cash-flow and budget status | **Mobile transactions**<br>Streamlined expense ledger optimized for single-hand mobile interaction |
 
 ## Features
 
@@ -162,6 +190,7 @@ Review the generated directory before deploying. Do not put credentials or secre
 ├── tests/                 # Node and browser regression tests
 ├── tools/                 # Static site verification
 ├── deploy/                # Deployment preparation and safety checks
+├── docs/                  # Documentation and screenshot assets
 ├── theme.js               # Shared theme/currency/date behavior
 ├── transactions-client.js # Shared transaction client logic
 └── styles.css             # Shared styles
