@@ -214,10 +214,7 @@ async function main() {
     const chrome = findChrome();
     if (!chrome) {
       console.error('ERROR: Chrome executable not found on this system.');
-      if (process.env.CI) {
-        process.exit(1);
-      }
-      return;
+      process.exit(1);
     }
     console.log(`Chrome detected at: ${chrome}`);
     console.log(`Chrome version: ${getChromeVersion(chrome)}`);

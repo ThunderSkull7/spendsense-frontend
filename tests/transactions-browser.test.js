@@ -115,6 +115,9 @@ function createServer(rootDir) {
 test('explore and filter history pages with search, date range, sort, and load-more', async (t) => {
   const chromePath = findChrome();
   if (!chromePath) {
+    if (process.env.CI) {
+      assert.fail('Chrome executable required in CI environment but not found');
+    }
     t.skip('Chrome executable not found; skipping browser test');
     return;
   }
@@ -271,6 +274,9 @@ test('explore and filter history pages with search, date range, sort, and load-m
 test('income edit and delete keep filters and list state consistent', async (t) => {
   const chromePath = findChrome();
   if (!chromePath) {
+    if (process.env.CI) {
+      assert.fail('Chrome executable required in CI environment but not found');
+    }
     t.skip('Chrome executable not found; skipping browser test');
     return;
   }

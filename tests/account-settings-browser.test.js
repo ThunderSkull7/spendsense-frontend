@@ -134,6 +134,9 @@ function createMockServer(rootDir) {
 test('browser runtime: account menu is accessible, identity-aware, and Settings saves only supported fields', async (t) => {
   const chromePath = findChrome();
   if (!chromePath) {
+    if (process.env.CI) {
+      assert.fail('Chrome executable required in CI environment but not found');
+    }
     t.skip('Chrome binary not found');
     return;
   }

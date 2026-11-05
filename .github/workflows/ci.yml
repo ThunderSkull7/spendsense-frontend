@@ -35,6 +35,9 @@ jobs:
       - name: Run Node unit, orchestration and Worker tests
         run: node tools/run-tests.js --suite=node
 
+      - name: Verify Chrome installation
+        run: node tools/run-tests.js --check-chrome
+
       - name: Run browser regression tests
         env:
           CHROME_BIN: /usr/bin/google-chrome

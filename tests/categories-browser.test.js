@@ -103,6 +103,9 @@ function createMockCategoryServer(rootDir) {
 test('browser runtime: defaults are locked and private categories remain editable', async (t) => {
   const chromePath = findChrome();
   if (!chromePath) {
+    if (process.env.CI) {
+      assert.fail('Chrome executable required in CI environment but not found');
+    }
     t.skip('Chrome binary not found');
     return;
   }
