@@ -1,0 +1,49 @@
+name: Feature Request
+description: Propose a new UI feature, UX improvement, or visual capability for SpendSense Frontend.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! Please describe your proposed enhancement and how it improves the SpendSense user experience.
+  - type: textarea
+    id: problem_statement
+    attributes:
+      label: Problem Description
+      description: Is your feature request related to a specific user problem or UX friction?
+      placeholder: "e.g., When viewing the expense ledger, it's cumbersome to..."
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed Solution or UI Flow
+      description: Describe the feature, visual appearance, or interaction flow.
+      placeholder: "Describe the new UI component, modal dialog, keyboard shortcut, or chart view."
+    validations:
+      required: true
+  - type: textarea
+    id: visual_mockups
+    attributes:
+      label: Visual Mockups or References
+      description: Add any sketches, wireframes, screenshots, or design references.
+    validations:
+      required: false
+  - type: textarea
+    id: alternatives_considered
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered alternative solutions or layouts?
+      placeholder: "Describe any alternative UX approaches evaluated."
+    validations:
+      required: false
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have searched existing issues to ensure this feature has not already been proposed.
+          required: true
+        - label: I understand that pull requests should follow vanilla JavaScript/CSS standards and include automated tests where applicable.
+          required: true
