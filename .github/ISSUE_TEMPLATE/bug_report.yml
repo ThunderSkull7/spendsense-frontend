@@ -1,0 +1,82 @@
+name: Bug Report
+description: Report a bug, rendering issue, or UI malfunction in SpendSense Frontend.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please provide detailed context to help us reproduce and resolve it.
+
+        > **Important:** If this is a security vulnerability, please do NOT use this form. Refer to [SECURITY.md](https://github.com/ThunderSkull7/spendsense-frontend/blob/main/SECURITY.md) for private reporting procedures. Do not include passwords, API tokens, session cookies, or real financial data.
+  - type: input
+    id: browser
+    attributes:
+      label: Browser & Version
+      description: What browser and version are you using?
+      placeholder: "e.g., Chrome 124.0, Firefox 126.0, Safari 17.4"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating System
+      description: What OS are you running?
+      placeholder: "e.g., Windows 11, macOS Sonoma 14.5, Ubuntu 24.04, iOS 17.4, Android 14"
+    validations:
+      required: true
+  - type: dropdown
+    id: page
+    attributes:
+      label: Affected Page or View
+      description: Where did the bug occur?
+      options:
+        - Dashboard (index.html)
+        - Expenses Ledger
+        - Income Management
+        - Budgets & Alerts
+        - Analytics & Reports
+        - Dark/Light Theme Toggle
+        - Authentication / Login Modal
+        - Other (explain in description)
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction_steps
+    attributes:
+      label: Steps to Reproduce
+      description: Describe the exact steps needed to reproduce the issue.
+      placeholder: |
+        1. Open the application at https://spendsensehq.pages.dev (or local server)
+        2. Navigate to...
+        3. Click on...
+        4. Observe unexpected behavior...
+    validations:
+      required: true
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: "Describe the expected UI rendering, state transition, or interaction."
+    validations:
+      required: true
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: Actual Behavior & Console Errors
+      description: What actually occurred? Include relevant sanitized DevTools console errors or network responses.
+      placeholder: "Paste sanitized console logs or network status codes here. Strip all tokens and personal data."
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Contributor Checklist
+      options:
+        - label: I have verified that this report does not contain an exploitable security vulnerability.
+          required: true
+        - label: I have searched existing issues to ensure this is not a duplicate.
+          required: true
+        - label: I have removed all passwords, tokens, API keys, and sensitive financial records from this report.
+          required: true
