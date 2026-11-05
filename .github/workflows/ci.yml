@@ -33,28 +33,12 @@ jobs:
           done
 
       - name: Run Node unit, orchestration and Worker tests
-        run: >-
-          node --test
-          tests/api-client.test.js
-          tests/date-format.test.js
-          tests/theme-colors.test.js
-          tests/reports-orchestration.test.js
-          tests/worker-proxy.test.js
-          tests/transactions-client.test.js
-          tests/analytics-period.test.js
+        run: node tools/run-tests.js --suite=node
 
       - name: Run browser regression tests
         env:
           CHROME_BIN: /usr/bin/google-chrome
-        run: >-
-          node --test
-          tests/theme-browser.test.js
-          tests/reports-browser.test.js
-          tests/categories-browser.test.js
-          tests/account-settings-browser.test.js
-          tests/transactions-browser.test.js
-          tests/reports-period-browser.test.js
-          tests/responsive-layout.test.js
+        run: node tools/run-tests.js --suite=browser
 
       - name: Run legacy site verification
         run: node tools/legacy-site-verify.js
