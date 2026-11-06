@@ -48,17 +48,15 @@ if (authForm) {
 
     authMessage.classList.remove("error", "success", "warning");
 
-    // Pages without a password field (e.g. forgot-password) only validate the
-    // email client-side and show the confirmation configured on the form.
+    // Forms without a password field: redirect to or guide user to the dedicated password recovery page
     if (!passwordInput) {
-      // PASSWORD RESET IS NOT YET SUPPORTED
       if (authForm.dataset.success) {
         authMessage.textContent = authForm.dataset.success;
-        authMessage.classList.add("warning");
+        authMessage.classList.add("success");
       } else {
-        authMessage.textContent =
-          "Password reset is not yet available. Contact support if you need assistance.";
-        authMessage.classList.add("warning");
+        authMessage.innerHTML =
+          'Looking to reset your password? Please visit the <a href="forgot-password.html" style="color: var(--teal); font-weight: 500;">Password Reset page</a>.';
+        authMessage.classList.add("info");
       }
       return;
     }

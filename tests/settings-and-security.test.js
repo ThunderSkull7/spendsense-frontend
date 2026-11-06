@@ -100,4 +100,19 @@ test('auth.js immediately scrubs sensitive credentials from visible browser URL 
   assert.match(cleanUrl, /#step2/, 'Clean URL must preserve URL hash');
 });
 
+test('auth.js does not display obsolete password-reset-not-available fallback message (Phase 11.3.1)', () => {
+  const authJs = read('authentication/auth.js');
+  assert.doesNotMatch(
+    authJs,
+    /Password reset is not yet available/i,
+    'auth.js must not contain obsolete unavailable messaging'
+  );
+  assert.match(
+    authJs,
+    /forgot-password\.html/,
+    'auth.js passwordless fallback must reference dedicated forgot-password.html'
+  );
+});
+
+
 
