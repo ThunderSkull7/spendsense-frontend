@@ -766,6 +766,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  const exportBtn = document.querySelector('[data-reports-export]');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', async () => {
+      if (exportBtn.disabled) return;
+      exportBtn.disabled = true;
+      const original = exportBtn.textContent;
+      exportBtn.textContent = 'Exporting…';
+      try {
+        const year = reportingPeriod.year;
+        const month = reportingPeriod.month;
+        const lastDay = new Date(year, month, 0).getDate();
+        const from = `${year}-${String(month).padStart(2, '0')}-01`;
+        const to = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+        await api.downloadFile(`/reports/export?from=${from}&to=${to}`, `spendsense-report-${from}-to-${to}.csv`);
+        UI.showToast('Report exported successfully', 'success');
+      } catch (err) {
+        UI.showToast(err.message || 'Export failed', 'error');
+      } finally {
+        exportBtn.disabled = false;
+        exportBtn.textContent = original;
+      }
+    });
+  }
+
   if (refreshBtn) {
     refreshBtn.addEventListener('click', async () => {
       if (refreshBtn.disabled || isLoadingAll) return;
@@ -793,6 +817,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Reload all analytics sections, including the top metrics, so the
     // reporting period stays consistent across cards, charts, and summaries.
     loadAll();
+    if (healthComponent) {
+      const m = String(reportingPeriod.month).padStart(2, '0');
+      healthComponent.loadHealth(`${reportingPeriod.year}-${m}`);
+    }
   };
 
   if (periodMonthEl) periodMonthEl.addEventListener('change', applyPeriodSelection);
@@ -801,6 +829,57 @@ document.addEventListener('DOMContentLoaded', () => {
   if (periodMonthEl && periodYearEl) {
     periodMonthEl.value = String(reportingPeriod.month);
     periodYearEl.value = String(reportingPeriod.year);
+  }
+
+  // ---------- Sub-navigation tabs: Reports & Analytics, Financial Health ----------
+  const reportTabs = document.querySelectorAll('[data-reports-tab]');
+  const reportViews = {
+    reports: document.getElementById('view-reports-charts'),
+    health: document.getElementById('view-financial-health')
+  };
+
+  let healthComponent = null;
+
+  function switchReportsTab(targetTab) {
+    reportTabs.forEach((tab) => {
+      const isSelected = tab.getAttribute('data-reports-tab') === targetTab;
+      tab.classList.toggle('active', isSelected);
+      tab.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+    });
+
+    Object.keys(reportViews).forEach((key) => {
+      if (reportViews[key]) {
+        reportViews[key].hidden = key !== targetTab;
+      }
+    });
+
+    if (targetTab === 'health') {
+      const m = String(reportingPeriod.month).padStart(2, '0');
+      const monthKey = `${reportingPeriod.year}-${m}`;
+      if (!healthComponent && window.SpendSenseFinancialHealth) {
+        healthComponent = new window.SpendSenseFinancialHealth();
+        healthComponent.init();
+        healthComponent.loadHealth(monthKey);
+      } else if (healthComponent) {
+        healthComponent.loadHealth(monthKey);
+      }
+    }
+  }
+
+  reportTabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const target = tab.getAttribute('data-reports-tab');
+      switchReportsTab(target);
+      const url = new URL(window.location);
+      url.searchParams.set('tab', target);
+      window.history.replaceState({}, '', url);
+    });
+  });
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialTab = urlParams.get('tab') || (window.location.hash ? window.location.hash.replace('#', '') : 'reports');
+  if (initialTab === 'health') {
+    switchReportsTab('health');
   }
 
   loadAll();

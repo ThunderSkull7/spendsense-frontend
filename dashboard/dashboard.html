@@ -132,12 +132,38 @@
               <div class="card-head">
                 <div>
                   <h2 class="card-title">Recent transactions</h2>
-                  <p class="card-sub">Latest logged expenses</p>
+                  <p class="card-sub">Latest expenses and income</p>
                 </div>
                 <a class="link small" href="../expense-management/expenses.html">View all</a>
               </div>
               <div class="card-body tight" data-transactions>
                 <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading transactions…</p></div>
+              </div>
+            </article>
+
+            <article class="card" data-upcoming-bills-card>
+              <div class="card-head">
+                <div>
+                  <h2 class="card-title">Upcoming bills</h2>
+                  <p class="card-sub">Next 30 days commitments</p>
+                </div>
+                <a class="link small" href="../expense-management/expenses.html#calendar">Bill calendar</a>
+              </div>
+              <div class="card-body tight" data-upcoming-bills>
+                <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading upcoming bills…</p></div>
+              </div>
+            </article>
+
+            <article class="card" data-goals-card>
+              <div class="card-head">
+                <div>
+                  <h2 class="card-title">Financial goals</h2>
+                  <p class="card-sub">Savings targets progress</p>
+                </div>
+                <a class="link small" href="../budget-planning/budget.html?tab=goals">Manage</a>
+              </div>
+              <div class="card-body tight" data-goals-summary>
+                <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading goals…</p></div>
               </div>
             </article>
           </div>

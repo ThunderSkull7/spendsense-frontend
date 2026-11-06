@@ -80,11 +80,18 @@
             </div>
           </form>
           <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+          <button class="btn secondary sm" type="button" data-reports-export>Export CSV</button>
           <button class="btn secondary sm" type="button" data-reports-refresh>Refresh</button>
         </div>
       </header>
 
       <main class="content">
+        <div class="sub-nav-tabs" role="tablist" aria-label="Reports and Financial Health Navigation">
+          <button type="button" class="sub-nav-tab active" role="tab" id="tab-reports-charts" aria-selected="true" aria-controls="view-reports-charts" data-reports-tab="reports">Reports &amp; analytics</button>
+          <button type="button" class="sub-nav-tab" role="tab" id="tab-financial-health" aria-selected="false" aria-controls="view-financial-health" data-reports-tab="health">Financial health</button>
+        </div>
+
+        <div id="view-reports-charts" role="tabpanel" aria-labelledby="tab-reports-charts" style="margin-top: 16px;">
         <!-- Analytics Top Stat Cards -->
         <section class="grid grid-3" aria-label="Key Financial Metrics" style="margin-bottom: 24px;">
           <article class="card stat-card">
@@ -188,11 +195,19 @@
             </div>
           </article>
         </section>
+        </div>
+
+        <div id="view-financial-health" role="tabpanel" aria-labelledby="tab-financial-health" hidden style="margin-top: 16px;">
+          <div id="financial-health-container">
+            <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Evaluating financial health indicators…</p></div>
+          </div>
+        </div>
       </main>
     </div>
 
     <script src="../script.js"></script>
     <script src="../analytics-period.js"></script>
+    <script src="../financial-health.js"></script>
     <script src="reports.js"></script>
   </body>
 </html>

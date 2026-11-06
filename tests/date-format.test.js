@@ -117,10 +117,10 @@ test('todayInputValue returns the local calendar date just after midnight', () =
 
 test('storage failures fall back to memory instead of breaking the shell', () => {
   const { settings } = loadSettings({ storageThrows: true });
-  assert.equal(settings.themeColor(), 'green');
+  assert.equal(settings.themeColor(), 'teal');
   assert.equal(settings.themeMode(), 'light');
-  settings.applyTheme('blue', 'dark');
-  assert.equal(settings.themeColor(), 'blue');
+  settings.applyTheme('dark');
+  assert.equal(settings.themeColor(), 'teal');
   assert.equal(settings.themeMode(), 'dark');
   settings.applyCurrency('USD');
   assert.equal(settings.currency, 'USD');

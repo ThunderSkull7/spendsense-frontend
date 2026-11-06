@@ -102,32 +102,17 @@
             <div class="card-head">
               <div>
                 <h2 class="card-title">Appearance</h2>
-                <p class="card-sub">Theme palette and light or dark mode</p>
+                <p class="card-sub">Light or dark mode</p>
               </div>
             </div>
             <div class="card-body">
               <form class="theme-form stack" data-theme-form>
-                <div class="field">
-                  <label for="themeColor">Colour palette</label>
-                  <select id="themeColor" name="themeColor" data-theme-color data-theme-color-select>
-                    <option value="green">Green</option>
-                    <option value="blue">Blue</option>
-                    <option value="red">Red</option>
-                    <option value="amber">Amber</option>
-                  </select>
-                </div>
                 <div class="field">
                   <label for="themeMode">Mode</label>
                   <select id="themeMode" name="themeMode" data-theme-mode data-theme-mode-select>
                     <option value="light">Light mode</option>
                     <option value="dark">Dark mode</option>
                   </select>
-                </div>
-                <div class="legend theme-swatches-legend" aria-label="Theme colour options">
-                  <span class="legend-item"><span class="dot dot-green" style="background:#10B981"></span> Green</span>
-                  <span class="legend-item"><span class="dot dot-blue" style="background:#60A5FA"></span> Blue</span>
-                  <span class="legend-item"><span class="dot dot-red" style="background:#FB7185"></span> Red</span>
-                  <span class="legend-item"><span class="dot dot-amber" style="background:#FBBF24"></span> Amber</span>
                 </div>
               </form>
             </div>
@@ -136,18 +121,71 @@
           <article class="card">
             <div class="card-head">
               <div>
-                <h2 class="card-title">Security</h2>
-                <p class="card-sub">Login protection and password updates</p>
+                <h2 class="card-title">Data Management</h2>
+                <p class="card-sub">Import records or download portable backup</p>
               </div>
             </div>
             <div class="card-body">
+              <div style="margin-bottom: 20px;">
+                <h3 style="font-size: 0.96rem; font-weight: 600; margin: 0 0 6px;">CSV Spreadsheet Import</h3>
+                <p style="margin: 0 0 12px; font-size: 0.88rem; color: var(--ink-2); line-height: 1.5;">
+                  Import expense and income records from CSV spreadsheets with row-by-row previews, duplicate detection, and formula neutralization.
+                </p>
+                <button type="button" class="btn primary sm" data-import-csv>Import Transactions from CSV</button>
+              </div>
+              <hr style="border: 0; border-top: 1px solid var(--border); margin: 16px 0;" />
+              <div>
+                <h3 style="font-size: 0.96rem; font-weight: 600; margin: 0 0 6px;">Data Backup Export</h3>
+                <p style="margin: 0 0 12px; font-size: 0.88rem; color: var(--ink-2); line-height: 1.5;">
+                  Download a complete, portable JSON backup (schema format: <code>spendsense-user-data-v1</code>) of your financial records including expenses, incomes, budgets, recurring bills, goals, and debts.
+                </p>
+                <button type="button" class="btn secondary sm" data-export-backup>Download Complete Backup (JSON)</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Security</h2>
+                <p class="card-sub">Password changes and account protection</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <form class="stack" data-password-form novalidate style="margin-bottom: 24px;">
+                <div class="field">
+                  <label for="current_password">Current password</label>
+                  <div class="password-field">
+                    <input id="current_password" name="current_password" type="password" required autocomplete="current-password" placeholder="Enter current password" />
+                    <button type="button" data-toggle-password aria-label="Show password">Show</button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="new_password">New password</label>
+                  <div class="password-field">
+                    <input id="new_password" name="password" type="password" required minlength="8" autocomplete="new-password" placeholder="At least 8 characters" />
+                    <button type="button" data-toggle-password aria-label="Show password">Show</button>
+                  </div>
+                  <p class="field-hint">Must be at least 8 characters.</p>
+                </div>
+                <div class="field">
+                  <label for="new_password_confirmation">Confirm new password</label>
+                  <div class="password-field">
+                    <input id="new_password_confirmation" name="password_confirmation" type="password" required minlength="8" autocomplete="new-password" placeholder="Confirm new password" />
+                    <button type="button" data-toggle-password aria-label="Show password">Show</button>
+                  </div>
+                </div>
+                <button class="btn primary" type="submit" data-password-submit>Update password</button>
+                <p class="settings-message msg" data-password-message aria-live="polite" role="status"></p>
+              </form>
+
               <div class="settings-unavailable">
                 <span class="settings-unavailable-icon" aria-hidden="true">
                   <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v3"/></svg>
                 </span>
                 <div>
-                  <h3>Security controls aren't available yet</h3>
-                  <p>Password changes, two-factor authentication, and login alerts need backend support that SpendSense doesn't have yet. Nothing on this page changes your sign-in security.</p>
+                  <h3>Advanced security controls aren't available yet</h3>
+                  <p>Two-factor authentication and login session alerts need infrastructure support that SpendSense doesn't have yet.</p>
                   <a class="link" href="../support/support.html">Contact support</a>
                 </div>
               </div>
@@ -158,6 +196,7 @@
     </div>
 
     <script src="../script.js"></script>
+    <script src="../import-modal.js"></script>
     <script src="settings.js"></script>
   </body>
 </html>

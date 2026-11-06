@@ -59,7 +59,7 @@ function createStaticServer(rootDir) {
   return server;
 }
 
-test('browser runtime: selecting red immediately applies red accents and persists across dark mode & dashboard navigation', async (t) => {
+test('browser runtime: enforces canonical teal accent, toggles Light/Dark modes, and exposes no palette selector', async (t) => {
   const chromePath = findChrome();
   if (!chromePath) {
     if (process.env.CI) {
@@ -153,9 +153,13 @@ test('browser runtime: selecting red immediately applies red accents and persist
       const btnStyle = btn ? getComputedStyle(btn) : null;
       const activeNav = document.querySelector('.sidebar-link.active');
       const activeNavStyle = activeNav ? getComputedStyle(activeNav) : null;
-      const select = document.querySelector('select#themeColor');
+      const colorSelect = document.querySelector('select#themeColor, select[data-theme-color]');
+      const swatchesLegend = document.querySelector('.theme-swatches-legend');
+      const modeSelect = document.querySelector('select#themeMode');
       return {
-        selectValue: select ? select.value : null,
+        hasColorSelect: colorSelect !== null,
+        hasSwatches: swatchesLegend !== null,
+        modeSelectValue: modeSelect ? modeSelect.value : null,
         themeColor: html.dataset.themeColor,
         mode: html.dataset.mode,
         primaryVar: htmlStyle.getPropertyValue('--primary').trim(),
@@ -164,55 +168,21 @@ test('browser runtime: selecting red immediately applies red accents and persist
       };
     `);
 
-    assert.equal(initial.selectValue, 'green');
-    assert.equal(initial.themeColor, 'green');
-    assert.equal(initial.primaryVar, '#10B981');
+    assert.equal(initial.hasColorSelect, false, 'Palette selector must be completely removed');
+    assert.equal(initial.hasSwatches, false, 'Palette swatches legend must be completely removed');
+    assert.equal(initial.modeSelectValue, 'light');
+    assert.equal(initial.themeColor, 'teal');
+    assert.equal(initial.primaryVar, '#10B981', 'Primary accent must be canonical teal');
     assert.equal(initial.btnBg, 'rgb(5, 150, 105)');
     assert.equal(initial.activeNavColor, 'rgb(16, 185, 129)');
 
-    // 2. Select 'red' in Settings and trigger change
-    await evalJs(`
-      const select = document.querySelector('select#themeColor');
-      select.value = 'red';
-      select.dispatchEvent(new Event('change', { bubbles: true }));
-    `);
-    // Wait for the 0.16s CSS transition to finish
-    await new Promise(r => setTimeout(r, 250));
-
-    const afterRed = await evalJs(`
-      const select = document.querySelector('select#themeColor');
-      const html = document.documentElement;
-      const htmlStyle = getComputedStyle(html);
-      const btn = document.querySelector('.btn.primary');
-      const btnStyle = btn ? getComputedStyle(btn) : null;
-      const activeNav = document.querySelector('.sidebar-link.active');
-      const activeNavStyle = activeNav ? getComputedStyle(activeNav) : null;
-
-      return {
-        selectValue: select.value,
-        themeColor: html.dataset.themeColor,
-        mode: html.dataset.mode,
-        storedColor: localStorage.getItem('spendsenseThemeColor'),
-        primaryVar: htmlStyle.getPropertyValue('--primary').trim(),
-        btnBg: btnStyle ? btnStyle.backgroundColor : null,
-        activeNavColor: activeNavStyle ? activeNavStyle.color : null
-      };
-    `);
-
-    assert.equal(afterRed.selectValue, 'red');
-    assert.equal(afterRed.themeColor, 'red');
-    assert.equal(afterRed.storedColor, 'red');
-    assert.equal(afterRed.primaryVar, '#FB7185');
-    assert.equal(afterRed.btnBg, 'rgb(244, 63, 94)', 'primary button must change from green to red');
-    assert.equal(afterRed.activeNavColor, 'rgb(251, 113, 133)', 'active sidebar link must change from green to red');
-
-    // 3. Switch to Dark Mode while Red is selected
+    // 2. Switch to Dark Mode via Mode select
     await evalJs(`
       const modeSelect = document.querySelector('select#themeMode');
       modeSelect.value = 'dark';
       modeSelect.dispatchEvent(new Event('change', { bubbles: true }));
     `);
-    // Wait for the CSS transition
+    // Wait for the 0.16s CSS transition to finish
     await new Promise(r => setTimeout(r, 250));
 
     const afterDark = await evalJs(`
@@ -236,17 +206,17 @@ test('browser runtime: selecting red immediately applies red accents and persist
       };
     `);
 
-    assert.equal(afterDark.themeColor, 'red', 'red palette must be preserved in dark mode');
+    assert.equal(afterDark.themeColor, 'teal');
     assert.equal(afterDark.mode, 'dark');
-    assert.equal(afterDark.storedColor, 'red');
+    assert.equal(afterDark.storedColor, null, 'spendsenseThemeColor must not be stored');
     assert.equal(afterDark.storedMode, 'dark');
-    assert.equal(afterDark.primaryVar, '#FB7185');
-    assert.equal(afterDark.bgVar, '#090B0F', 'dark page background must be #090B0F');
-    assert.equal(afterDark.surfaceVar, '#14171D', 'dark card surface must be #14171D');
-    assert.equal(afterDark.btnBg, 'rgb(244, 63, 94)');
-    assert.equal(afterDark.activeNavColor, 'rgb(251, 113, 133)');
+    assert.equal(afterDark.primaryVar, '#10B981', 'Canonical teal accent must be preserved in dark mode');
+    assert.equal(afterDark.bgVar, '#090B0F', 'Dark background must be #090B0F');
+    assert.equal(afterDark.surfaceVar, '#14171D', 'Dark card surface must be #14171D');
+    assert.equal(afterDark.btnBg, 'rgb(5, 150, 105)');
+    assert.equal(afterDark.activeNavColor, 'rgb(16, 185, 129)');
 
-    // 4. Navigate to Dashboard and verify persistence of red palette & dark mode
+    // 3. Navigate to Dashboard and verify persistence of canonical teal & dark mode
     await send('Page.navigate', { url: `http://127.0.0.1:${port}/dashboard/dashboard.html` });
     await new Promise(r => setTimeout(r, 1000));
 
@@ -271,15 +241,38 @@ test('browser runtime: selecting red immediately applies red accents and persist
       };
     `);
 
-    assert.equal(dashboardState.themeColor, 'red');
+    assert.equal(dashboardState.themeColor, 'teal');
     assert.equal(dashboardState.mode, 'dark');
-    assert.equal(dashboardState.storedColor, 'red');
+    assert.equal(dashboardState.storedColor, null);
     assert.equal(dashboardState.storedMode, 'dark');
-    assert.equal(dashboardState.primaryVar, '#FB7185');
+    assert.equal(dashboardState.primaryVar, '#10B981');
     assert.equal(dashboardState.bgVar, '#090B0F');
     assert.equal(dashboardState.surfaceVar, '#14171D');
-    assert.equal(dashboardState.btnBg, 'rgb(244, 63, 94)');
-    assert.equal(dashboardState.activeNavColor, 'rgb(251, 113, 133)');
+
+    // 4. Toggle back to Light mode via topbar button in dashboard
+    await evalJs(`
+      const toggleBtn = document.querySelector('[data-theme-toggle]');
+      toggleBtn.click();
+    `);
+    await new Promise(r => setTimeout(r, 250));
+
+    const afterToggle = await evalJs(`
+      const html = document.documentElement;
+      const htmlStyle = getComputedStyle(html);
+      return {
+        mode: html.dataset.mode,
+        themeColor: html.dataset.themeColor,
+        storedMode: localStorage.getItem('spendsenseThemeMode'),
+        primaryVar: htmlStyle.getPropertyValue('--primary').trim(),
+        bgVar: htmlStyle.getPropertyValue('--bg').trim(),
+      };
+    `);
+
+    assert.equal(afterToggle.mode, 'light');
+    assert.equal(afterToggle.themeColor, 'teal');
+    assert.equal(afterToggle.storedMode, 'light');
+    assert.equal(afterToggle.primaryVar, '#10B981');
+    assert.equal(afterToggle.bgVar, '#F8FAFC');
 
     ws.close();
   } finally {

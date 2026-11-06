@@ -326,3 +326,29 @@ test('loadSessionUser leaves neutral fallbacks when the session is absent', asyn
   assert.deepEqual(events, [], 'identity hydration must not trigger a global session-expired event');
 });
 
+test('formatAuthError categorizes authentication and network errors accurately', () => {
+  const { api } = loadClient({ fetchImpl: async () => {} });
+
+  // 401 Unauthorized
+  assert.equal(api.formatAuthError(401, {}, 'Default'), 'Invalid email or password.');
+  assert.equal(api.formatAuthError(401, { message: 'These credentials do not match.' }, 'Default'), 'These credentials do not match.');
+  assert.equal(api.formatAuthError(401, { message: 'Login failed' }, 'Default'), 'Invalid email or password.');
+
+  // 422 Validation
+  assert.equal(api.formatAuthError(422, { errors: { email: ['The email has already been taken.'] } }, 'Default'), 'The email has already been taken.');
+  assert.equal(api.formatAuthError(422, { message: 'Invalid data' }, 'Default'), 'Invalid data');
+
+  // 429 Rate limiting
+  assert.equal(api.formatAuthError(429, {}, 'Default'), 'Too many attempts. Please try again later.');
+
+  // 419 CSRF / Session expiry
+  assert.equal(api.formatAuthError(419, {}, 'Default'), 'Your session has expired. Please refresh the page and try again.');
+
+  // 500+ Server error
+  assert.equal(api.formatAuthError(500, {}, 'Default'), 'Server error. Our team has been notified. Please try again later.');
+  assert.equal(api.formatAuthError(503, {}, 'Default'), 'Server error. Our team has been notified. Please try again later.');
+
+  // Fallback to default
+  assert.equal(api.formatAuthError(400, {}, 'Fallback error message'), 'Fallback error message');
+});
+

@@ -32,6 +32,17 @@
       }
       memStorage.set(key, String(value));
     },
+    removeItem(key) {
+      try {
+        if (typeof localStorage !== "undefined" && localStorage) {
+          localStorage.removeItem(key);
+          return;
+        }
+      } catch (e) {
+        /* storage blocked/unavailable, fallback to memory */
+      }
+      memStorage.delete(key);
+    },
   };
 
   const currencySymbols = {
@@ -51,17 +62,14 @@
 
   const skipTags = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "OPTION", "TEXTAREA"]);
 
-  const VALID_PALETTES = new Set(["green", "blue", "red", "amber"]);
-  const normalizePalette = (c) => {
-    const raw = String(c || "").trim().toLowerCase();
-    if (raw === "rose") return "red";
-    if (raw === "yellow") return "amber";
-    if (raw === "emerald" || raw === "clean-light") return "green";
-    return VALID_PALETTES.has(raw) ? raw : "green";
-  };
+  // Canonical Teal Accent: sole accent colour supported across all modes.
+  const CANONICAL_ACCENT = "teal";
 
-  const rawSavedColor = safeStorage.getItem(KEYS.color);
-  const savedColor = normalizePalette(rawSavedColor || "green");
+  // Clean up obsolete stored palette preference from existing installations.
+  if (safeStorage.getItem(KEYS.color)) {
+    safeStorage.removeItem(KEYS.color);
+  }
+
   const savedMode = safeStorage.getItem(KEYS.mode) === "dark" ? "dark" : "light";
   const savedCurrency = safeStorage.getItem(KEYS.currency) || "INR";
 
@@ -96,19 +104,29 @@
     });
   };
 
-  const applyTheme = (color, mode) => {
-    const chosenColor = normalizePalette(color || safeStorage.getItem(KEYS.color) || "green");
-    const chosenMode = mode ? (mode === "dark" ? "dark" : "light") : (safeStorage.getItem(KEYS.mode) === "dark" ? "dark" : "light");
-    root.dataset.themeColor = chosenColor;
+  const applyTheme = (modeOrColor, legacyMode) => {
+    let chosenMode = "light";
+    if (legacyMode !== undefined) {
+      chosenMode = legacyMode === "dark" ? "dark" : "light";
+    } else if (modeOrColor === "dark" || modeOrColor === "light") {
+      chosenMode = modeOrColor;
+    } else {
+      chosenMode = safeStorage.getItem(KEYS.mode) === "dark" ? "dark" : "light";
+    }
+
+    root.dataset.themeColor = CANONICAL_ACCENT;
     root.dataset.mode = chosenMode;
-    safeStorage.setItem(KEYS.color, chosenColor);
     safeStorage.setItem(KEYS.mode, chosenMode);
+    safeStorage.removeItem(KEYS.color);
+
     window.dispatchEvent(
-      new CustomEvent("spendsense:theme-change", { detail: { color: chosenColor, mode: chosenMode } })
+      new CustomEvent("spendsense:theme-change", {
+        detail: { mode: chosenMode, color: CANONICAL_ACCENT }
+      })
     );
   };
 
-  const themeColor = () => root.dataset.themeColor || normalizePalette(safeStorage.getItem(KEYS.color) || "green");
+  const themeColor = () => CANONICAL_ACCENT;
   const themeMode = () => root.dataset.mode || safeStorage.getItem(KEYS.mode) || "light";
 
   const applyCurrency = (currency) => {
@@ -577,10 +595,7 @@
         );
       syncLabel();
       button.addEventListener("click", () => {
-        applyTheme(
-          root.dataset.themeColor || savedColor,
-          root.dataset.mode === "dark" ? "light" : "dark"
-        );
+        applyTheme(root.dataset.mode === "dark" ? "light" : "dark");
         syncLabel();
       });
     });
@@ -604,7 +619,7 @@
     applyMoneySymbols();
   };
 
-  root.dataset.themeColor = savedColor;
+  root.dataset.themeColor = CANONICAL_ACCENT;
   root.dataset.mode = savedMode;
 
   window.SpendSenseSettings = {
