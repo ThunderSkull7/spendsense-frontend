@@ -236,7 +236,8 @@ function corsHeaders(requestOrigin) {
   return {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Accept, Content-Type, Authorization, X-XSRF-TOKEN, X-Requested-With, Idempotency-Key',
+    'Access-Control-Allow-Headers': 'Accept, Content-Type, Authorization, X-XSRF-TOKEN, X-Requested-With, Idempotency-Key, X-Request-Id',
+    'Access-Control-Expose-Headers': 'X-Request-Id',
     'Access-Control-Allow-Credentials': 'true',
     'Vary': 'Origin'
   };

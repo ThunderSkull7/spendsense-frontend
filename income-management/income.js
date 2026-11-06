@@ -535,5 +535,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const exportBtn = document.querySelector('[data-export-csv]');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', async () => {
+      const origText = exportBtn.textContent;
+      exportBtn.disabled = true;
+      exportBtn.textContent = 'Exporting…';
+      try {
+        const params = new URLSearchParams();
+        params.set('type', 'income');
+        const filters = readEffectiveFilters();
+        if (filters.search) params.set('q', filters.search);
+        if (filters.startDate) params.set('from', filters.startDate);
+        if (filters.endDate) params.set('to', filters.endDate);
+        await api.downloadFile(`/transactions/export?${params.toString()}`, 'spendsense-income.csv');
+        UI.showToast('Income exported successfully', 'success');
+      } catch (err) {
+        UI.showToast(err.message || 'Export failed', 'error');
+      } finally {
+        exportBtn.disabled = false;
+        exportBtn.textContent = origText;
+      }
+    });
+  }
+
+  window.addEventListener('spendsense:data-imported', () => {
+    loadIncomes();
+  });
+
   loadIncomes();
 });

@@ -105,9 +105,9 @@
   --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
-/* ---------- Theme Color Palettes (Applied via data-theme-color) ---------- */
-
-/* 1. Green Palette (Default) */
+/* ---------- Canonical Teal Accent (Sole Accent for Light Mode) ---------- */
+:root,
+:root[data-theme-color="teal"],
 :root[data-theme-color="green"] {
   --primary: #10B981;
   --primary-600: #059669;
@@ -117,42 +117,6 @@
   --accent: #10B981;
   --accent-100: rgba(16, 185, 129, 0.12);
   --color-primary: #10B981;
-}
-
-/* 2. Blue Palette */
-:root[data-theme-color="blue"] {
-  --primary: #60A5FA;
-  --primary-600: #3B82F6;
-  --primary-700: #2563EB;
-  --primary-100: rgba(96, 165, 250, 0.12);
-  --primary-ring: rgba(96, 165, 250, 0.28);
-  --accent: #60A5FA;
-  --accent-100: rgba(96, 165, 250, 0.12);
-  --color-primary: #60A5FA;
-}
-
-/* 3. Red Palette */
-:root[data-theme-color="red"] {
-  --primary: #FB7185;
-  --primary-600: #F43F5E;
-  --primary-700: #E11D48;
-  --primary-100: rgba(251, 113, 133, 0.12);
-  --primary-ring: rgba(251, 113, 133, 0.28);
-  --accent: #FB7185;
-  --accent-100: rgba(251, 113, 133, 0.12);
-  --color-primary: #FB7185;
-}
-
-/* 4. Amber Palette */
-:root[data-theme-color="amber"] {
-  --primary: #FBBF24;
-  --primary-600: #F59E0B;
-  --primary-700: #D97706;
-  --primary-100: rgba(251, 191, 36, 0.14);
-  --primary-ring: rgba(251, 191, 36, 0.3);
-  --accent: #FBBF24;
-  --accent-100: rgba(251, 191, 36, 0.14);
-  --color-primary: #FBBF24;
 }
 
 /* ---------- Dark Mode Overrides (Semantic Base) ---------- */
@@ -219,7 +183,9 @@
   --shadow-lg: 0 18px 44px rgba(0, 0, 0, 0.65);
 }
 
-/* Dark mode: Green */
+/* Dark mode: Canonical Teal Accent */
+:root[data-mode="dark"],
+:root[data-mode="dark"][data-theme-color="teal"],
 :root[data-mode="dark"][data-theme-color="green"] {
   --bg: #090B0F;
   --surface: #14171D;
@@ -235,60 +201,6 @@
   --accent: #10B981;
   --accent-100: rgba(16, 185, 129, 0.15);
   --color-primary: #10B981;
-}
-
-/* Dark mode: Blue */
-:root[data-mode="dark"][data-theme-color="blue"] {
-  --bg: #090B0F;
-  --surface: #14171D;
-  --surface-2: #1C2028;
-  --surface-3: #262B35;
-  --border: #262B35;
-  --border-strong: #373E4D;
-  --primary: #60A5FA;
-  --primary-600: #3B82F6;
-  --primary-700: #2563EB;
-  --primary-100: rgba(96, 165, 250, 0.16);
-  --primary-ring: rgba(96, 165, 250, 0.35);
-  --accent: #60A5FA;
-  --accent-100: rgba(96, 165, 250, 0.16);
-  --color-primary: #60A5FA;
-}
-
-/* Dark mode: Red */
-:root[data-mode="dark"][data-theme-color="red"] {
-  --bg: #090B0F;
-  --surface: #14171D;
-  --surface-2: #1C2028;
-  --surface-3: #262B35;
-  --border: #262B35;
-  --border-strong: #373E4D;
-  --primary: #FB7185;
-  --primary-600: #F43F5E;
-  --primary-700: #E11D48;
-  --primary-100: rgba(251, 113, 133, 0.16);
-  --primary-ring: rgba(251, 113, 133, 0.35);
-  --accent: #FB7185;
-  --accent-100: rgba(251, 113, 133, 0.16);
-  --color-primary: #FB7185;
-}
-
-/* Dark mode: Amber */
-:root[data-mode="dark"][data-theme-color="amber"] {
-  --bg: #090B0F;
-  --surface: #14171D;
-  --surface-2: #1C2028;
-  --surface-3: #262B35;
-  --border: #262B35;
-  --border-strong: #373E4D;
-  --primary: #FBBF24;
-  --primary-600: #F59E0B;
-  --primary-700: #D97706;
-  --primary-100: rgba(251, 191, 36, 0.18);
-  --primary-ring: rgba(251, 191, 36, 0.35);
-  --accent: #FBBF24;
-  --accent-100: rgba(251, 191, 36, 0.18);
-  --color-primary: #FBBF24;
 }
 
 /* ---------- Base & Reset ---------- */
@@ -528,25 +440,26 @@ select {
 }
 .password-field input {
   width: 100%;
-  padding-right: 74px;
+  padding-right: 76px;
 }
 .password-field button,
 .password-field [data-toggle-password] {
   position: absolute;
   top: 50%;
-  right: 8px;
+  right: 4px;
   transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 28px;
-  padding: 0 10px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 12px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
   line-height: 1;
@@ -929,6 +842,10 @@ select {
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s, border-color 0.2s;
+  min-width: 0;
+}
+.grid > * {
+  min-width: 0;
 }
 .card:hover {
   box-shadow: var(--shadow);
@@ -1284,11 +1201,12 @@ table.table {
 }
 .modal-close {
   position: absolute;
-  top: 18px;
-  right: 18px;
-  width: 34px; height: 34px;
+  top: 14px;
+  right: 14px;
+  width: 44px; height: 44px;
+  min-width: 44px; min-height: 44px;
   display: grid; place-items: center;
-  border: 0; border-radius: 8px;
+  border: 0; border-radius: var(--r-sm);
   background: transparent;
   color: var(--muted);
   font-size: 1.25rem;
@@ -1316,7 +1234,11 @@ table.table {
   font-size: 0.88rem;
   font-weight: 650;
   color: var(--muted);
-  padding: 9px 12px;
+  padding: 10px 12px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s;
@@ -1366,12 +1288,13 @@ table.table {
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border);
 }
-.l-container { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 28px; }
-.landing-nav .l-bar { display: flex; align-items: center; gap: 28px; min-height: 68px; }
-.landing-nav .brand { display: inline-flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.15rem; }
+.l-container { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 28px; box-sizing: border-box; }
+.landing-nav .l-bar { display: flex; align-items: center; gap: 28px; min-height: 68px; box-sizing: border-box; }
+.landing-nav .brand { display: inline-flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.15rem; flex-shrink: 0; }
+.landing-nav .nav-toggle { display: none; }
 .landing-nav .l-links { display: flex; align-items: center; gap: 24px; font-size: 0.92rem; font-weight: 600; color: var(--muted); margin-left: auto; }
 .landing-nav .l-links a:hover { color: var(--ink); }
-.landing-nav .l-actions { display: flex; align-items: center; gap: 10px; }
+.landing-nav .l-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 
 .hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 56px; align-items: center; padding: 72px 0 54px; }
 .hero-badge {
@@ -1464,7 +1387,7 @@ table.table {
 .budget-item .b-meta .b-remaining.over { color: var(--danger); font-weight: 650; }
 
 .tx-list { display: flex; flex-direction: column; }
-.tx-row { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--border); }
+.tx-row { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--border); min-width: 0; }
 .tx-row:last-child { border-bottom: 0; }
 .tx-row .tx-ico {
   width: 38px; height: 38px;
@@ -1476,9 +1399,9 @@ table.table {
   border: 1px solid var(--border);
 }
 .tx-row .tx-ico svg { width: 17px; height: 17px; }
-.tx-row .tx-main { min-width: 0; }
+.tx-row .tx-main { min-width: 0; flex: 1 1 0%; overflow: hidden; }
 .tx-row .tx-title { font-weight: 650; font-size: 0.91rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
-.tx-row .tx-sub { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }
+.tx-row .tx-sub { font-size: 0.78rem; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tx-row .tx-amt { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ---------- Choice Chips & Filters ---------- */
@@ -1705,7 +1628,7 @@ table.table {
 /* ---------- Responsive Breakpoints ---------- */
 @media (max-width: 1180px) {
   .grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .grid-main-side { grid-template-columns: 1fr; }
+  .grid-main-side { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 1080px) {
@@ -1729,6 +1652,85 @@ table.table {
 }
 
 @media (max-width: 768px) {
+  .l-container { padding: 0 16px; }
+  .landing-nav .l-bar {
+    gap: 10px;
+    min-height: 56px;
+    padding: 8px 0;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .landing-nav .brand {
+    font-size: 1.05rem;
+    gap: 8px;
+  }
+  .landing-nav .nav-toggle {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: var(--r-sm);
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--ink);
+    cursor: pointer;
+    order: 2;
+    margin-left: 6px;
+  }
+  .landing-nav .nav-toggle svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    fill: none;
+  }
+  .landing-nav .nav-toggle:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+  }
+  .landing-nav .l-actions {
+    order: 1;
+    margin-left: auto;
+    gap: 8px;
+  }
+  .landing-nav .l-links {
+    display: none;
+    width: 100%;
+    order: 3;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    margin: 8px 0 2px;
+    padding: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    box-shadow: var(--shadow-md);
+  }
+  .landing-nav .l-links.open {
+    display: flex;
+  }
+  .landing-nav .l-links a {
+    padding: 10px 14px;
+    border-radius: var(--r-sm);
+    color: var(--ink);
+    font-size: 0.94rem;
+    font-weight: 600;
+    text-decoration: none;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  .landing-nav .l-links a:hover,
+  .landing-nav .l-links a:focus-visible {
+    background: var(--surface-2);
+    color: var(--primary);
+  }
+
   .content { padding: 22px 18px 60px; }
   .topbar { padding: 12px 18px; }
   .topbar-sub { display: none; }
@@ -1743,7 +1745,6 @@ table.table {
   .table td { padding: 12px 14px; }
   table.table { font-size: 0.88rem; }
   .table .pill { max-width: 140px; }
-  .landing-nav .l-links { display: none; }
   .columns-chart { height: 150px; gap: 14px; }
 }
 
@@ -1751,6 +1752,7 @@ table.table {
   .content { padding: 16px 12px 48px; }
   .card-head { padding: 14px 16px; }
   .card-body { padding: 16px; }
+  .card-body.tight { padding: 0 16px; }
   .card-footer { padding: 12px 16px; }
   .topbar { padding: 10px 12px; gap: 10px; }
   .topbar-actions { gap: 8px; }
@@ -1793,13 +1795,42 @@ table.table {
   .table .num { text-align: left; }
   .table td.actions-cell { justify-content: flex-end; padding-top: 8px; border-top: 1px solid var(--border); margin-top: 4px; }
 
-  /* Mobile auth modal spacing */
+  /* Mobile auth modal spacing & touch target */
   .modal-backdrop { padding: 12px; }
   .modal { padding: 24px 20px 22px; border-radius: var(--r); }
   .modal h2 { font-size: 1.2rem; }
-  .modal-close { top: 12px; right: 12px; width: 32px; height: 32px; }
+  .modal-close { top: 10px; right: 10px; width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
   .auth-tabs { margin: 18px 0 16px; }
   .modal form[data-auth-form] { gap: 15px; }
+}
+
+@media (max-width: 480px) {
+  .l-container { padding: 0 12px; }
+  .hero-actions { flex-direction: column; width: 100%; }
+  .hero-actions .btn { width: 100%; justify-content: center; min-height: 44px; }
+  .trust-row { gap: 16px; }
+}
+
+@media (max-width: 360px) {
+  .l-container { padding: 0 8px; }
+  .landing-nav .l-bar { gap: 4px; }
+  .landing-nav .brand { gap: 6px; font-size: 0.92rem; }
+  .landing-nav .brand-mark { width: 28px; height: 28px; font-size: 0.92rem; }
+  .landing-nav .l-actions { gap: 4px; }
+  .landing-nav .l-actions .btn {
+    padding: 0 8px;
+    font-size: 0.78rem;
+    height: 38px;
+    min-height: 38px;
+  }
+  .landing-nav .nav-toggle {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    margin-left: 2px;
+  }
+  .hero h1 { font-size: 1.6rem; }
 }
 
 /* Reduced Motion Support */
@@ -1809,5 +1840,396 @@ table.table {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- CSV Import Workflow Component ---------- */
+.modal.modal-wide {
+  max-width: 760px;
+  width: 100%;
+}
+.import-dropzone {
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--r);
+  padding: 28px 20px;
+  text-align: center;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.import-dropzone:hover,
+.import-dropzone.dragover,
+.import-dropzone:focus-visible {
+  border-color: var(--primary);
+  background: var(--primary-100);
+  outline: none;
+}
+.import-icon {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 10px;
+  color: var(--muted);
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.import-dropzone:hover .import-icon,
+.import-dropzone.dragover .import-icon {
+  color: var(--primary);
+}
+.import-prompt {
+  font-size: 0.98rem;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+.import-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0;
+}
+.import-selected-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  margin-top: 12px;
+}
+.import-selected-file .file-name {
+  font-weight: 600;
+  color: var(--ink);
+  margin-right: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.import-selected-file .file-size {
+  font-size: 0.82rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.import-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.import-policy-box {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+.import-policy-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.import-policy-legend {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.import-policy-box .radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+.import-errors-box {
+  background: var(--danger-100);
+  border: 1px solid var(--danger);
+  border-radius: var(--r-sm);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+.import-errors-head {
+  font-weight: 700;
+  color: var(--danger);
+  font-size: 0.88rem;
+  margin-bottom: 6px;
+}
+.import-errors-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.84rem;
+  color: var(--danger);
+  max-height: 120px;
+  overflow-y: auto;
+}
+.import-preview-section {
+  margin-top: 12px;
+}
+.import-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--ink);
+}
+.import-table-wrap {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+.import-preview-table {
+  margin: 0;
+  font-size: 0.84rem;
+}
+.import-success-banner {
+  text-align: center;
+  padding: 24px 16px 16px;
+}
+.import-success-banner .success-icon {
+  width: 52px;
+  height: 52px;
+  stroke: var(--success);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  margin: 0 auto 12px;
+}
+.import-success-banner .success-title {
+  font-size: 1.25rem;
+  font-weight: 750;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+.import-success-banner .success-sub {
+  font-size: 0.92rem;
+  color: var(--muted);
+  margin: 0;
+}
+.import-results-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+}
+@media (max-width: 480px) {
+  .import-results-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+/* ==========================================================================
+   SpendSense — Sub-Navigation Tabs, Recurring Bills & Bill Calendar
+   ========================================================================== */
+
+.sub-nav-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  background: var(--surface);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.sub-nav-tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 600;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.sub-nav-tab:hover {
+  color: var(--ink);
+}
+.sub-nav-tab:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: -2px;
+}
+.sub-nav-tab.active,
+.sub-nav-tab[aria-selected="true"] {
+  color: var(--teal);
+  border-bottom-color: var(--teal);
+}
+
+/* Calendar Month Grid */
+.calendar-wrap {
+  padding: 16px;
+}
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.calendar-month-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  min-width: 160px;
+  text-align: center;
+  margin: 0;
+  color: var(--ink);
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+  box-sizing: border-box;
+}
+.calendar-weekday {
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 8px 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.calendar-day {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  min-height: 84px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  position: relative;
+  box-sizing: border-box;
+}
+.calendar-day:hover {
+  border-color: var(--teal);
+}
+.calendar-day.other-month {
+  opacity: 0.35;
+  background: transparent;
+  cursor: default;
+}
+.calendar-day.today {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 1px var(--teal);
+}
+.calendar-day.selected {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+.calendar-day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.calendar-day-num {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.calendar-day-count {
+  font-size: 0.72rem;
+  padding: 1px 5px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--teal);
+  font-weight: 600;
+}
+.calendar-bill-pill {
+  font-size: 0.72rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+.calendar-bill-pill.status-paid {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10B981;
+}
+.calendar-bill-pill.status-due {
+  background: rgba(20, 184, 166, 0.15);
+  color: #14B8A6;
+  font-weight: 600;
+}
+.calendar-bill-pill.status-upcoming,
+.calendar-bill-pill.status-planned {
+  background: rgba(245, 158, 11, 0.12);
+  color: #D97706;
+}
+.calendar-bill-pill.status-overdue {
+  background: rgba(239, 68, 68, 0.12);
+  color: #EF4444;
+  font-weight: 600;
+}
+.calendar-bill-pill.status-skipped {
+  background: rgba(156, 163, 175, 0.15);
+  color: #6B7280;
+  text-decoration: line-through;
+}
+
+/* Day detail drawer */
+.calendar-day-panel {
+  margin-top: 18px;
+  padding: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+}
+.calendar-day-panel-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--ink);
+}
+
+/* Pill statuses */
+.pill.status-paid { background: rgba(16, 185, 129, 0.14); color: #10B981; }
+.pill.status-due { background: rgba(20, 184, 166, 0.16); color: #14B8A6; font-weight: 600; }
+.pill.status-upcoming { background: rgba(245, 158, 11, 0.14); color: #D97706; }
+.pill.status-overdue { background: rgba(239, 68, 68, 0.14); color: #EF4444; font-weight: 600; }
+.pill.status-skipped { background: rgba(156, 163, 175, 0.16); color: #6B7280; }
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .calendar-day {
+    min-height: 52px;
+    padding: 4px;
+  }
+  .calendar-bill-pill span {
+    display: none;
+  }
+  .calendar-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .calendar-nav {
+    justify-content: space-between;
   }
 }

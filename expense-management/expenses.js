@@ -738,5 +738,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const exportBtn = document.querySelector('[data-export-csv]');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', async () => {
+      const origText = exportBtn.textContent;
+      exportBtn.disabled = true;
+      exportBtn.textContent = 'Exporting…';
+      try {
+        const params = new URLSearchParams();
+        params.set('type', 'expense');
+        const filters = readEffectiveFilters();
+        if (filters.search) params.set('q', filters.search);
+        if (filters.startDate) params.set('from', filters.startDate);
+        if (filters.endDate) params.set('to', filters.endDate);
+        if (filters.categoryId) params.set('category_id', filters.categoryId);
+        await api.downloadFile(`/transactions/export?${params.toString()}`, 'spendsense-expenses.csv');
+        UI.showToast('Expenses exported successfully', 'success');
+      } catch (err) {
+        UI.showToast(err.message || 'Export failed', 'error');
+      } finally {
+        exportBtn.disabled = false;
+        exportBtn.textContent = origText;
+      }
+    });
+  }
+
+  window.addEventListener('spendsense:data-imported', () => {
+    loadExpenses();
+  });
+
   loadExpenses();
 });

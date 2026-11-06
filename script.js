@@ -51,6 +51,16 @@ const API = {
     });
   },
 
+  // Generate a privacy-safe client correlation ID (X-Request-Id) for diagnostics (OBS-01)
+  generateRequestId() {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return 'req_' + crypto.randomUUID().replace(/-/g, '').slice(0, 16);
+    }
+    return 'req_' + Math.random().toString(36).slice(2, 18);
+  },
+
+  lastRequestId: null,
+
   // Check if an endpoint requires/enforces idempotency on creation mutations
   isIdempotentEndpoint(method, endpoint) {
     if (method !== 'POST') return false;
@@ -71,6 +81,12 @@ const API = {
       }
     }
 
+    // Attach correlation request ID for safe diagnostics (OBS-01)
+    if (!headers['X-Request-Id']) {
+      headers['X-Request-Id'] = this.generateRequestId();
+    }
+    this.lastRequestId = headers['X-Request-Id'];
+
     // Add XSRF-TOKEN header if provided (required for POST/PUT/DELETE on stateful routes)
     if (csrfToken !== null) {
       headers['X-XSRF-TOKEN'] = csrfToken;
@@ -84,6 +100,11 @@ const API = {
       options.body = JSON.stringify(body);
     }
     const response = await fetch(url, options);
+
+    if (response && response.headers && typeof response.headers.get === 'function') {
+      const serverId = response.headers.get('x-request-id');
+      if (serverId) this.lastRequestId = serverId;
+    }
 
     // A stale XSRF-TOKEN (e.g. after the session rotates on login) returns 419.
     // Refresh the token once and retry the request before surfacing the error.
@@ -129,6 +150,100 @@ const API = {
     return this.api('DELETE', endpoint, null, await this.ensureCsrfToken(), false, extraHeaders);
   },
 
+  // Multipart form post helper for file uploads (CSV import).
+  // Automatically attaches CSRF token without forcing Content-Type: application/json.
+  async postForm(endpoint, formData, isRetry = false, extraHeaders = {}) {
+    const url = `${API_BASE_URL}/api${endpoint}`;
+    const csrfToken = await this.ensureCsrfToken();
+    const headers = { Accept: 'application/json', ...(extraHeaders || {}) };
+    if (!headers['X-Request-Id']) {
+      headers['X-Request-Id'] = this.generateRequestId();
+    }
+    this.lastRequestId = headers['X-Request-Id'];
+    if (csrfToken) {
+      headers['X-XSRF-TOKEN'] = csrfToken;
+    }
+    const response = await fetch(url, {
+      method: 'POST',
+      credentials: 'include',
+      headers,
+      body: formData,
+    });
+
+    if (response.status === 419 && !isRetry) {
+      await this.fetchXSRFToken();
+      return this.postForm(endpoint, formData, true, extraHeaders);
+    }
+
+    let data;
+    try {
+      data = await response.json();
+    } catch (e) {
+      data = { message: response.statusText };
+    }
+
+    if (response.status === 401) {
+      data = { message: 'Session expired. Please log in again.', expired: true };
+      window.dispatchEvent(new CustomEvent('spendsense:session-expired'));
+    }
+
+    return { response, data, status: response.status };
+  },
+
+  // Authenticated file download helper (CSV exports, reports, backups).
+  // Automatically attaches credentials and initiates client-side blob download
+  // without page redirects or exposing tokens in URL queries.
+  async downloadFile(endpoint, fallbackFilename = 'export.csv') {
+    const url = `${API_BASE_URL}/api${endpoint}`;
+    const reqId = this.generateRequestId();
+    this.lastRequestId = reqId;
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Accept: 'text/csv, application/json, text/plain, */*',
+        'X-Request-Id': reqId,
+      },
+    });
+
+    if (response.status === 401) {
+      window.dispatchEvent(new CustomEvent('spendsense:session-expired'));
+      throw new Error('Session expired. Please log in again.');
+    }
+
+    if (!response.ok) {
+      let errMsg = 'Download failed.';
+      try {
+        const json = await response.json();
+        if (json && json.message) errMsg = json.message;
+      } catch (_) {}
+      throw new Error(errMsg);
+    }
+
+    const blob = await response.blob();
+    const disposition = response.headers.get('content-disposition');
+    let filename = fallbackFilename;
+    if (disposition && disposition.includes('filename=')) {
+      const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (match && match[1]) {
+        filename = match[1].replace(/['"]/g, '').trim();
+      }
+    }
+
+    if (typeof window !== 'undefined' && window.URL && document && typeof document.createElement === 'function') {
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+    }
+
+    return { success: true, filename };
+  },
+
   // Read the current XSRF-TOKEN cookie value (set by Laravel on stateful responses).
   getCsrfToken() {
     const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
@@ -150,7 +265,7 @@ const API = {
     if (status === 200) {
       return { success: true, user: data.user, message: data.message };
     }
-    return { success: false, message: data.message || 'Login failed' };
+    return { success: false, message: this.formatAuthError(status, data, 'Invalid email or password.') };
   },
 
   async logout() {
@@ -164,7 +279,32 @@ const API = {
     if (status === 201) {
       return { success: true, user: data.user, message: data.message };
     }
-    return { success: false, message: data.message || 'Registration failed' };
+    return { success: false, message: this.formatAuthError(status, data, 'Registration failed. Please check your inputs.') };
+  },
+
+  formatAuthError(status, data, defaultMsg) {
+    if (status === 401) {
+      return (data && data.message && !/login failed/i.test(data.message)) ? data.message : 'Invalid email or password.';
+    }
+    if (status === 422) {
+      if (data && data.errors) {
+        const firstKey = Object.keys(data.errors)[0];
+        if (firstKey && data.errors[firstKey] && data.errors[firstKey][0]) {
+          return data.errors[firstKey][0];
+        }
+      }
+      return (data && data.message) ? data.message : 'Validation failed. Please verify your details.';
+    }
+    if (status === 429) {
+      return 'Too many attempts. Please try again later.';
+    }
+    if (status === 419) {
+      return 'Your session has expired. Please refresh the page and try again.';
+    }
+    if (status >= 500) {
+      return 'Server error. Our team has been notified. Please try again later.';
+    }
+    return (data && data.message) ? data.message : defaultMsg;
   },
 
   // Session user known to this page (set on login/register; the shell shows it).
@@ -262,14 +402,33 @@ document.addEventListener('DOMContentLoaded', () => {
   const navToggle = document.querySelector('.nav-toggle');
   const navLinks = document.querySelector('[data-nav-links]');
   if (navToggle && navLinks) {
-    navToggle.addEventListener('click', () => {
+    const closeNav = () => {
+      navLinks.classList.remove('open');
+      navToggle.setAttribute('aria-expanded', 'false');
+    };
+
+    navToggle.addEventListener('click', (event) => {
+      event.stopPropagation();
       const isOpen = navLinks.classList.toggle('open');
       navToggle.setAttribute('aria-expanded', String(isOpen));
     });
+
     navLinks.addEventListener('click', (event) => {
       if (event.target.tagName === 'A') {
-        navLinks.classList.remove('open');
-        navToggle.setAttribute('aria-expanded', 'false');
+        closeNav();
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (navLinks.classList.contains('open') && !navToggle.contains(event.target) && !navLinks.contains(event.target)) {
+        closeNav();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && navLinks.classList.contains('open')) {
+        closeNav();
+        navToggle.focus();
       }
     });
   }
@@ -279,6 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const authBackdrop = document.querySelector('.modal-backdrop');
   const authClose = document.querySelector('[data-auth-close]');
   const authTabs = document.querySelector('.auth-tabs');
+  let lastFocusedTrigger = null;
 
   // Toggle between the login and register sections
   function switchAuthMode(isRegister) {
@@ -291,17 +451,86 @@ document.addEventListener('DOMContentLoaded', () => {
     registerSection.style.display = isRegister ? 'block' : 'none';
     if (loginTab) loginTab.setAttribute('aria-selected', String(!isRegister));
     if (registerTab) registerTab.setAttribute('aria-selected', String(isRegister));
+
+    // Focus the first interactive input in the newly active section
+    const activeSection = isRegister ? registerSection : loginSection;
+    const firstInput = activeSection.querySelector('input:not([type="hidden"])');
+    if (firstInput && authModal && !authModal.hasAttribute('aria-hidden')) {
+      firstInput.focus();
+    }
   }
 
-  // Show/hide auth modal
-  function toggleAuthModal(show) {
+  // Determine effective visibility of interactive modal controls
+  function isModalElementVisible(el) {
+    if (!el || el.disabled || el.hidden || el.getAttribute('aria-hidden') === 'true') {
+      return false;
+    }
+    if (el.tabIndex < 0) {
+      return false;
+    }
+    if (typeof el.checkVisibility === 'function') {
+      if (!el.checkVisibility({ checkVisibilityCSS: true })) {
+        return false;
+      }
+    }
+    const style = window.getComputedStyle(el);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') {
+      return false;
+    }
+    // Walk ancestors up to the modal container to ensure no enclosing section is hidden
+    let curr = el.parentElement;
+    while (curr && curr !== authModal && curr !== document.body) {
+      if (curr.hidden || curr.getAttribute('aria-hidden') === 'true') {
+        return false;
+      }
+      const parentStyle = window.getComputedStyle(curr);
+      if (parentStyle.display === 'none' || parentStyle.visibility === 'hidden' || parentStyle.visibility === 'collapse') {
+        return false;
+      }
+      curr = curr.parentElement;
+    }
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) {
+      return false;
+    }
+    return true;
+  }
+
+  // Query only currently visible and interactive elements inside the modal for focus trapping
+  function getModalFocusableElements() {
+    if (!authModal) return [];
+    const elements = Array.from(authModal.querySelectorAll(
+      'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+    ));
+    return elements.filter(isModalElementVisible);
+  }
+
+  // Show/hide auth modal with focus trap and trigger restoration
+  function toggleAuthModal(show, triggerElement = null) {
     if (!authModal) return;
     if (show) {
+      if (triggerElement) {
+        lastFocusedTrigger = triggerElement;
+      } else if (document.activeElement && document.activeElement !== document.body) {
+        lastFocusedTrigger = document.activeElement;
+      }
       authModal.removeAttribute('aria-hidden');
-      const focusTarget = authModal.querySelector('input');
-      if (focusTarget) focusTarget.focus();
+      const loginSection = document.querySelector('[data-login-section]');
+      const registerSection = document.querySelector('[data-register-section]');
+      const isRegister = registerSection && registerSection.style.display === 'block';
+      const activeSection = isRegister ? registerSection : (loginSection || authModal);
+      const focusTarget = activeSection.querySelector('input:not([type="hidden"])') || authModal.querySelector('button');
+      if (focusTarget) {
+        focusTarget.focus();
+      }
     } else {
       authModal.setAttribute('aria-hidden', 'true');
+      if (lastFocusedTrigger && typeof lastFocusedTrigger.focus === 'function' && document.body.contains(lastFocusedTrigger)) {
+        lastFocusedTrigger.focus();
+      } else {
+        const fallback = document.querySelector('.landing-nav .brand') || document.querySelector('a, button');
+        if (fallback) fallback.focus();
+      }
     }
   }
 
@@ -312,12 +541,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const target = trigger.dataset.authToggle;
       if (target === 'register') {
         switchAuthMode(true);
-        toggleAuthModal(true);
+        toggleAuthModal(true, trigger);
       } else if (target === 'login') {
         switchAuthMode(false);
-        toggleAuthModal(true);
+        toggleAuthModal(true, trigger);
       } else {
-        toggleAuthModal(true);
+        toggleAuthModal(true, trigger);
       }
     });
   });
@@ -338,21 +567,56 @@ document.addEventListener('DOMContentLoaded', () => {
   // Tab switching
   if (authTabs) {
     authTabs.addEventListener('click', (event) => {
-      const tab = event.target.dataset ? event.target.dataset.authTab : null;
+      const tabBtn = event.target.closest('[data-auth-tab]');
+      const tab = tabBtn ? tabBtn.dataset.authTab : null;
       if (tab) switchAuthMode(tab === 'register');
     });
   }
 
-  // Keyboard Escape to close modal
+  // Keyboard accessibility: Escape to dismiss, Tab key trapping inside modal
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && authModal) {
+    if (!authModal || authModal.hasAttribute('aria-hidden')) return;
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
       toggleAuthModal(false);
+      return;
+    }
+
+    if (event.key === 'Tab') {
+      const focusable = getModalFocusableElements();
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (event.shiftKey) {
+        if (document.activeElement === first || !authModal.contains(document.activeElement)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last || !authModal.contains(document.activeElement)) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     }
   });
 
   // Auth form submission (one handler per form: login and register)
   document.querySelectorAll('[data-auth-form]').forEach((form) => {
     const message = form.querySelector('[data-auth-message]');
+
+    // Clear validation error when user begins editing
+    form.querySelectorAll('input').forEach((input) => {
+      input.addEventListener('input', () => {
+        if (message && message.classList.contains('error')) {
+          message.textContent = '';
+          message.classList.remove('error');
+        }
+      });
+    });
+
     form.addEventListener('submit', async (event) => {
       // Authentication pages (login/signup/forgot-password) load their own auth.js,
       // which marks their form with data-auth-bound and owns the submission there.
@@ -369,23 +633,43 @@ document.addEventListener('DOMContentLoaded', () => {
       const emailInput = form.querySelector('input[type="email"]');
       const passwordInput = form.querySelector('input[type="password"]');
       const name = nameInput ? nameInput.value.trim() : undefined;
-      const email = emailInput ? emailInput.value : '';
+      const email = emailInput ? emailInput.value.trim() : '';
       const password = passwordInput ? passwordInput.value : '';
 
+      // Differentiate missing required fields from format validation
       if (!email || !password || (isRegistration && !name)) {
         if (message) {
-          message.textContent = 'Please complete the required fields.';
+          message.textContent = 'Please complete all required fields.';
           message.classList.add('error');
         }
         return;
       }
 
-      // Validate registration: check password match when a confirmation field exists.
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        if (message) {
+          message.textContent = 'Please enter a valid email address.';
+          message.classList.add('error');
+        }
+        return;
+      }
+
+      // Validate registration: password length & password confirmation match
       if (isRegistration) {
+        if (password.length < 8) {
+          if (message) {
+            message.textContent = 'Password must be at least 8 characters.';
+            message.classList.add('error');
+          }
+          return;
+        }
+
         const pwConfirm = form.querySelector('input[name="password_confirmation"]');
         if (pwConfirm && pwConfirm.value !== password) {
-          message.textContent = 'Passwords do not match.';
-          message.classList.add('error');
+          if (message) {
+            message.textContent = 'Passwords do not match.';
+            message.classList.add('error');
+          }
           return;
         }
       }
@@ -404,11 +688,11 @@ document.addEventListener('DOMContentLoaded', () => {
           : await window.auth.login(email, password);
       } catch (err) {
         const rawMsg = String(err && err.message ? err.message : '');
-        let cleanMsg = rawMsg;
-        if (/failed to fetch/i.test(rawMsg)) {
-          cleanMsg = 'Unable to reach the server. Please check your network connection or try again later.';
+        let cleanMsg = 'Unable to reach the server. Please check your network connection or try again later.';
+        if (!/failed to fetch|network|load failed/i.test(rawMsg) && rawMsg) {
+          cleanMsg = rawMsg;
         }
-        result = { success: false, message: cleanMsg ? `Something went wrong. ${cleanMsg}` : 'Unable to complete request. Please try again.' };
+        result = { success: false, message: cleanMsg };
       }
 
       // Re-enable button
@@ -433,7 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } else if (message) {
         message.classList.add('error');
-        message.textContent = result.message || 'Failed';
+        message.textContent = result.message || 'Invalid email or password.';
       }
     });
   });

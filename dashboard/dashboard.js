@@ -37,7 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastBreakdownResult = null;
   let lastComparisonResult = null;
   let lastBudgetsResult = null;
-  let lastTransactionsResult = null;
+  let lastExpensesResult = null;
+  let lastIncomesResult = null;
+  let lastCalendarResult = null;
   let reportingPeriod = periodHelper ? periodHelper.readPeriod() : { month: new Date().getMonth() + 1, year: new Date().getFullYear() };
 
   const setMonthLabels = (month, year) => {
@@ -297,60 +299,367 @@ document.addEventListener('DOMContentLoaded', () => {
     budgetsEl.replaceChildren(list);
   };
 
-  const renderTransactions = (result) => {
-    if (!result || result.status !== 200 || !result.data || !result.data.data) {
+  const normalizeExpenseRow = (row) => {
+    if (!row || typeof row !== 'object') return null;
+    const date = String(row.expense_date || row.transaction_date || row.date || '').trim().slice(0, 10);
+    const amount = Number(row.amount != null ? row.amount : NaN);
+    const category = row.category && typeof row.category === 'object' ? row.category : null;
+    const categoryName = category && category.name ? String(category.name).trim() : '';
+    const description = String(row.description || '').trim();
+    const title = description || categoryName || 'Expense';
+    const sub = (date ? UI.formatDate(date) : '') + (description && categoryName ? ' · ' + categoryName : '');
+    return {
+      type: 'expense',
+      id: row.id != null ? row.id : '',
+      date,
+      created_at: String(row.created_at || ''),
+      amount: Number.isFinite(amount) ? amount : 0,
+      title,
+      sub: sub || (date ? UI.formatDate(date) : ''),
+      category,
+      categoryName,
+    };
+  };
+
+  const normalizeIncomeRow = (row) => {
+    if (!row || typeof row !== 'object') return null;
+    const date = String(row.income_date || row.transaction_date || row.date || '').trim().slice(0, 10);
+    const amount = Number(row.amount != null ? row.amount : NaN);
+    const source = String(row.source || '').trim();
+    const notes = String(row.notes || '').trim();
+    const frequency = String(row.frequency || '').trim();
+    const title = source || 'Income';
+    let extra = '';
+    if (notes) {
+      extra = ' · ' + notes;
+    } else if (frequency && frequency !== 'one-time') {
+      extra = ' · ' + frequency;
+    }
+    const sub = (date ? UI.formatDate(date) : '') + extra;
+    return {
+      type: 'income',
+      id: row.id != null ? row.id : '',
+      date,
+      created_at: String(row.created_at || ''),
+      amount: Number.isFinite(amount) ? amount : 0,
+      title,
+      sub: sub || (date ? UI.formatDate(date) : ''),
+      source,
+      category: null,
+      categoryName: source || 'Income',
+    };
+  };
+
+  const extractRows = (result) => {
+    if (!result || !result.data) return [];
+    const d = result.data.data;
+    if (Array.isArray(d)) return d;
+    if (d && Array.isArray(d.data)) return d.data;
+    return [];
+  };
+
+  const isResultSuccess = (result) =>
+    Boolean(result && (result.status === 200 || result.status === 201) && result.data && result.data.success !== false && result.data.data !== undefined);
+
+  const renderTransactions = (expensesRes, incomesRes) => {
+    const expenseOk = isResultSuccess(expensesRes);
+    const incomeOk = isResultSuccess(incomesRes);
+
+    if (!expenseOk && !incomeOk) {
       UI.renderState(transactionsEl, 'error', { message: 'Could not load recent transactions.', retry: loadDashboard });
       return;
     }
-    const rows = result.data.data.data || [];
-    if (!rows.length) {
-      UI.renderState(transactionsEl, 'empty', { message: 'No expenses logged yet. Add your first expense to see it here.' });
+
+    const rawExpenses = expenseOk ? extractRows(expensesRes) : [];
+    const rawIncomes = incomeOk ? extractRows(incomesRes) : [];
+
+    const expenses = rawExpenses.map(normalizeExpenseRow).filter(Boolean);
+    const incomes = rawIncomes.map(normalizeIncomeRow).filter(Boolean);
+
+    const combined = [...expenses, ...incomes];
+
+    // Check if both succeeded and no transactions exist
+    if (expenseOk && incomeOk && !combined.length) {
+      UI.renderState(transactionsEl, 'empty', { message: 'No transactions logged yet. Add your first expense or income to see it here.' });
+      return;
+    }
+
+    // Stable, deterministic sorting:
+    // 1. Transaction date descending
+    // 2. Created_at descending (if present and distinct)
+    // 3. ID descending (numeric if finite)
+    // 4. Deterministic type tie-breaker ('expense' < 'income')
+    combined.sort((a, b) => {
+      if (a.date !== b.date) {
+        return a.date < b.date ? 1 : -1;
+      }
+      if (a.created_at && b.created_at && a.created_at !== b.created_at) {
+        return a.created_at < b.created_at ? 1 : -1;
+      }
+      const idA = Number(a.id);
+      const idB = Number(b.id);
+      if (Number.isFinite(idA) && Number.isFinite(idB) && idA !== idB) {
+        return idA < idB ? 1 : -1;
+      }
+      if (a.type !== b.type) {
+        return a.type < b.type ? -1 : 1;
+      }
+      return 0;
+    });
+
+    const container = document.createElement('div');
+
+    // Partial failure notifications: safe and clear user communication
+    if (!expenseOk && incomeOk) {
+      const notice = document.createElement('div');
+      notice.className = 'tx-partial-notice';
+      notice.setAttribute('role', 'status');
+      notice.style.margin = '8px 12px 10px 12px';
+      notice.style.padding = '8px 12px';
+      notice.style.borderRadius = 'var(--r-card, 8px)';
+      notice.style.background = 'var(--surface-3)';
+      notice.style.borderLeft = '3px solid var(--amber, #f59e0b)';
+      notice.style.fontSize = '0.8rem';
+      notice.style.color = 'var(--ink-2)';
+
+      const pill = document.createElement('span');
+      pill.className = 'pill amber';
+      pill.style.fontSize = '0.68rem';
+      pill.style.padding = '1px 6px';
+      pill.style.marginRight = '6px';
+      pill.textContent = 'Notice';
+
+      notice.append(pill, document.createTextNode('Could not load recent expense transactions. Displaying income only.'));
+      container.appendChild(notice);
+
+      if (!incomes.length) {
+        const emptyMsg = document.createElement('p');
+        emptyMsg.style.padding = '16px';
+        emptyMsg.style.textAlign = 'center';
+        emptyMsg.style.color = 'var(--muted)';
+        emptyMsg.style.fontSize = '0.88rem';
+        emptyMsg.textContent = 'No income records found.';
+        container.appendChild(emptyMsg);
+        transactionsEl.replaceChildren(container);
+        return;
+      }
+    } else if (expenseOk && !incomeOk) {
+      const notice = document.createElement('div');
+      notice.className = 'tx-partial-notice';
+      notice.setAttribute('role', 'status');
+      notice.style.margin = '8px 12px 10px 12px';
+      notice.style.padding = '8px 12px';
+      notice.style.borderRadius = 'var(--r-card, 8px)';
+      notice.style.background = 'var(--surface-3)';
+      notice.style.borderLeft = '3px solid var(--amber, #f59e0b)';
+      notice.style.fontSize = '0.8rem';
+      notice.style.color = 'var(--ink-2)';
+
+      const pill = document.createElement('span');
+      pill.className = 'pill amber';
+      pill.style.fontSize = '0.68rem';
+      pill.style.padding = '1px 6px';
+      pill.style.marginRight = '6px';
+      pill.textContent = 'Notice';
+
+      notice.append(pill, document.createTextNode('Could not load recent income transactions. Displaying expenses only.'));
+      container.appendChild(notice);
+
+      if (!expenses.length) {
+        const emptyMsg = document.createElement('p');
+        emptyMsg.style.padding = '16px';
+        emptyMsg.style.textAlign = 'center';
+        emptyMsg.style.color = 'var(--muted)';
+        emptyMsg.style.fontSize = '0.88rem';
+        emptyMsg.textContent = 'No expense records found.';
+        container.appendChild(emptyMsg);
+        transactionsEl.replaceChildren(container);
+        return;
+      }
+    }
+
+    const list = document.createElement('div');
+    list.className = 'tx-list';
+
+    combined.slice(0, 6).forEach((row) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'tx-row';
+      wrap.dataset.txType = row.type;
+      if (row.id) wrap.dataset.txId = String(row.id);
+
+      const ico = document.createElement('span');
+      ico.className = 'tx-ico';
+
+      if (row.type === 'income') {
+        ico.style.backgroundColor = 'var(--primary-100, rgba(13, 148, 136, 0.12))';
+        ico.style.color = 'var(--primary, #0D9488)';
+        ico.style.borderColor = 'rgba(13, 148, 136, 0.28)';
+        ico.textContent = (row.source || 'I').charAt(0).toUpperCase();
+        ico.title = 'Income: ' + (row.source || 'Income');
+      } else {
+        const tone = window.SpendSenseSettings && typeof window.SpendSenseSettings.getCategoryTone === 'function'
+          ? window.SpendSenseSettings.getCategoryTone(row.category)
+          : { color: 'var(--ink)' };
+        ico.style.backgroundColor = tone.bgSubtle || ((tone.color || '#0D9488') + '18');
+        ico.style.color = tone.color || 'var(--ink)';
+        ico.style.borderColor = tone.borderSubtle || ((tone.color || '#0D9488') + '38');
+        ico.textContent = (row.category && row.category.name ? row.category.name : 'E').charAt(0).toUpperCase();
+        ico.title = 'Expense: ' + (row.category && row.category.name ? row.category.name : 'Expense');
+      }
+
+      const main = document.createElement('div');
+      main.className = 'tx-main';
+
+      const title = document.createElement('div');
+      title.className = 'tx-title';
+      title.textContent = row.title;
+
+      const sub = document.createElement('div');
+      sub.className = 'tx-sub';
+      const typeLabel = row.type === 'income' ? 'Income' : 'Expense';
+      const dateLabel = row.date ? UI.formatDate(row.date) : '';
+      const catLabel = row.categoryName && row.categoryName !== row.title ? row.categoryName : '';
+      const parts = [dateLabel, typeLabel, catLabel].filter(Boolean);
+      sub.textContent = parts.join(' · ');
+      main.append(title, sub);
+
+      const amount = document.createElement('span');
+      if (row.type === 'income') {
+        amount.className = 'tx-amt amount-pos';
+        amount.textContent = '+' + money(row.amount);
+      } else {
+        amount.className = 'tx-amt amount-neg';
+        amount.textContent = '-' + money(row.amount);
+      }
+
+      wrap.append(ico, main, amount);
+      list.appendChild(wrap);
+    });
+
+    container.appendChild(list);
+    transactionsEl.replaceChildren(container);
+  };
+
+  const upcomingBillsEl = document.querySelector('[data-upcoming-bills]');
+  const goalsEl = document.querySelector('[data-goals-summary]');
+  let lastGoalsResult = null;
+
+  function renderGoalsSummary(result) {
+    if (!goalsEl) return;
+    if (!result || result.status !== 200 || !result.data || !result.data.data) {
+      goalsEl.innerHTML = '<p class="card-sub" style="padding: 12px 16px; margin: 0;">No financial goals active.</p>';
+      return;
+    }
+
+    const payload = result.data.data;
+    const goals = payload.goals || [];
+    const activeGoals = goals.filter((g) => g.status === 'active');
+
+    if (activeGoals.length === 0) {
+      goalsEl.innerHTML = '<p class="card-sub" style="padding: 12px 16px; margin: 0;">No active goals. <a href="../budget-planning/budget.html?tab=goals">Create a goal</a> to track savings.</p>';
+      return;
+    }
+
+    const container = document.createElement('div');
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
+    container.style.gap = '10px';
+    container.style.padding = '10px 16px';
+
+    activeGoals.slice(0, 3).forEach((g) => {
+      const item = document.createElement('div');
+      const pct = Math.min(100, Math.max(0, parseFloat(g.progress_percent) || 0));
+
+      item.innerHTML = '<div style="display: flex; justify-content: space-between; font-size: 0.84rem; font-weight: 600; margin-bottom: 3px;">' +
+        '<span>' + (g.name || 'Goal') + '</span>' +
+        '<span style="color: var(--teal);">' + money(g.saved_amount) + ' / ' + money(g.target_amount) + '</span>' +
+      '</div>' +
+      '<div class="progress-bar-wrap" style="height: 6px; background: var(--surface-3); border-radius: 3px; overflow: hidden;">' +
+        '<div style="height: 100%; width: ' + pct + '%; background: var(--teal); border-radius: 3px; transition: width 0.3s ease;"></div>' +
+      '</div>';
+
+      container.appendChild(item);
+    });
+
+    goalsEl.innerHTML = '';
+    goalsEl.appendChild(container);
+  }
+
+  function renderUpcomingBills(result) {
+    if (!upcomingBillsEl) return;
+    if (!result || result.status !== 200 || !result.data || !result.data.data) {
+      upcomingBillsEl.innerHTML = '<p class="card-sub" style="padding: 12px 16px; margin: 0;">No upcoming bills scheduled.</p>';
+      return;
+    }
+
+    const data = result.data.data;
+    const upcoming = data.upcoming || [];
+    const overdue = data.overdue || [];
+    const combined = [...overdue, ...upcoming].slice(0, 5);
+
+    if (combined.length === 0) {
+      upcomingBillsEl.innerHTML = '<p class="card-sub" style="padding: 12px 16px; margin: 0;">No bills due in the next 30 days. <a href="../expense-management/expenses.html#recurring">Add recurring bills</a></p>';
       return;
     }
 
     const list = document.createElement('div');
     list.className = 'tx-list';
-    rows.slice(0, 6).forEach((row) => {
-      const tone = window.SpendSenseSettings.getCategoryTone(row.category);
-      const wrap = document.createElement('div');
-      wrap.className = 'tx-row';
+    combined.forEach((occ) => {
+      const row = document.createElement('div');
+      row.className = 'tx-row';
+      const left = document.createElement('div');
+      const desc = document.createElement('div');
+      desc.className = 'tx-desc';
+      desc.textContent = occ.schedule ? occ.schedule.description : 'Recurring Bill';
+      const meta = document.createElement('div');
+      meta.className = 'tx-meta';
+      const cat = occ.schedule && occ.schedule.category ? occ.schedule.category.name : 'Bill';
+      meta.textContent = `${cat} • Due ${occ.occurrence_date}`;
+      left.append(desc, meta);
 
-      const ico = document.createElement('span');
-      ico.className = 'tx-ico';
-      ico.style.backgroundColor = tone.bgSubtle || (tone.color + '18');
-      ico.style.color = tone.color;
-      ico.style.borderColor = tone.borderSubtle || (tone.color + '38');
-      ico.textContent = (row.category && row.category.name ? row.category.name : 'E').charAt(0).toUpperCase();
+      const right = document.createElement('div');
+      right.style.display = 'flex';
+      right.style.alignItems = 'center';
+      right.style.gap = '8px';
+      right.style.marginLeft = 'auto';
 
-      const main = document.createElement('div');
-      main.className = 'tx-main';
-      const title = document.createElement('div');
-      title.className = 'tx-title';
-      title.textContent = row.description || (row.category ? row.category.name : 'Expense');
-      const sub = document.createElement('div');
-      sub.className = 'tx-sub';
-      sub.textContent = UI.formatDate(row.expense_date) + (row.description && row.category ? ' · ' + row.category.name : '');
-      main.append(title, sub);
+      const amt = document.createElement('div');
+      amt.className = 'tx-amt neg';
+      amt.textContent = money(occ.expected_amount);
 
-      const amount = document.createElement('span');
-      amount.className = 'tx-amt amount-neg';
-      amount.textContent = '-' + money(row.amount);
+      if (occ.is_overdue) {
+        const badge = document.createElement('span');
+        badge.className = 'pill danger';
+        badge.textContent = 'Overdue';
+        right.appendChild(badge);
+      } else if (occ.is_due) {
+        const badge = document.createElement('span');
+        badge.className = 'pill teal';
+        badge.textContent = 'Due Today';
+        right.appendChild(badge);
+      }
 
-      wrap.append(ico, main, amount);
-      list.appendChild(wrap);
+      right.appendChild(amt);
+      row.append(left, right);
+      list.appendChild(row);
     });
-    transactionsEl.replaceChildren(list);
-  };
+
+    upcomingBillsEl.innerHTML = '';
+    upcomingBillsEl.appendChild(list);
+  }
 
   async function loadDashboard() {
     setLoading();
 
-    const [cashFlow, breakdown, comparison, budgetStatus, transactions] = await Promise.allSettled([
+    const [cashFlow, breakdown, comparison, budgetStatus, expensesSettled, incomesSettled, calendarSettled, goalsSettled] = await Promise.allSettled([
       api.get(spendPeriodQuery('/analytics/cash-flow')),
       api.get(spendPeriodQuery('/analytics/spending-by-category')),
       api.get(spendPeriodQuery('/analytics/month-comparison')),
       api.get(spendPeriodQuery('/analytics/budget-status')),
       api.get('/expenses'),
+      api.get('/incomes'),
+      api.get('/recurring-expenses/calendar'),
+      api.get('/savings-goals'),
     ]);
 
     // --- Stat cards + month label from cash flow ---
@@ -375,12 +684,17 @@ document.addEventListener('DOMContentLoaded', () => {
     lastBreakdownResult = breakdown.status === 'fulfilled' ? breakdown.value : null;
     lastComparisonResult = comparison.status === 'fulfilled' ? comparison.value : null;
     lastBudgetsResult = budgetStatus.status === 'fulfilled' ? budgetStatus.value : null;
-    lastTransactionsResult = transactions.status === 'fulfilled' ? transactions.value : null;
+    lastExpensesResult = expensesSettled.status === 'fulfilled' ? expensesSettled.value : null;
+    lastIncomesResult = incomesSettled.status === 'fulfilled' ? incomesSettled.value : null;
+    lastCalendarResult = calendarSettled.status === 'fulfilled' ? calendarSettled.value : null;
+    lastGoalsResult = goalsSettled.status === 'fulfilled' ? goalsSettled.value : null;
 
     renderBreakdown(lastBreakdownResult);
     renderComparison(lastComparisonResult);
     renderBudgets(lastBudgetsResult);
-    renderTransactions(lastTransactionsResult);
+    renderTransactions(lastExpensesResult, lastIncomesResult);
+    renderUpcomingBills(lastCalendarResult);
+    renderGoalsSummary(lastGoalsResult);
 
     if (!monthResolved) {
       monthLabels.forEach((el) => {
@@ -393,6 +707,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (lastBreakdownResult) renderBreakdown(lastBreakdownResult);
     if (lastComparisonResult) renderComparison(lastComparisonResult);
     if (lastBudgetsResult) renderBudgets(lastBudgetsResult);
+    if (lastExpensesResult || lastIncomesResult) renderTransactions(lastExpensesResult, lastIncomesResult);
+    if (lastCalendarResult) renderUpcomingBills(lastCalendarResult);
   });
 
   if (refreshButton) {
