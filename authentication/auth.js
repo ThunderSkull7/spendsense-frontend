@@ -97,7 +97,7 @@ if (authForm) {
 
         const confirmInput = authForm.querySelector('input[name="password_confirmation"]');
 
-        const { data, status } = await window.SpendSenseAPI.post("/register", {
+        const { response, data, status } = await window.SpendSenseAPI.post("/register", {
           name,
           email,
           password,
@@ -116,13 +116,9 @@ if (authForm) {
             window.location.href = "../dashboard/dashboard.html";
           }, 1000);
         } else {
-          let errText = "Registration failed.";
-          if (status === 422 && data.errors) {
-            const firstKey = Object.keys(data.errors)[0];
-            errText = data.errors[firstKey] ? data.errors[firstKey][0] : data.message;
-          } else if (data.message) {
-            errText = data.message;
-          }
+          const errText = window.SpendSenseAPI && typeof window.SpendSenseAPI.formatAuthError === "function"
+            ? window.SpendSenseAPI.formatAuthError(status, data, "Registration failed.", response)
+            : (data && data.message ? data.message : "Registration failed.");
           authMessage.textContent = errText;
           authMessage.classList.add("error");
           restoreSubmit();
@@ -257,7 +253,7 @@ if (forgotForm && resetForm) {
     }
 
     try {
-      const { data, status } = await window.SpendSenseAPI.post("/forgot-password", { email });
+      const { response, data, status } = await window.SpendSenseAPI.post("/forgot-password", { email });
       if (status === 200 && data && data.success) {
         if (forgotMessage) {
           forgotMessage.textContent = data.message || "Reset instructions sent.";
@@ -274,7 +270,10 @@ if (forgotForm && resetForm) {
         }, 1000);
       } else {
         if (forgotMessage) {
-          forgotMessage.textContent = (data && data.message) || "Unable to send reset instructions. Please try again.";
+          const errText = window.SpendSenseAPI && typeof window.SpendSenseAPI.formatAuthError === "function"
+            ? window.SpendSenseAPI.formatAuthError(status, data, "Unable to send reset instructions. Please try again.", response)
+            : ((data && data.message) || "Unable to send reset instructions. Please try again.");
+          forgotMessage.textContent = errText;
           forgotMessage.className = "auth-message error";
         }
       }
@@ -342,7 +341,7 @@ if (forgotForm && resetForm) {
     }
 
     try {
-      const { data, status } = await window.SpendSenseAPI.post("/reset-password", {
+      const { response, data, status } = await window.SpendSenseAPI.post("/reset-password", {
         email,
         token,
         password,
@@ -358,13 +357,9 @@ if (forgotForm && resetForm) {
           window.location.href = "login.html";
         }, 1200);
       } else {
-        let errText = "Failed to reset password.";
-        if (status === 422 && data && data.errors) {
-          const firstKey = Object.keys(data.errors)[0];
-          errText = data.errors[firstKey] ? data.errors[firstKey][0] : data.message;
-        } else if (data && data.message) {
-          errText = data.message;
-        }
+        const errText = window.SpendSenseAPI && typeof window.SpendSenseAPI.formatAuthError === "function"
+          ? window.SpendSenseAPI.formatAuthError(status, data, "Failed to reset password.", response)
+          : "Failed to reset password.";
         if (resetMessage) {
           resetMessage.textContent = errText;
           resetMessage.className = "auth-message error";

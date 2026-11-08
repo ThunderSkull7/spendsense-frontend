@@ -26,9 +26,14 @@ const API = {
     if (this._csrfPromise) return this._csrfPromise;
     this._csrfPromise = (async () => {
       try {
-        await fetch(`${API_BASE_URL}/sanctum/csrf-cookie`, {
+        const res = await fetch(`${API_BASE_URL}/sanctum/csrf-cookie`, {
           credentials: 'include',
         });
+        if (!res.ok) {
+          // If the endpoint returns an edge challenge (429) or upstream error (502),
+          // return null gracefully without throwing so the client remains resilient.
+          return null;
+        }
         return this.getCsrfToken();
       } catch (e) {
         return null;
@@ -117,7 +122,20 @@ const API = {
 
     let data;
     try {
-      data = await response.json();
+      if (typeof response.text === 'function') {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch (_) {
+          const contentType = (response.headers && typeof response.headers.get === 'function' ? response.headers.get('content-type') : '') || '';
+          const isHtml = contentType.includes('text/html') || /<!DOCTYPE html|<html|cf-mitigated|just a moment/i.test(text);
+          data = { message: response.statusText, isHtml, rawPreview: text.slice(0, 200) };
+        }
+      } else if (typeof response.json === 'function') {
+        data = await response.json();
+      } else {
+        data = { message: response.statusText };
+      }
     } catch (e) {
       data = { message: response.statusText };
     }
@@ -177,7 +195,20 @@ const API = {
 
     let data;
     try {
-      data = await response.json();
+      if (typeof response.text === 'function') {
+        const text = await response.text();
+        try {
+          data = JSON.parse(text);
+        } catch (_) {
+          const contentType = (response.headers && typeof response.headers.get === 'function' ? response.headers.get('content-type') : '') || '';
+          const isHtml = contentType.includes('text/html') || /<!DOCTYPE html|<html|cf-mitigated|just a moment/i.test(text);
+          data = { message: response.statusText, isHtml, rawPreview: text.slice(0, 200) };
+        }
+      } else if (typeof response.json === 'function') {
+        data = await response.json();
+      } else {
+        data = { message: response.statusText };
+      }
     } catch (e) {
       data = { message: response.statusText };
     }
@@ -261,11 +292,11 @@ const API = {
 
   // Authentication helpers
   async login(email, password) {
-    const { data, status } = await this.post('/login', { email, password });
+    const { response, data, status } = await this.post('/login', { email, password });
     if (status === 200) {
       return { success: true, user: data.user, message: data.message };
     }
-    return { success: false, message: this.formatAuthError(status, data, 'Invalid email or password.') };
+    return { success: false, message: this.formatAuthError(status, data, 'Invalid email or password.', response) };
   },
 
   async logout() {
@@ -275,14 +306,22 @@ const API = {
 
   // Register new user
   async register(name, email, password) {
-    const { data, status } = await this.post('/register', { name, email, password, password_confirmation: password });
+    const { response, data, status } = await this.post('/register', { name, email, password, password_confirmation: password });
     if (status === 201) {
       return { success: true, user: data.user, message: data.message };
     }
-    return { success: false, message: this.formatAuthError(status, data, 'Registration failed. Please check your inputs.') };
+    return { success: false, message: this.formatAuthError(status, data, 'Registration failed. Please check your inputs.', response) };
   },
 
-  formatAuthError(status, data, defaultMsg) {
+  formatAuthError(status, data, defaultMsg, response) {
+    // 1. Detect Cloudflare Edge Challenges or HTML challenge responses
+    const isCfMitigated = response && response.headers && typeof response.headers.get === 'function' && response.headers.get('cf-mitigated') === 'challenge';
+    const isHtml = (data && data.isHtml) || (response && response.headers && typeof response.headers.get === 'function' && (response.headers.get('content-type') || '').includes('text/html'));
+
+    if (isCfMitigated || isHtml) {
+      return 'Service is temporarily verifying connections. Please try again in a moment.';
+    }
+
     if (status === 401) {
       return (data && data.message && !/login failed/i.test(data.message)) ? data.message : 'Invalid email or password.';
     }
@@ -296,15 +335,25 @@ const API = {
       return (data && data.message) ? data.message : 'Validation failed. Please verify your details.';
     }
     if (status === 429) {
-      return 'Too many attempts. Please try again later.';
+      const retryAfter = response && response.headers && typeof response.headers.get === 'function' ? response.headers.get('retry-after') : null;
+      if (retryAfter) {
+        return `Too many login attempts. Please wait ${retryAfter} seconds and try again.`;
+      }
+      if (data && data.message && /too many attempts/i.test(data.message)) {
+        return 'Too many login attempts. Please wait a moment and try again.';
+      }
+      return 'Too many requests. Please wait a moment and try again.';
     }
     if (status === 419) {
       return 'Your session has expired. Please refresh the page and try again.';
     }
+    if (status === 502 || status === 503 || status === 504) {
+      return 'Service is temporarily unavailable. Please try again shortly.';
+    }
     if (status >= 500) {
       return 'Server error. Our team has been notified. Please try again later.';
     }
-    return (data && data.message) ? data.message : defaultMsg;
+    return (data && data.message) ? data.message : (defaultMsg || 'An error occurred. Please try again.');
   },
 
   // Session user known to this page (set on login/register; the shell shows it).
@@ -825,16 +874,9 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshStats();
   }
 
-  // --- CSRF token fetch on startup ---
-  // Prime the cookie jar so that subsequent state-changing requests include X-XSRF-TOKEN.
-  (async () => {
-    try {
-      await fetchXSRFToken();
-    } catch (e) {
-      // If the backend is unavailable the first state-changing request will
-      // surface the error; there is nothing to prime here.
-    }
-  })();
+  // Note: CSRF cookies are initialized lazily before state-changing mutations
+  // (POST, PUT, DELETE) via ensureCsrfToken(), avoiding unneeded network calls
+  // and spurious edge challenges during initial page load.
 });
 
 // Refresh any inline stat panels (safe no-op when the hooks are absent).

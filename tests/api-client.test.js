@@ -10,9 +10,16 @@ const SCRIPT_JS = path.join(__dirname, '..', 'script.js');
 
 function loadClient({ fetchImpl, cookie = '' }) {
   const events = [];
+  const listeners = {};
   const documentStub = {
     cookie,
-    addEventListener() {},
+    addEventListener(event, fn) {
+      listeners[event] = listeners[event] || [];
+      listeners[event].push(fn);
+    },
+    trigger(event) {
+      (listeners[event] || []).forEach((fn) => fn());
+    },
     querySelector() {
       return null;
     },
@@ -25,6 +32,8 @@ function loadClient({ fetchImpl, cookie = '' }) {
     fetch: fetchImpl,
     console,
     crypto,
+    Headers,
+    Response,
     setTimeout,
     clearTimeout,
     CustomEvent: class CustomEvent {
@@ -338,17 +347,103 @@ test('formatAuthError categorizes authentication and network errors accurately',
   assert.equal(api.formatAuthError(422, { errors: { email: ['The email has already been taken.'] } }, 'Default'), 'The email has already been taken.');
   assert.equal(api.formatAuthError(422, { message: 'Invalid data' }, 'Default'), 'Invalid data');
 
-  // 429 Rate limiting
-  assert.equal(api.formatAuthError(429, {}, 'Default'), 'Too many attempts. Please try again later.');
+  // Genuine Laravel 429 Rate limiting (with Retry-After header)
+  const mockLaravelRateLimitResponse = {
+    headers: new Headers({ 'retry-after': '60' }),
+  };
+  assert.equal(
+    api.formatAuthError(429, { message: 'Too Many Attempts.' }, 'Default', mockLaravelRateLimitResponse),
+    'Too many login attempts. Please wait 60 seconds and try again.'
+  );
+
+  // Genuine Laravel 429 Rate limiting without Retry-After header
+  assert.equal(
+    api.formatAuthError(429, { message: 'Too Many Attempts.' }, 'Default'),
+    'Too many login attempts. Please wait a moment and try again.'
+  );
+
+  // Generic 429 without rate limit message
+  assert.equal(
+    api.formatAuthError(429, {}, 'Default'),
+    'Too many requests. Please wait a moment and try again.'
+  );
+
+  // Cloudflare Edge Challenge 429 (cf-mitigated: challenge header)
+  const mockCfChallengeResponse = {
+    headers: new Headers({ 'cf-mitigated': 'challenge', 'content-type': 'text/html; charset=UTF-8' }),
+  };
+  assert.equal(
+    api.formatAuthError(429, { message: 'Too Many Requests' }, 'Default', mockCfChallengeResponse),
+    'Service is temporarily verifying connections. Please try again in a moment.'
+  );
+
+  // HTML challenge page returned on 429
+  assert.equal(
+    api.formatAuthError(429, { isHtml: true, message: 'Too Many Requests' }, 'Default'),
+    'Service is temporarily verifying connections. Please try again in a moment.'
+  );
 
   // 419 CSRF / Session expiry
   assert.equal(api.formatAuthError(419, {}, 'Default'), 'Your session has expired. Please refresh the page and try again.');
 
-  // 500+ Server error
+  // 502/503 Upstream service unavailable
+  assert.equal(api.formatAuthError(502, {}, 'Default'), 'Service is temporarily unavailable. Please try again shortly.');
+  assert.equal(api.formatAuthError(503, {}, 'Default'), 'Service is temporarily unavailable. Please try again shortly.');
+
+  // 500 Server error
   assert.equal(api.formatAuthError(500, {}, 'Default'), 'Server error. Our team has been notified. Please try again later.');
-  assert.equal(api.formatAuthError(503, {}, 'Default'), 'Server error. Our team has been notified. Please try again later.');
 
   // Fallback to default
   assert.equal(api.formatAuthError(400, {}, 'Fallback error message'), 'Fallback error message');
 });
+
+test('ordinary initial page load (DOMContentLoaded) does not dispatch any eager CSRF request', async () => {
+  let csrfCalls = 0;
+  const { api, documentStub } = loadClient({
+    fetchImpl: async (url) => {
+      if (String(url).endsWith('/sanctum/csrf-cookie')) {
+        csrfCalls++;
+        return jsonResponse(204, {});
+      }
+      return jsonResponse(200, {});
+    },
+  });
+  api.init('http://127.0.0.1:8002');
+
+  // Trigger DOMContentLoaded
+  documentStub.trigger('DOMContentLoaded');
+
+  // Wait for any asynchronous microtasks
+  await new Promise((resolve) => setTimeout(resolve, 20));
+
+  assert.equal(csrfCalls, 0, 'DOMContentLoaded must not fire eager CSRF cookie fetch');
+});
+
+test('CSRF token is fetched lazily before state-changing POST when cookie is absent', async () => {
+  const callSequence = [];
+  const { api } = loadClient({
+    cookie: '', // No cookie present initially
+    fetchImpl: async (url, options) => {
+      if (String(url).endsWith('/sanctum/csrf-cookie')) {
+        callSequence.push('CSRF');
+        return new Response(null, {
+          status: 204,
+          headers: { 'Set-Cookie': 'XSRF-TOKEN=fresh-token' },
+        });
+      }
+      if (options && options.method === 'POST') {
+        callSequence.push('POST');
+        return jsonResponse(200, { user: { id: 1, name: 'Test User' } });
+      }
+      return jsonResponse(200, {});
+    },
+  });
+  api.init('http://127.0.0.1:8002');
+
+  const result = await api.post('/login', { email: 'user@test.com', password: 'password' });
+
+  assert.equal(result.status, 200);
+  assert.deepEqual(callSequence, ['CSRF', 'POST'], 'CSRF cookie must be fetched before state-changing POST');
+});
+
 
