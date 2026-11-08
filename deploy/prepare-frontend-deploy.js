@@ -196,8 +196,8 @@ function main() {
   for (const s of skipped) {
     console.log(`  - ${s}`);
   }
-  if (replaced !== 14) {
-    console.warn(`Warning: expected 14 legacy SpendSense pages to carry the API meta tag, rewrote ${replaced} - verify the page set before deploying.`);
+  if (replaced !== 25) {
+    console.warn(`Warning: expected 25 SpendSense pages to carry the API meta tag, rewrote ${replaced} - verify the page set before deploying.`);
   }
   console.log(`Source untouched    : ${sourceMatchesAfter} source pages still contain ${replaceThis}`);
   console.log('OK - deployable copy ready.');

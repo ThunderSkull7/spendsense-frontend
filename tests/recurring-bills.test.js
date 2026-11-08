@@ -10,30 +10,52 @@ const path = require('node:path');
 
 const rootDir = path.resolve(__dirname, '..');
 
-test('expenses.html structure contains sub-nav tabs, recurring bills view, and calendar view', () => {
+test('expenses.html has embedded recurring and calendar tabs removed per Batch 1', () => {
   const html = fs.readFileSync(path.join(rootDir, 'expense-management/expenses.html'), 'utf8');
 
-  // Verify Sub-Nav Tabs
-  assert.match(html, /id="tab-all-expenses"/, 'Must contain All Expenses tab');
-  assert.match(html, /id="tab-recurring-bills"/, 'Must contain Recurring Bills tab');
-  assert.match(html, /id="tab-bill-calendar"/, 'Must contain Bill Calendar tab');
+  // Verify old sub-nav tabs removed
+  assert.doesNotMatch(html, /id="tab-recurring-bills"/, 'Must not contain Recurring Bills tab');
+  assert.doesNotMatch(html, /id="tab-bill-calendar"/, 'Must not contain Bill Calendar tab');
+  assert.doesNotMatch(html, /id="view-recurring-bills"/, 'Must not contain view-recurring-bills panel');
+  assert.doesNotMatch(html, /id="view-bill-calendar"/, 'Must not contain view-bill-calendar panel');
 
-  // Verify Tab Panels
+  // Verify Expense table remains
   assert.match(html, /id="view-all-expenses"/, 'Must contain view-all-expenses panel');
+});
+
+test('recurring-transactions.html contains standalone recurring bills view and modals', () => {
+  const html = fs.readFileSync(path.join(rootDir, 'recurring-transactions/recurring-transactions.html'), 'utf8');
+
+  // Verify Panels & Elements
   assert.match(html, /id="view-recurring-bills"/, 'Must contain view-recurring-bills panel');
-  assert.match(html, /id="view-bill-calendar"/, 'Must contain view-bill-calendar panel');
+  assert.match(html, /data-stat-monthly-commitment/, 'Must contain monthly commitment stat');
+  assert.match(html, /data-stat-annual-commitment/, 'Must contain annual commitment stat');
+  assert.match(html, /data-stat-active-commitments/, 'Must contain active schedules stat');
+  assert.match(html, /data-stat-upcoming-bills/, 'Must contain due next 30 days stat');
 
   // Verify Modals
   assert.match(html, /id="recurring-modal"/, 'Must contain add/edit recurring modal');
   assert.match(html, /id="pay-bill-modal"/, 'Must contain pay bill modal');
   assert.match(html, /id="occurrences-modal"/, 'Must contain occurrences modal');
 
-  // Verify Script Tag
+  // Verify Script Tag & Nav
   assert.match(html, /<script src="\.\.\/recurring-bills\.js"><\/script>/, 'Must load recurring-bills.js');
+  assert.match(html, /data-nav="recurring"/, 'Must contain data-nav="recurring" in sidebar');
+});
 
-  // Verify 14-page compliance (no data-nav="bills" or "goals")
-  assert.doesNotMatch(html, /data-nav="bills"/, 'Must NOT contain data-nav="bills" in sidebar');
-  assert.doesNotMatch(html, /data-nav="goals"/, 'Must NOT contain data-nav="goals" in sidebar');
+test('financial-calendar.html contains standalone calendar view and controls', () => {
+  const html = fs.readFileSync(path.join(rootDir, 'financial-calendar/financial-calendar.html'), 'utf8');
+
+  // Verify Calendar View & Controls
+  assert.match(html, /id="view-bill-calendar"/, 'Must contain view-bill-calendar panel');
+  assert.match(html, /id="calendar-month-heading"/, 'Must contain month heading');
+  assert.match(html, /data-calendar-grid/, 'Must contain calendar grid');
+  assert.match(html, /data-calendar-day-panel/, 'Must contain day panel');
+  assert.match(html, /data-calendar-list-view/, 'Must contain calendar list view');
+
+  // Verify Script Tag & Nav
+  assert.match(html, /<script src="\.\.\/recurring-bills\.js"><\/script>/, 'Must load recurring-bills.js');
+  assert.match(html, /data-nav="calendar"/, 'Must contain data-nav="calendar" in sidebar');
 });
 
 test('recurring-bills.js exports SpendSenseRecurringBills component', () => {
@@ -51,7 +73,6 @@ test('styles.css contains calendar and sub-navigation styling tokens', () => {
   const css = fs.readFileSync(path.join(rootDir, 'styles.css'), 'utf8');
 
   assert.match(css, /\.sub-nav-tabs/, 'Must style .sub-nav-tabs');
-  assert.match(css, /\.sub-nav-tab\.active/, 'Must style active tab');
   assert.match(css, /\.calendar-grid/, 'Must style .calendar-grid');
   assert.match(css, /\.calendar-day/, 'Must style .calendar-day');
   assert.match(css, /\.calendar-bill-pill/, 'Must style .calendar-bill-pill');
@@ -73,4 +94,3 @@ test('notifications.js wires to /api/bill-reminders', () => {
   assert.match(notifJs, /\/bill-reminders/, 'notifications.js must call /bill-reminders');
   assert.match(notifJs, /\/bill-reminders\/read-all/, 'notifications.js must support read-all');
 });
-

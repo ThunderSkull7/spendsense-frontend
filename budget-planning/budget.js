@@ -1,3 +1,14 @@
+// Immediate deep-link redirection for promoted features
+(() => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const legacyTab = urlParams.get('tab') || (window.location.hash ? window.location.hash.replace('#', '') : null);
+  if (legacyTab === 'goals' || legacyTab === 'financial-goals') {
+    window.location.replace('../savings-goals/savings-goals.html');
+  } else if (legacyTab === 'debts' || legacyTab === 'debt-tracker') {
+    window.location.replace('../debts-loans/debts-loans.html');
+  }
+})();
+
 // Budget management — API-backed (list with progress, create, delete).
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.SpendSenseAPI || !window.SpendSenseUI) return;
@@ -399,62 +410,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (reloadBtn) reloadBtn.addEventListener('click', loadBudgets);
 
-  // ---------- Sub-navigation tabs: Budgets, Goals, Debts ----------
-  const tabs = document.querySelectorAll('[data-planning-tab]');
-  const views = {
-    budgets: document.getElementById('view-monthly-budgets'),
-    goals: document.getElementById('view-financial-goals'),
-    debts: document.getElementById('view-debt-tracker')
-  };
-
-  let goalsComponent = null;
-  let debtsComponent = null;
-
-  function switchTab(targetTab) {
-    tabs.forEach((tab) => {
-      const isSelected = tab.getAttribute('data-planning-tab') === targetTab;
-      tab.classList.toggle('active', isSelected);
-      tab.setAttribute('aria-selected', isSelected ? 'true' : 'false');
-    });
-
-    Object.keys(views).forEach((key) => {
-      if (views[key]) {
-        views[key].hidden = key !== targetTab;
-      }
-    });
-
-    if (targetTab === 'goals') {
-      if (!goalsComponent && window.SpendSenseGoals) {
-        goalsComponent = new window.SpendSenseGoals();
-        goalsComponent.init();
-      } else if (goalsComponent) {
-        goalsComponent.loadGoals();
-      }
-    } else if (targetTab === 'debts') {
-      if (!debtsComponent && window.SpendSenseDebts) {
-        debtsComponent = new window.SpendSenseDebts();
-        debtsComponent.init();
-      } else if (debtsComponent) {
-        debtsComponent.loadDebts();
-      }
-    }
-  }
-
-  tabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const target = tab.getAttribute('data-planning-tab');
-      switchTab(target);
-      const url = new URL(window.location);
-      url.searchParams.set('tab', target);
-      window.history.replaceState({}, '', url);
-    });
-  });
-
-  // Deep-link from URL query parameter ?tab=goals or ?tab=debts or hash #goals / #debts
+  // Deep-link redirection for promoted features
   const urlParams = new URLSearchParams(window.location.search);
   const initialTab = urlParams.get('tab') || (window.location.hash ? window.location.hash.replace('#', '') : 'budgets');
-  if (initialTab === 'goals' || initialTab === 'debts') {
-    switchTab(initialTab);
+  if (initialTab === 'goals') {
+    window.location.replace('../savings-goals/savings-goals.html');
+    return;
+  } else if (initialTab === 'debts') {
+    window.location.replace('../debts-loans/debts-loans.html');
+    return;
   }
 
   loadCategoryOptions();

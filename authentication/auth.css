@@ -2,12 +2,20 @@
 
 .auth-page {
   position: relative;
-  overflow: hidden;
   background-color: var(--bg);
 }
 
+/* Localized background visual container that clips ambient glow circles without document-wide overflow-x: hidden */
+.auth-backdrop {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* Soft ambient glow in the corners for a calm, branded backdrop. */
-.auth-page::before {
+.auth-backdrop::before {
   content: "";
   position: absolute;
   top: -180px;
@@ -19,7 +27,7 @@
   pointer-events: none;
 }
 
-.auth-page::after {
+.auth-backdrop::after {
   content: "";
   position: absolute;
   bottom: -220px;
@@ -40,4 +48,14 @@
   text-align: center;
   min-height: 1.25rem;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 

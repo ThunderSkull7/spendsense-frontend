@@ -8,18 +8,21 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
 
-test('budget.html structure contains sub-nav tabs, goals panel, debt panel, and modals', () => {
+test('budget.html focuses on monthly budgets and has embedded goals/debt tabs removed per Batch 1', () => {
   const html = read('budget-planning/budget.html');
 
-  // Sub-navigation tabs
-  assert.match(html, /data-planning-tab="budgets"/, 'Contains budgets tab');
-  assert.match(html, /data-planning-tab="goals"/, 'Contains goals tab');
-  assert.match(html, /data-planning-tab="debts"/, 'Contains debts tab');
-
-  // Tabpanels
+  // Verify monthly budgets panel remains
   assert.match(html, /id="view-monthly-budgets"/, 'Contains monthly budgets panel');
-  assert.match(html, /id="view-financial-goals"/, 'Contains financial goals panel');
-  assert.match(html, /id="view-debt-tracker"/, 'Contains debt tracker panel');
+
+  // Verify old embedded tabs removed
+  assert.doesNotMatch(html, /data-planning-tab="goals"/, 'Must not contain goals tab');
+  assert.doesNotMatch(html, /data-planning-tab="debts"/, 'Must not contain debts tab');
+  assert.doesNotMatch(html, /id="view-financial-goals"/, 'Must not contain financial goals panel');
+  assert.doesNotMatch(html, /id="view-debt-tracker"/, 'Must not contain debt tracker panel');
+});
+
+test('savings-goals.html contains standalone financial goals panel, stats and modals', () => {
+  const html = read('savings-goals/savings-goals.html');
 
   // Goals elements
   assert.match(html, /id="goals-stat-active"/, 'Contains active goals stat');
@@ -29,6 +32,13 @@ test('budget.html structure contains sub-nav tabs, goals panel, debt panel, and 
   assert.match(html, /id="goal-contribution-modal"/, 'Contains contribution modal');
   assert.match(html, /id="goal-history-modal"/, 'Contains contribution history modal');
 
+  // Target navigation
+  assert.match(html, /data-nav="goals"/, 'Contains data-nav="goals" in sidebar');
+});
+
+test('debts-loans.html contains standalone debt tracker panel, stats and modals', () => {
+  const html = read('debts-loans/debts-loans.html');
+
   // Debt elements
   assert.match(html, /id="debts-stat-balance"/, 'Contains debt balance stat');
   assert.match(html, /id="debts-container"/, 'Contains debts container');
@@ -37,9 +47,8 @@ test('budget.html structure contains sub-nav tabs, goals panel, debt panel, and 
   assert.match(html, /id="debt-history-modal"/, 'Contains repayment history modal');
   assert.match(html, /Accounting note:/, 'Contains financial accounting boundary note');
 
-  // 14-page compliance (no data-nav="goals" or "debts" in sidebar)
-  assert.doesNotMatch(html, /data-nav="goals"/, 'Must not add data-nav="goals" in sidebar');
-  assert.doesNotMatch(html, /data-nav="debts"/, 'Must not add data-nav="debts" in sidebar');
+  // Target navigation
+  assert.match(html, /data-nav="debts"/, 'Contains data-nav="debts" in sidebar');
 });
 
 test('goals-manager.js exports SpendSenseGoals and helper methods', () => {
@@ -55,14 +64,20 @@ test('debts-manager.js exports SpendSenseDebts and formats currencies cleanly', 
   assert.equal(formatCurrency(250000), '₹2,50,000.00');
 });
 
-test('reports.html structure contains sub-nav tabs and financial health panel', () => {
+test('reports.html focuses on reports & analytics and has financial health tab removed per Batch 1', () => {
   const html = read('reports-analytics/reports.html');
 
-  assert.match(html, /data-reports-tab="reports"/, 'Contains reports tab');
-  assert.match(html, /data-reports-tab="health"/, 'Contains financial health tab');
   assert.match(html, /id="view-reports-charts"/, 'Contains reports charts panel');
+  assert.doesNotMatch(html, /data-reports-tab="health"/, 'Must not contain financial health tab');
+  assert.doesNotMatch(html, /id="view-financial-health"/, 'Must not contain financial health panel');
+});
+
+test('financial-health.html contains standalone financial health panel and container', () => {
+  const html = read('financial-health/financial-health.html');
+
   assert.match(html, /id="view-financial-health"/, 'Contains financial health panel');
   assert.match(html, /id="financial-health-container"/, 'Contains health container');
+  assert.match(html, /data-nav="health"/, 'Contains data-nav="health" in sidebar');
 });
 
 test('financial-health.js exports SpendSenseFinancialHealth', () => {
@@ -75,4 +90,3 @@ test('dashboard.html contains financial goals summary card', () => {
   assert.match(html, /data-goals-card/, 'Contains data-goals-card');
   assert.match(html, /data-goals-summary/, 'Contains data-goals-summary element');
 });
-

@@ -10,58 +10,57 @@
     <link rel="stylesheet" href="expenses.css" />
   </head>
   <body class="app-body">
-    <aside class="sidebar" data-sidebar>
+            <aside class="sidebar" data-sidebar>
       <a class="sidebar-brand" href="../dashboard/dashboard.html">
         <span class="brand-mark">S</span>
         <span>SpendSense</span>
       </a>
       <nav class="sidebar-nav" aria-label="Main navigation">
         <p class="sidebar-group">Overview</p>
-        <a class="sidebar-link" href="../dashboard/dashboard.html" data-nav="dashboard"><span class="nav-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Dashboard</a>
+        <a class="sidebar-link" href="../dashboard/dashboard.html" data-nav="dashboard"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Dashboard</a>
+
         <p class="sidebar-group">Money</p>
-        <a class="sidebar-link active" href="../expense-management/expenses.html" data-nav="expenses"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>Expenses</a>
-        <a class="sidebar-link" href="../income-management/income.html" data-nav="income"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income</a>
-        <a class="sidebar-link" href="../budget-planning/budget.html" data-nav="budgets"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budgets</a>
-        <a class="sidebar-link" href="../categories-management/categories.html" data-nav="categories"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h6l10 10-8 8L3 11z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg></span>Categories</a>
+        <a class="sidebar-link active" href="../expense-management/expenses.html" data-nav="expenses"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>Expenses</a>
+        <a class="sidebar-link" href="../income-management/income.html" data-nav="income"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income</a>
+        <a class="sidebar-link" href="../budget-planning/budget.html" data-nav="budgets"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budgets</a>
+        <a class="sidebar-link" href="../categories-management/categories.html" data-nav="categories"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h6l10 10-8 8L3 11z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg></span>Categories</a>
+        <a class="sidebar-link" href="../recurring-transactions/recurring-transactions.html" data-nav="recurring"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg></span>Recurring Transactions</a>
+        <a class="sidebar-link" href="../savings-goals/savings-goals.html" data-nav="goals"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/></svg></span>Savings Goals</a>
+        <a class="sidebar-link" href="../debts-loans/debts-loans.html" data-nav="debts"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Debts &amp; Loans</a>
+        <a class="sidebar-link" href="../subscriptions/subscriptions.html" data-nav="subscriptions"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9a4 4 0 0 0-4 4v1"/><path d="M17 4l3 3-3 3"/><path d="M4 17h9a4 4 0 0 0 4-4v-1"/><path d="M7 20l-3-3 3-3"/></svg></span>Subscriptions</a>
+        <a class="sidebar-link" href="../net-worth/net-worth.html" data-nav="net-worth"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M19 9l-5 5-4-4-3 3"/></svg></span>Net Worth</a>
+
         <p class="sidebar-group">Insights</p>
-        <a class="sidebar-link" href="../reports-analytics/reports.html" data-nav="reports"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg></span>Reports</a>
-        <p class="sidebar-group">Account</p>
-        <a class="sidebar-link" href="../notifications/notifications.html" data-nav="notifications"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>Notifications</a>
-        <a class="sidebar-link" href="../settings/settings.html" data-nav="settings"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</a>
-        <a class="sidebar-link" href="../support/support.html" data-nav="support"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 1 1 3.8 2.6c-.8.3-1 .9-1 1.6v.4"/><path d="M12 17.2v.01"/></svg></span>Support</a>
+        <a class="sidebar-link" href="../reports-analytics/reports.html" data-nav="reports"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg></span>Reports</a>
+        <a class="sidebar-link" href="../spending-trends/spending-trends.html" data-nav="insights-trends"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Spending Trends</a>
+        <a class="sidebar-link" href="../income-analysis/income-analysis.html" data-nav="insights-income"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income Analysis</a>
+        <a class="sidebar-link" href="../budget-performance/budget-performance.html" data-nav="insights-budgets"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budget Performance</a>
+        <a class="sidebar-link" href="../cash-flow-forecast/cash-flow-forecast.html" data-nav="forecast"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Cash Flow Forecast</a>
+        <a class="sidebar-link" href="../financial-health/financial-health.html" data-nav="health"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>Financial Health</a>
+
+        <p class="sidebar-group">Planning</p>
+        <a class="sidebar-link" href="../financial-calendar/financial-calendar.html" data-nav="calendar"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Financial Calendar</a>
       </nav>
-      <div class="sidebar-footer">
-        <div class="user-chip">
-          <span class="user-avatar" data-user-avatar>S</span>
-          <span class="user-meta"><strong data-user-name>Account</strong><small data-user-email>Signed-in session</small></span>
-        </div>
-        <button class="btn ghost sm block" type="button" data-logout>Log out</button>
-      </div>
     </aside>
     <div class="sidebar-overlay" data-sidebar-overlay></div>
 
     <div class="main">
       <header class="topbar">
-        <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
+        <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
         <div class="topbar-titles">
-          <span class="topbar-title">Expenses</span>
+          <h1 class="topbar-title">Expenses</h1>
           <span class="topbar-sub">Log and review your spending</span>
         </div>
         <div class="topbar-actions">
-          <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+          <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
           <a class="btn primary sm" href="add-expense.html">Add expense</a>
         </div>
       </header>
 
       <main class="content">
-        <div class="sub-nav-tabs" role="tablist" aria-label="Expenses navigation views">
-          <button type="button" class="sub-nav-tab active" role="tab" id="tab-all-expenses" aria-selected="true" aria-controls="view-all-expenses" data-expense-tab="all">All expenses</button>
-          <button type="button" class="sub-nav-tab" role="tab" id="tab-recurring-bills" aria-selected="false" aria-controls="view-recurring-bills" data-expense-tab="recurring">Recurring bills</button>
-          <button type="button" class="sub-nav-tab" role="tab" id="tab-bill-calendar" aria-selected="false" aria-controls="view-bill-calendar" data-expense-tab="calendar">Bill calendar</button>
-        </div>
 
         <div id="view-all-expenses" role="tabpanel" aria-labelledby="tab-all-expenses">
-          <section class="card" style="border-top-left-radius: 0; border-top-right-radius: 0; border-top: 0;">
+          <section class="card">
             <div class="card-head">
             <div>
               <h2 class="card-title">All expenses</h2>
@@ -137,335 +136,12 @@
         </section>
       </div>
 
-      <!-- Recurring Bills View -->
-      <div id="view-recurring-bills" role="tabpanel" aria-labelledby="tab-recurring-bills" hidden>
-        <section class="grid grid-4" style="margin-top: 14px;" aria-label="Recurring commitments summary">
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Monthly equivalent</span>
-              <span class="stat-icon tone-teal"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10"/><path d="M15.5 9.5c-.6-.9-1.8-1.5-3.5-1.5-2 0-3.5 1-3.5 2.4 0 1.3 1.1 2 3.5 2.4 2.4.4 3.5 1.1 3.5 2.4 0 1.4-1.5 2.4-3.5 2.4-1.7 0-2.9-.6-3.5-1.5"/></svg></span>
-            </div>
-            <div class="stat-value" data-stat-monthly-commitment>₹0.00</div>
-            <div class="stat-foot">Normalized estimate (52 wks / 12 mos)</div>
-          </article>
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Annualized total</span>
-              <span class="stat-icon"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>
-            </div>
-            <div class="stat-value" data-stat-annual-commitment>₹0.00</div>
-            <div class="stat-foot">Projected annual commitment</div>
-          </article>
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Active schedules</span>
-              <span class="stat-icon tone-teal"><svg viewBox="0 0 24 24"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.93 4.93l2.83 2.83"/><path d="M16.24 16.24l2.83 2.83"/><path d="M2 12h4"/><path d="M18 12h4"/><path d="M4.93 19.07l2.83-2.83"/><path d="M16.24 7.76l2.83-2.83"/></svg></span>
-            </div>
-            <div class="stat-value" data-stat-active-commitments>0 active</div>
-            <div class="stat-foot">Ongoing payment obligations</div>
-          </article>
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Upcoming / Overdue</span>
-              <span class="stat-icon tone-amber"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg></span>
-            </div>
-            <div class="stat-value" data-stat-upcoming-bills>₹0.00</div>
-            <div class="stat-foot">Pending: <span data-stat-overdue-bills style="color: var(--danger, #EF4444); font-weight: 600;">₹0.00</span> overdue</div>
-          </article>
-        </section>
-
-        <section class="card" style="margin-top: 14px;">
-          <div class="card-head">
-            <div>
-              <h2 class="card-title">Recurring bills & subscriptions</h2>
-              <p class="card-sub">Manage ongoing subscriptions, utility bills, and planned obligations</p>
-            </div>
-            <div class="card-head-actions">
-              <button type="button" class="btn primary sm" id="open-add-recurring-btn">+ Add recurring bill</button>
-            </div>
-          </div>
-
-          <div class="filter-toolbar" role="search" aria-label="Filter recurring bills">
-            <div class="filter-field search-field">
-              <label for="recurring-search">Search</label>
-              <input id="recurring-search" type="search" placeholder="Search bill description or category…" autocomplete="off" />
-            </div>
-
-            <div class="filter-field">
-              <label for="recurring-status-filter">Status</label>
-              <select id="recurring-status-filter" aria-label="Filter by status">
-                <option value="all">All statuses</option>
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="stopped">Cancelled</option>
-              </select>
-            </div>
-
-            <div class="filter-field">
-              <label for="recurring-freq-filter">Frequency</label>
-              <select id="recurring-freq-filter" aria-label="Filter by frequency">
-                <option value="all">All frequencies</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="biweekly">Bi-weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="quarterly">Quarterly</option>
-                <option value="half-yearly">Half-yearly</option>
-                <option value="yearly">Yearly</option>
-              </select>
-            </div>
-          </div>
-
-          <div data-recurring-state>
-            <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading recurring commitments…</p></div>
-          </div>
-
-          <div class="table-wrap" data-recurring-table-wrap hidden>
-            <table class="table" data-recurring-table>
-              <thead>
-                <tr>
-                  <th class="cell-wrap">Description & Category</th>
-                  <th class="num col-tight">Amount & Freq</th>
-                  <th class="num col-tight">Estimates</th>
-                  <th class="col-tight">Next Due</th>
-                  <th class="col-tight">Status</th>
-                  <th class="col-tight text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody data-recurring-rows></tbody>
-            </table>
-          </div>
-        </section>
-      </div>
-
-      <!-- Bill Calendar View -->
-      <div id="view-bill-calendar" role="tabpanel" aria-labelledby="tab-bill-calendar" hidden>
-        <section class="grid grid-4" style="margin-top: 14px;" aria-label="Month bill summary">
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Total expected</span>
-              <span class="stat-icon tone-teal"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>
-            </div>
-            <div class="stat-value" data-cal-stat-expected>₹0.00</div>
-            <div class="stat-foot">Expected this month</div>
-          </article>
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Total paid</span>
-              <span class="stat-icon tone-teal"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg></span>
-            </div>
-            <div class="stat-value" data-cal-stat-paid style="color: var(--success, #10B981);">₹0.00</div>
-            <div class="stat-foot">Recorded actual expenses</div>
-          </article>
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Remaining unpaid</span>
-              <span class="stat-icon tone-amber"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
-            </div>
-            <div class="stat-value" data-cal-stat-unpaid>₹0.00</div>
-            <div class="stat-foot">Upcoming planned bills</div>
-          </article>
-          <article class="card stat-card">
-            <div class="stat-top">
-              <span class="stat-label">Overdue</span>
-              <span class="stat-icon tone-amber"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg></span>
-            </div>
-            <div class="stat-value" data-cal-stat-overdue style="color: var(--danger, #EF4444);">₹0.00</div>
-            <div class="stat-foot">Due in the past & unpaid</div>
-          </article>
-        </section>
-
-        <section class="card" style="margin-top: 14px;">
-          <div class="calendar-wrap">
-            <div class="calendar-header">
-              <div class="calendar-nav">
-                <button type="button" class="btn secondary sm" id="calendar-prev-month" aria-label="Previous month">← Prev</button>
-                <h2 class="calendar-month-title" id="calendar-month-heading">Loading…</h2>
-                <button type="button" class="btn secondary sm" id="calendar-next-month" aria-label="Next month">Next →</button>
-                <button type="button" class="btn ghost sm" id="calendar-today-btn">Today</button>
-              </div>
-
-              <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <select id="calendar-status-filter" class="form-control" style="width: auto; height: 36px; padding: 4px 8px; font-size: 0.85rem;" aria-label="Filter calendar by status">
-                  <option value="all">All statuses</option>
-                  <option value="planned">Planned only</option>
-                  <option value="paid">Paid only</option>
-                  <option value="overdue">Overdue only</option>
-                  <option value="skipped">Skipped only</option>
-                </select>
-
-                <select id="calendar-category-filter" class="form-control" style="width: auto; height: 36px; padding: 4px 8px; font-size: 0.85rem;" aria-label="Filter calendar by category">
-                  <option value="all">All categories</option>
-                </select>
-
-                <div class="btn-group" role="group" aria-label="Calendar view mode">
-                  <button type="button" class="btn secondary sm active" id="cal-toggle-grid" aria-pressed="true">Grid</button>
-                  <button type="button" class="btn secondary sm" id="cal-toggle-list" aria-pressed="false">List</button>
-                </div>
-
-                <button type="button" class="btn primary sm" id="open-add-recurring-cal-btn">+ Add bill</button>
-              </div>
-            </div>
-
-            <div data-calendar-state></div>
-
-            <!-- Month Grid -->
-            <div class="calendar-grid" data-calendar-grid aria-label="Monthly bill calendar"></div>
-
-            <!-- Accessible List View -->
-            <div class="table-wrap" data-calendar-list-wrap hidden style="margin-top: 16px;">
-              <div data-calendar-list-view></div>
-            </div>
-
-            <!-- Selected Day Panel -->
-            <div class="calendar-day-panel" data-calendar-day-panel>
-              <h3 class="calendar-day-panel-title" data-calendar-day-title>Bills due on selected day</h3>
-              <div data-calendar-day-list>
-                <p class="card-sub" style="margin: 8px 0 0;">Select any day on the calendar to inspect scheduled bills.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <!-- Add / Edit Recurring Bill Modal -->
-      <div id="recurring-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="recurring-modal-title" hidden>
-        <div class="modal-card" style="max-width: 540px;">
-          <div class="modal-header">
-            <div>
-              <h2 id="recurring-modal-title" class="modal-title">Add Recurring Bill</h2>
-              <p class="modal-sub">Create a recurring payment commitment with automatic schedule projection</p>
-            </div>
-            <button type="button" class="modal-close" id="close-recurring-modal-btn" aria-label="Close dialog">×</button>
-          </div>
-
-          <form id="recurring-form" class="modal-body" novalidate>
-            <div id="recurring-form-error" class="banner error" role="alert" hidden style="margin-bottom: 14px;"></div>
-
-            <div class="form-group" style="margin-bottom: 12px;">
-              <label for="recurring-description">Bill description / Name *</label>
-              <input id="recurring-description" type="text" class="form-control" placeholder="e.g. Netflix, Electricity, Rent" required autocomplete="off" data-preview-trigger />
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-              <div class="form-group">
-                <label for="recurring-amount">Amount (₹) *</label>
-                <input id="recurring-amount" type="number" step="0.01" min="0.01" class="form-control" placeholder="0.00" required data-preview-trigger />
-              </div>
-              <div class="form-group">
-                <label for="recurring-category">Category *</label>
-                <select id="recurring-category" class="form-control" required>
-                  <option value="">Select category…</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-              <div class="form-group">
-                <label for="recurring-frequency">Frequency *</label>
-                <select id="recurring-frequency" class="form-control" required data-preview-trigger>
-                  <option value="daily">Daily (365/yr)</option>
-                  <option value="weekly">Weekly (52/yr)</option>
-                  <option value="biweekly">Bi-weekly (26/yr)</option>
-                  <option value="monthly" selected>Monthly (12/yr)</option>
-                  <option value="quarterly">Quarterly (4/yr)</option>
-                  <option value="half-yearly">Half-yearly (2/yr)</option>
-                  <option value="yearly">Yearly (1/yr)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="recurring-reminder-days">Reminder window</label>
-                <select id="recurring-reminder-days" class="form-control">
-                  <option value="1">1 day before</option>
-                  <option value="3" selected>3 days before</option>
-                  <option value="7">7 days before</option>
-                  <option value="14">14 days before</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-              <div class="form-group">
-                <label for="recurring-start-date">Start date *</label>
-                <input id="recurring-start-date" type="date" class="form-control" required data-preview-trigger />
-              </div>
-              <div class="form-group">
-                <label for="recurring-end-date">End date (optional)</label>
-                <input id="recurring-end-date" type="date" class="form-control" data-preview-trigger />
-              </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom: 14px;">
-              <label for="recurring-notes">Notes (optional)</label>
-              <textarea id="recurring-notes" class="form-control" rows="2" placeholder="Account numbers, cancellation links, or reminder details…"></textarea>
-            </div>
-
-            <!-- Live Projection Box -->
-            <div id="recurring-preview-box" class="banner" style="background: var(--surface-2); border-left: 3px solid var(--teal); margin-bottom: 16px; font-size: 0.88rem;" hidden></div>
-
-            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
-              <button type="button" class="btn secondary sm" id="cancel-recurring-modal-btn">Cancel</button>
-              <button type="submit" class="btn primary sm" id="save-recurring-btn">Save Recurring Bill</button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Pay Bill Occurrence Modal -->
-      <div id="pay-bill-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="pay-bill-title" hidden>
-        <div class="modal-card" style="max-width: 440px;">
-          <div class="modal-header">
-            <div>
-              <h2 id="pay-bill-title" class="modal-title">Record Bill Payment</h2>
-              <p class="modal-sub" id="pay-bill-desc">Record actual payment and generate an expense transaction</p>
-            </div>
-            <button type="button" class="modal-close" id="close-pay-modal-btn" aria-label="Close dialog">×</button>
-          </div>
-
-          <form id="pay-bill-form" class="modal-body">
-            <div id="pay-bill-error" class="banner error" role="alert" hidden style="margin-bottom: 12px;"></div>
-
-            <div class="form-group" style="margin-bottom: 12px;">
-              <label for="pay-bill-amount">Actual Amount Paid (₹) *</label>
-              <input id="pay-bill-amount" type="number" step="0.01" min="0.01" class="form-control" required />
-            </div>
-
-            <div class="form-group" style="margin-bottom: 16px;">
-              <label for="pay-bill-date">Payment Date *</label>
-              <input id="pay-bill-date" type="date" class="form-control" required />
-            </div>
-
-            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
-              <button type="button" class="btn secondary sm" id="cancel-pay-modal-btn">Cancel</button>
-              <button type="submit" class="btn primary sm" id="confirm-pay-bill-btn">Confirm Payment</button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Occurrences History Modal -->
-      <div id="occurrences-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="occurrences-modal-title" hidden>
-        <div class="modal-card" style="max-width: 680px;">
-          <div class="modal-header">
-            <div>
-              <h2 id="occurrences-modal-title" class="modal-title">Schedule Occurrences</h2>
-              <p class="modal-sub">Expected schedule timeline, recorded payments, and pending actions</p>
-            </div>
-            <button type="button" class="modal-close" id="close-occurrences-modal-btn" aria-label="Close dialog">×</button>
-          </div>
-
-          <div class="modal-body">
-            <div id="occurrences-list" style="max-height: 400px; overflow-y: auto;"></div>
-          </div>
-        </div>
-      </div>
       </main>
     </div>
 
     <script src="../script.js"></script>
     <script src="../transactions-client.js"></script>
     <script src="../import-modal.js"></script>
-    <script src="../recurring-bills.js"></script>
     <script src="expenses.js"></script>
   </body>
 </html>

@@ -268,6 +268,13 @@
 
     if (monthSelect) monthSelect.addEventListener('change', onPeriodChange);
     if (yearSelect) yearSelect.addEventListener('change', onPeriodChange);
+
+    // Theme synchronization
+    window.addEventListener('spendsense:theme-change', function () {
+      if (self.data) {
+        self.render();
+      }
+    });
   };
 
   if (typeof window !== 'undefined') {

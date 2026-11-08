@@ -10,45 +10,49 @@
     <link rel="stylesheet" href="expenses.css" />
   </head>
   <body class="app-body">
-    <aside class="sidebar" data-sidebar>
+            <aside class="sidebar" data-sidebar>
       <a class="sidebar-brand" href="../dashboard/dashboard.html">
         <span class="brand-mark">S</span>
         <span>SpendSense</span>
       </a>
       <nav class="sidebar-nav" aria-label="Main navigation">
         <p class="sidebar-group">Overview</p>
-        <a class="sidebar-link" href="../dashboard/dashboard.html" data-nav="dashboard"><span class="nav-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Dashboard</a>
+        <a class="sidebar-link" href="../dashboard/dashboard.html" data-nav="dashboard"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Dashboard</a>
+
         <p class="sidebar-group">Money</p>
-        <a class="sidebar-link active" href="../expense-management/expenses.html" data-nav="expenses"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>Expenses</a>
-        <a class="sidebar-link" href="../income-management/income.html" data-nav="income"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income</a>
-        <a class="sidebar-link" href="../budget-planning/budget.html" data-nav="budgets"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budgets</a>
-        <a class="sidebar-link" href="../categories-management/categories.html" data-nav="categories"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M3 5a2 2 0 0 1 2-2h6l10 10-8 8L3 11z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg></span>Categories</a>
+        <a class="sidebar-link active" href="../expense-management/expenses.html" data-nav="expenses"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>Expenses</a>
+        <a class="sidebar-link" href="../income-management/income.html" data-nav="income"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income</a>
+        <a class="sidebar-link" href="../budget-planning/budget.html" data-nav="budgets"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budgets</a>
+        <a class="sidebar-link" href="../categories-management/categories.html" data-nav="categories"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h6l10 10-8 8L3 11z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg></span>Categories</a>
+        <a class="sidebar-link" href="../recurring-transactions/recurring-transactions.html" data-nav="recurring"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg></span>Recurring Transactions</a>
+        <a class="sidebar-link" href="../savings-goals/savings-goals.html" data-nav="goals"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/></svg></span>Savings Goals</a>
+        <a class="sidebar-link" href="../debts-loans/debts-loans.html" data-nav="debts"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Debts &amp; Loans</a>
+        <a class="sidebar-link" href="../subscriptions/subscriptions.html" data-nav="subscriptions"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9a4 4 0 0 0-4 4v1"/><path d="M17 4l3 3-3 3"/><path d="M4 17h9a4 4 0 0 0 4-4v-1"/><path d="M7 20l-3-3 3-3"/></svg></span>Subscriptions</a>
+        <a class="sidebar-link" href="../net-worth/net-worth.html" data-nav="net-worth"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M19 9l-5 5-4-4-3 3"/></svg></span>Net Worth</a>
+
         <p class="sidebar-group">Insights</p>
-        <a class="sidebar-link" href="../reports-analytics/reports.html" data-nav="reports"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg></span>Reports</a>
-        <p class="sidebar-group">Account</p>
-        <a class="sidebar-link" href="../notifications/notifications.html" data-nav="notifications"><span class="nav-ico"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>Notifications</a>
-        <a class="sidebar-link" href="../settings/settings.html" data-nav="settings"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>Settings</a>
-        <a class="sidebar-link" href="../support/support.html" data-nav="support"><span class="nav-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 1 1 3.8 2.6c-.8.3-1 .9-1 1.6v.4"/><path d="M12 17.2v.01"/></svg></span>Support</a>
+        <a class="sidebar-link" href="../reports-analytics/reports.html" data-nav="reports"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg></span>Reports</a>
+        <a class="sidebar-link" href="../spending-trends/spending-trends.html" data-nav="insights-trends"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Spending Trends</a>
+        <a class="sidebar-link" href="../income-analysis/income-analysis.html" data-nav="insights-income"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income Analysis</a>
+        <a class="sidebar-link" href="../budget-performance/budget-performance.html" data-nav="insights-budgets"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budget Performance</a>
+        <a class="sidebar-link" href="../cash-flow-forecast/cash-flow-forecast.html" data-nav="forecast"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Cash Flow Forecast</a>
+        <a class="sidebar-link" href="../financial-health/financial-health.html" data-nav="health"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>Financial Health</a>
+
+        <p class="sidebar-group">Planning</p>
+        <a class="sidebar-link" href="../financial-calendar/financial-calendar.html" data-nav="calendar"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Financial Calendar</a>
       </nav>
-      <div class="sidebar-footer">
-        <div class="user-chip">
-          <span class="user-avatar" data-user-avatar>S</span>
-          <span class="user-meta"><strong data-user-name>Account</strong><small data-user-email>Signed-in session</small></span>
-        </div>
-        <button class="btn ghost sm block" type="button" data-logout>Log out</button>
-      </div>
     </aside>
     <div class="sidebar-overlay" data-sidebar-overlay></div>
 
     <div class="main">
       <header class="topbar">
-        <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
+        <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
         <div class="topbar-titles">
-          <span class="topbar-title">Add expense</span>
+          <h1 class="topbar-title">Add expense</h1>
           <span class="topbar-sub">Log a new expense</span>
         </div>
         <div class="topbar-actions">
-          <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+          <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
           <a class="btn secondary sm" href="expenses.html">All expenses</a>
         </div>
       </header>

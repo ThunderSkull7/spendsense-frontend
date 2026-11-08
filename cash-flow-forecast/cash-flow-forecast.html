@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="api-base-url" content="http://127.0.0.1:8002" />
+    <title>Cash Flow Forecast | SpendSense</title>
+    <script src="../theme.js"></script>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body class="app-body">
+    <aside class="sidebar" data-sidebar>
+      <a class="sidebar-brand" href="../dashboard/dashboard.html">
+        <span class="brand-mark">S</span>
+        <span>SpendSense</span>
+      </a>
+      <nav class="sidebar-nav" aria-label="Main navigation">
+        <p class="sidebar-group">Overview</p>
+        <a class="sidebar-link" href="../dashboard/dashboard.html" data-nav="dashboard"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Dashboard</a>
+
+        <p class="sidebar-group">Money</p>
+        <a class="sidebar-link" href="../expense-management/expenses.html" data-nav="expenses"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>Expenses</a>
+        <a class="sidebar-link" href="../income-management/income.html" data-nav="income"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income</a>
+        <a class="sidebar-link" href="../budget-planning/budget.html" data-nav="budgets"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budgets</a>
+        <a class="sidebar-link" href="../categories-management/categories.html" data-nav="categories"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h6l10 10-8 8L3 11z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg></span>Categories</a>
+        <a class="sidebar-link" href="../recurring-transactions/recurring-transactions.html" data-nav="recurring"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg></span>Recurring Transactions</a>
+        <a class="sidebar-link" href="../savings-goals/savings-goals.html" data-nav="goals"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/></svg></span>Savings Goals</a>
+        <a class="sidebar-link" href="../debts-loans/debts-loans.html" data-nav="debts"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Debts &amp; Loans</a>
+        <a class="sidebar-link" href="../subscriptions/subscriptions.html" data-nav="subscriptions"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9a4 4 0 0 0-4 4v1"/><path d="M17 4l3 3-3 3"/><path d="M4 17h9a4 4 0 0 0 4-4v-1"/><path d="M7 20l-3-3 3-3"/></svg></span>Subscriptions</a>
+        <a class="sidebar-link" href="../net-worth/net-worth.html" data-nav="net-worth"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M19 9l-5 5-4-4-3 3"/></svg></span>Net Worth</a>
+
+        <p class="sidebar-group">Insights</p>
+        <a class="sidebar-link" href="../reports-analytics/reports.html" data-nav="reports"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg></span>Reports</a>
+        <a class="sidebar-link" href="../spending-trends/spending-trends.html" data-nav="insights-trends"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Spending Trends</a>
+        <a class="sidebar-link" href="../income-analysis/income-analysis.html" data-nav="insights-income"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income Analysis</a>
+        <a class="sidebar-link" href="../budget-performance/budget-performance.html" data-nav="insights-budgets"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budget Performance</a>
+        <a class="sidebar-link active" href="../cash-flow-forecast/cash-flow-forecast.html" data-nav="forecast"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Cash Flow Forecast</a>
+        <a class="sidebar-link" href="../financial-health/financial-health.html" data-nav="health"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>Financial Health</a>
+
+        <p class="sidebar-group">Planning</p>
+        <a class="sidebar-link" href="../financial-calendar/financial-calendar.html" data-nav="calendar"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Financial Calendar</a>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay" data-sidebar-overlay></div>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
+        <div class="topbar-titles">
+          <h1 class="topbar-title">Cash Flow Forecast</h1>
+          <span class="topbar-sub">Schedule-based projection of expected recurring income and planned bill commitments</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+          <button class="btn secondary sm" type="button" id="refresh-forecast-btn" data-refresh data-refresh-btn>Refresh</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <div id="view-cash-flow-forecast" role="region" aria-label="Cash flow forecast projection">
+          <!-- Filter & Horizon Toolbar -->
+          <div class="card" style="padding: 14px 16px; margin-bottom: 20px;">
+            <form id="forecast-filter-form" class="filter-toolbar" style="margin-bottom: 0;" aria-label="Configure forecast horizon and as-of date">
+              <div class="filter-field" style="flex: 0 1 180px;">
+                <label for="forecast-horizon">Forecast Horizon</label>
+                <select id="forecast-horizon" aria-label="Select forecast horizon days">
+                  <option value="30" selected>30 Days Ahead</option>
+                  <option value="60">60 Days Ahead</option>
+                  <option value="90">90 Days Ahead</option>
+                </select>
+              </div>
+              <div class="filter-field" style="flex: 0 1 180px;">
+                <label for="forecast-as-of-date">As Of Date</label>
+                <input type="date" id="forecast-as-of-date" />
+              </div>
+              <div class="filter-field" style="display: flex; align-items: flex-end;">
+                <button type="submit" class="btn primary sm" id="forecast-apply-btn">Generate Forecast</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Financial Integrity: Starting Balance Notice -->
+          <div class="card" id="forecast-integrity-banner" style="padding: 16px 20px; margin-bottom: 20px; border-left: 4px solid var(--accent); background: var(--bg-alt, var(--surface));">
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+              <span style="font-size: 1.2rem; color: var(--accent); line-height: 1;">ℹ️</span>
+              <div>
+                <strong style="font-size: 0.92rem; display: block; margin-bottom: 4px;">Transparent Schedule-Based Projection</strong>
+                <p style="margin: 0; font-size: 0.8rem; color: var(--muted); line-height: 1.5;">
+                  SpendSense tracks transactions and recurring commitments, but does not maintain a verified liquid bank account balance. Net worth assets and savings goals are not liquid cash. This forecast projects <strong>Net Cash Flow</strong> (Planned Recurring Income minus Planned Recurring Bills) over your selected horizon, rather than speculative ending bank balances.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Overdue Commitments Alert Callout (hidden by default) -->
+          <div id="forecast-overdue-banner" class="card" style="display: none; padding: 14px 18px; margin-bottom: 20px; border-left: 4px solid var(--warning, #f59e0b); background: var(--bg-alt, var(--surface));">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.1rem; color: var(--warning, #f59e0b);">⚠️</span>
+                <span id="forecast-overdue-text" style="font-size: 0.84rem; font-weight: 500;">
+                  0 overdue commitment(s) totaling ₹0.00 dated before the forecast window.
+                </span>
+              </div>
+              <span class="pill warning" style="font-size: 0.72rem;">Excluded from Forecast Totals</span>
+            </div>
+          </div>
+
+          <!-- Summary Metric Cards -->
+          <section class="grid grid-4" style="margin-bottom: 20px;" aria-label="Forecast summary metrics">
+            <article class="card stat-card">
+              <span class="stat-label">Projected Inflow</span>
+              <span id="stat-expected-income" class="stat-value">₹0.00</span>
+              <span id="stat-income-count" class="stat-sub">0 planned income occurrences</span>
+            </article>
+            <article class="card stat-card">
+              <span class="stat-label">Projected Outflow</span>
+              <span id="stat-expected-expenses" class="stat-value">₹0.00</span>
+              <span id="stat-expense-count" class="stat-sub">0 planned bill occurrences</span>
+            </article>
+            <article class="card stat-card">
+              <span class="stat-label">Projected Net Cash Flow</span>
+              <span id="stat-projected-net" class="stat-value">₹0.00</span>
+              <span id="stat-net-sentiment" class="stat-sub">Inflow minus outflow</span>
+            </article>
+            <article class="card stat-card">
+              <span class="stat-label">Forecast Horizon</span>
+              <span id="stat-horizon-days" class="stat-value">30 Days</span>
+              <span id="stat-window-dates" class="stat-sub">Window start to end</span>
+            </article>
+          </section>
+
+          <!-- Async State Container -->
+          <div id="forecast-state-container" role="status" aria-live="polite"></div>
+
+          <!-- Main Content Wrap -->
+          <div id="forecast-content-wrap" style="display: none;">
+            <!-- Monthly Projection Breakdown Card -->
+            <section class="card" style="padding: 20px; margin-bottom: 24px;" aria-label="Monthly projection breakdown">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                <div>
+                  <h2 style="margin: 0; font-size: 1.05rem; font-weight: 600;">Monthly Cash Flow Projections</h2>
+                  <p id="forecast-monthly-sub" style="margin: 2px 0 0; font-size: 0.82rem; color: var(--muted);">
+                    Aggregation of planned recurring occurrences across calendar months in the window
+                  </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 16px; font-size: 0.78rem;">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="display: inline-block; width: 12px; height: 12px; background: var(--success, #10b981); border-radius: 2px;"></span>
+                    <span>Expected Inflow</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="display: inline-block; width: 12px; height: 12px; background: var(--danger, #ef4444); border-radius: 2px;"></span>
+                    <span>Expected Outflow</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Monthly projections grid -->
+              <div id="forecast-monthly-grid" role="region" aria-label="Monthly Cash Flow Forecast Projections" class="grid grid-3" style="gap: 16px;"></div>
+            </section>
+
+            <!-- Planned Occurrences Events Timeline -->
+            <section class="card" style="margin-bottom: 24px;" aria-label="Planned occurrences table">
+              <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div>
+                  <h2 style="margin: 0; font-size: 1.05rem; font-weight: 600;">Planned Cash Flow Events Timeline</h2>
+                  <p style="margin: 2px 0 0; font-size: 0.82rem; color: var(--muted);">
+                    Chronological sequence of materialized occurrences scheduled during this horizon.
+                  </p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <select id="forecast-event-filter" aria-label="Filter events by type" style="padding: 4px 8px; font-size: 0.8rem; border-radius: 4px; border: 1px solid var(--border);">
+                    <option value="all" selected>All Events</option>
+                    <option value="income">Inflow Only</option>
+                    <option value="expense">Outflow Only</option>
+                  </select>
+                  <span id="forecast-events-count-badge" class="pill neutral">0 events</span>
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table class="table data-table" id="forecast-events-table">
+                  <thead>
+                    <tr>
+                      <th class="col-tight">Date</th>
+                      <th class="col-tight">Type</th>
+                      <th>Commitment / Schedule</th>
+                      <th>Category</th>
+                      <th class="num">Expected Amount</th>
+                      <th class="col-tight">Certainty</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forecast-events-body"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- Context Panels: Schedule Context & Historical Reference -->
+            <section class="grid grid-2" style="margin-bottom: 24px; gap: 20px;">
+              <!-- Schedule & Subscription Context -->
+              <article class="card" style="padding: 20px;">
+                <h2 style="margin: 0 0 6px; font-size: 1rem; font-weight: 600;">Schedule &amp; Planning Context</h2>
+                <p style="margin: 0 0 16px; font-size: 0.78rem; color: var(--muted); line-height: 1.4;">
+                  Active schedules feeding this forecast, alongside non-duplicative subscription context.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+                    <span style="font-size: 0.85rem;">Active Recurring Incomes</span>
+                    <strong id="context-income-schedules" style="font-size: 0.95rem;">0 active</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+                    <span style="font-size: 0.85rem;">Active Recurring Bills</span>
+                    <strong id="context-expense-schedules" style="font-size: 0.95rem;">0 active</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+                    <div>
+                      <div style="font-size: 0.85rem;">Active Subscriptions</div>
+                      <div style="font-size: 0.72rem; color: var(--muted);">Planning context; not added to expected expense totals</div>
+                    </div>
+                    <div style="text-align: right;">
+                      <strong id="context-subscriptions-cost" style="font-size: 0.95rem; display: block;">₹0.00 /mo</strong>
+                      <span id="context-subscriptions-count" style="font-size: 0.72rem; color: var(--muted);">0 active</span>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <!-- Historical Actuals (3-Month Lookback) -->
+              <article class="card" style="padding: 20px;">
+                <h2 style="margin: 0 0 6px; font-size: 1rem; font-weight: 600;">Historical Actuals (3-Month Baseline)</h2>
+                <p style="margin: 0 0 16px; font-size: 0.78rem; color: var(--muted); line-height: 1.4;">
+                  Completed calendar months shown as background context. Past averages are never projected into the future.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+                    <span style="font-size: 0.85rem;">Average Completed Monthly Income</span>
+                    <strong id="context-historical-income" style="font-size: 0.95rem; color: var(--success, #10b981);">₹0.00</strong>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
+                    <span style="font-size: 0.85rem;">Average Completed Monthly Expenses</span>
+                    <strong id="context-historical-expenses" style="font-size: 0.95rem;">₹0.00</strong>
+                  </div>
+                  <div style="padding-top: 4px;">
+                    <span id="context-historical-range" style="font-size: 0.76rem; color: var(--muted);">Based on 3 completed calendar months</span>
+                  </div>
+                </div>
+              </article>
+            </section>
+
+            <!-- Methodological Integrity Notes -->
+            <section class="card" style="padding: 18px 20px; border-left: 4px solid var(--accent); background: var(--bg-alt, var(--surface));">
+              <h2 style="margin: 0 0 6px; font-size: 0.92rem; font-weight: 600;">Methodological Integrity &amp; Forecasting Rules</h2>
+              <ul id="forecast-notes-list" style="margin: 0; padding-left: 20px; font-size: 0.8rem; color: var(--muted); line-height: 1.6;">
+                <li>Forecast amounts are expected recurring occurrences, not completed income or expenses.</li>
+                <li>Paid, skipped and cancelled occurrences are excluded; paused and stopped schedules are excluded by query.</li>
+                <li>Recurring schedules materialize a bounded future horizon, so forecasts only see occurrences already generated by existing schedules.</li>
+                <li>No financial transaction is created, edited or paid by loading this forecast.</li>
+                <li>Expected values are not guaranteed and may omit unscheduled spending or income.</li>
+              </ul>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="../script.js"></script>
+    <script src="cash-flow-forecast.js"></script>
+  </body>
+</html>
+

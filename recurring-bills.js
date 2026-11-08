@@ -280,9 +280,15 @@
 
   SpendSenseRecurringBills.prototype.handleRouteHash = function () {
     var hash = (window.location.hash || '').replace('#', '').toLowerCase();
-    if (hash === 'calendar' || hash === 'bill-calendar') {
+    if (hash === 'calendar' || hash === 'bill-calendar' || (this.containerCalendar && !this.containerAll && !this.containerRecurring)) {
       this.switchTab('calendar');
-    } else if (hash === 'recurring' || hash === 'bills') {
+    } else if (hash === 'recurring' || hash === 'bills' || (this.containerRecurring && !this.containerAll && !this.containerCalendar)) {
+      this.switchTab('recurring');
+    } else if (this.tabAll) {
+      this.switchTab('all');
+    } else if (this.containerCalendar) {
+      this.switchTab('calendar');
+    } else if (this.containerRecurring) {
       this.switchTab('recurring');
     } else {
       this.switchTab('all');
@@ -311,10 +317,10 @@
 
     if (tabName === 'recurring') {
       this.loadSchedules();
-      window.location.hash = '#recurring';
+      if (this.tabAll) window.location.hash = '#recurring';
     } else if (tabName === 'calendar') {
       this.loadCalendar();
-      window.location.hash = '#calendar';
+      if (this.tabAll) window.location.hash = '#calendar';
     } else {
       if (window.location.hash && window.location.hash !== '#all') {
         history.replaceState(null, '', window.location.pathname);

@@ -318,7 +318,7 @@ async function fetchJson(url) {
   });
 }
 
-test('browser runtime: planning sub-nav tabs, financial goals, and debt tracker in budget.html', async (t) => {
+test('browser runtime: standalone savings goals, debts-loans, and financial health pages, modal workflows, parent tab removal, and legacy redirects', async (t) => {
   const chromePath = findChrome();
   if (!chromePath) {
     t.skip('Chrome executable not found');
@@ -354,28 +354,23 @@ test('browser runtime: planning sub-nav tabs, financial goals, and debt tracker 
     await cdp.send('Page.enable');
     await cdp.send('Runtime.enable');
 
-    // Step 1: Navigate to budget.html
-    await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/budget-planning/budget.html` });
-    await new Promise((r) => setTimeout(r, 800));
-
-    // Verify initial state: Monthly budgets active
-    const initialTab = await cdp.eval(`document.querySelector('.sub-nav-tab.active')?.getAttribute('data-planning-tab')`);
-    assert.equal(initialTab, 'budgets', 'Default tab should be budgets');
-
-    // Step 2: Switch to Financial Goals tab
-    await cdp.eval(`document.querySelector('[data-planning-tab="goals"]')?.click()`);
-    await new Promise((r) => setTimeout(r, 600));
+    // Step 1: Navigate to standalone savings-goals.html
+    await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/savings-goals/savings-goals.html` });
+    let activeGoalsCount = '0';
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 150));
+      activeGoalsCount = await cdp.eval(`document.getElementById('goals-stat-active')?.textContent`);
+      if (activeGoalsCount && activeGoalsCount !== '0') break;
+    }
 
     const goalsVisible = await cdp.eval(`!document.getElementById('view-financial-goals')?.hidden`);
     assert.equal(goalsVisible, true, 'Financial goals panel should be visible');
-
-    const activeGoalsCount = await cdp.eval(`document.getElementById('goals-stat-active')?.textContent`);
     assert.equal(activeGoalsCount, '1', 'Active goals count should be 1');
 
     const goalCardRendered = await cdp.eval(`document.querySelector('.goal-card')?.querySelector('.card-title')?.textContent`);
     assert.equal(goalCardRendered, 'Emergency Fund', 'Emergency Fund goal card should be rendered');
 
-    // Step 3: Open Goal creation modal
+    // Step 2: Open Goal creation modal
     await cdp.eval(`document.getElementById('add-goal-btn')?.click()`);
     await new Promise((r) => setTimeout(r, 300));
     const goalModalVisible = await cdp.eval(`!document.getElementById('goal-modal')?.hidden`);
@@ -385,31 +380,94 @@ test('browser runtime: planning sub-nav tabs, financial goals, and debt tracker 
     await cdp.eval(`document.querySelector('[data-close-goal-modal]')?.click()`);
     await new Promise((r) => setTimeout(r, 200));
 
-    // Step 4: Switch to Debt Tracker tab
-    await cdp.eval(`document.querySelector('[data-planning-tab="debts"]')?.click()`);
-    await new Promise((r) => setTimeout(r, 600));
+    // Step 3: Navigate to standalone debts-loans.html
+    await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/debts-loans/debts-loans.html` });
+    let debtPrincipal = '';
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 150));
+      debtPrincipal = await cdp.eval(`document.getElementById('debts-stat-principal')?.textContent`);
+      if (debtPrincipal && debtPrincipal.includes('5,00,000')) break;
+    }
 
     const debtsVisible = await cdp.eval(`!document.getElementById('view-debt-tracker')?.hidden`);
     assert.equal(debtsVisible, true, 'Debt tracker panel should be visible');
-
-    const debtPrincipal = await cdp.eval(`document.getElementById('debts-stat-principal')?.textContent`);
     assert.match(debtPrincipal, /5,00,000/, 'Original principal should be ₹5,00,000');
 
     const debtCardTitle = await cdp.eval(`document.querySelector('.debt-card')?.querySelector('.card-title')?.textContent`);
     assert.equal(debtCardTitle, 'Education Loan', 'Education loan card should be rendered');
 
-    // Step 5: Navigate to reports.html and test Financial Health tab
-    await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/reports-analytics/reports.html` });
-    await new Promise((r) => setTimeout(r, 800));
-
-    await cdp.eval(`document.querySelector('[data-reports-tab="health"]')?.click()`);
-    await new Promise((r) => setTimeout(r, 600));
+    // Step 4: Navigate to standalone financial-health.html
+    await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/financial-health/financial-health.html` });
+    let netCashFlowValue = '';
+    for (let i = 0; i < 20; i++) {
+      await new Promise((r) => setTimeout(r, 150));
+      netCashFlowValue = await cdp.eval(`document.querySelector('#financial-health-container .stat-card .stat-value')?.textContent`);
+      if (netCashFlowValue && netCashFlowValue.includes('25,000')) break;
+    }
 
     const healthVisible = await cdp.eval(`!document.getElementById('view-financial-health')?.hidden`);
     assert.equal(healthVisible, true, 'Financial health panel should be visible');
-
-    const netCashFlowValue = await cdp.eval(`document.querySelector('#financial-health-container .stat-card .stat-value')?.textContent`);
     assert.match(netCashFlowValue, /25,000/, 'Net cash flow should display ₹25,000');
+
+    // Step 5: Test legacy redirects
+    await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/budget-planning/budget.html?tab=goals` });
+    await new Promise((r) => setTimeout(r, 800));
+    const redirectedGoals = await cdp.eval(`window.location.href`);
+    assert.match(redirectedGoals, /savings-goals\.html/, 'Legacy ?tab=goals redirects to savings-goals.html');
+
+    await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/budget-planning/budget.html?tab=debts` });
+    await new Promise((r) => setTimeout(r, 800));
+    const redirectedDebts = await cdp.eval(`window.location.href`);
+    assert.match(redirectedDebts, /debts-loans\.html/, 'Legacy ?tab=debts redirects to debts-loans.html');
+
+    await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/reports-analytics/reports.html?tab=health` });
+    await new Promise((r) => setTimeout(r, 800));
+    const redirectedHealth = await cdp.eval(`window.location.href`);
+    assert.match(redirectedHealth, /financial-health\.html/, 'Legacy ?tab=health redirects to financial-health.html');
+
+    // Step 6: Verify budget.html parent page cleanup and sidebar
+    await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/budget-planning/budget.html` });
+    await new Promise((r) => setTimeout(r, 800));
+
+    const budgetState = await cdp.eval(`
+      ({
+        hasGoalsTab: document.querySelector('[data-planning-tab="goals"]') !== null,
+        hasDebtsTab: document.querySelector('[data-planning-tab="debts"]') !== null,
+        hasGoalsView: document.getElementById('view-financial-goals') !== null,
+        hasDebtsView: document.getElementById('view-debt-tracker') !== null,
+        hasSidebarAccount: document.querySelector('.sidebar-nav')?.textContent.includes('Account'),
+        hasSidebarFooter: document.querySelector('.sidebar-footer') !== null,
+        groups: Array.from(document.querySelectorAll('.sidebar-group')).map(g => g.textContent.trim())
+      })
+    `);
+
+    assert.equal(budgetState.hasGoalsTab, false, 'budget.html must not contain goals tab');
+    assert.equal(budgetState.hasDebtsTab, false, 'budget.html must not contain debts tab');
+    assert.equal(budgetState.hasGoalsView, false, 'budget.html must not contain goals view panel');
+    assert.equal(budgetState.hasDebtsView, false, 'budget.html must not contain debts view panel');
+    assert.equal(budgetState.hasSidebarAccount, false, 'budget.html must not contain sidebar Account heading');
+    assert.equal(budgetState.hasSidebarFooter, false, 'budget.html must not contain sidebar footer');
+    assert.deepEqual(budgetState.groups, ['Overview', 'Money', 'Insights', 'Planning'], 'budget.html must have exact 4 sidebar groups');
+
+    // Step 7: Verify reports.html parent page cleanup and sidebar
+    await cdp.send('Page.navigate', { url: `http://127.0.0.1:${port}/reports-analytics/reports.html` });
+    await new Promise((r) => setTimeout(r, 800));
+
+    const reportsState = await cdp.eval(`
+      ({
+        hasHealthTab: document.querySelector('[data-reports-tab="health"]') !== null,
+        hasHealthView: document.getElementById('view-financial-health') !== null,
+        hasSidebarAccount: document.querySelector('.sidebar-nav')?.textContent.includes('Account'),
+        hasSidebarFooter: document.querySelector('.sidebar-footer') !== null,
+        groups: Array.from(document.querySelectorAll('.sidebar-group')).map(g => g.textContent.trim())
+      })
+    `);
+
+    assert.equal(reportsState.hasHealthTab, false, 'reports.html must not contain health tab');
+    assert.equal(reportsState.hasHealthView, false, 'reports.html must not contain health view panel');
+    assert.equal(reportsState.hasSidebarAccount, false, 'reports.html must not contain sidebar Account heading');
+    assert.equal(reportsState.hasSidebarFooter, false, 'reports.html must not contain sidebar footer');
+    assert.deepEqual(reportsState.groups, ['Overview', 'Money', 'Insights', 'Planning'], 'reports.html must have exact 4 sidebar groups');
 
   } finally {
     if (cdp) cdp.close();

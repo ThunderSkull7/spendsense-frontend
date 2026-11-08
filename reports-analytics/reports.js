@@ -1,3 +1,12 @@
+// Immediate deep-link redirection for promoted features
+(() => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialTab = urlParams.get('tab') || (window.location.hash ? window.location.hash.replace('#', '') : null);
+  if (initialTab === 'health' || initialTab === 'financial-health') {
+    window.location.replace('../financial-health/financial-health.html');
+  }
+})();
+
 // Reports & analytics — real API data with Chart.js when available,
 // CSS chart fallbacks otherwise.
 document.addEventListener('DOMContentLoaded', () => {
@@ -831,55 +840,12 @@ document.addEventListener('DOMContentLoaded', () => {
     periodYearEl.value = String(reportingPeriod.year);
   }
 
-  // ---------- Sub-navigation tabs: Reports & Analytics, Financial Health ----------
-  const reportTabs = document.querySelectorAll('[data-reports-tab]');
-  const reportViews = {
-    reports: document.getElementById('view-reports-charts'),
-    health: document.getElementById('view-financial-health')
-  };
-
-  let healthComponent = null;
-
-  function switchReportsTab(targetTab) {
-    reportTabs.forEach((tab) => {
-      const isSelected = tab.getAttribute('data-reports-tab') === targetTab;
-      tab.classList.toggle('active', isSelected);
-      tab.setAttribute('aria-selected', isSelected ? 'true' : 'false');
-    });
-
-    Object.keys(reportViews).forEach((key) => {
-      if (reportViews[key]) {
-        reportViews[key].hidden = key !== targetTab;
-      }
-    });
-
-    if (targetTab === 'health') {
-      const m = String(reportingPeriod.month).padStart(2, '0');
-      const monthKey = `${reportingPeriod.year}-${m}`;
-      if (!healthComponent && window.SpendSenseFinancialHealth) {
-        healthComponent = new window.SpendSenseFinancialHealth();
-        healthComponent.init();
-        healthComponent.loadHealth(monthKey);
-      } else if (healthComponent) {
-        healthComponent.loadHealth(monthKey);
-      }
-    }
-  }
-
-  reportTabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const target = tab.getAttribute('data-reports-tab');
-      switchReportsTab(target);
-      const url = new URL(window.location);
-      url.searchParams.set('tab', target);
-      window.history.replaceState({}, '', url);
-    });
-  });
-
+  // Deep-link redirection for promoted features
   const urlParams = new URLSearchParams(window.location.search);
   const initialTab = urlParams.get('tab') || (window.location.hash ? window.location.hash.replace('#', '') : 'reports');
   if (initialTab === 'health') {
-    switchReportsTab('health');
+    window.location.replace('../financial-health/financial-health.html');
+    return;
   }
 
   loadAll();

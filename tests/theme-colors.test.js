@@ -132,68 +132,60 @@ test('prefix matching is case-insensitive', () => {
   assert.equal(lower['name:groceries'], upper['NAME:Groceries']);
 });
 
-test('settings.html offers exactly Light and Dark appearance mode and no accent palette selector exists', () => {
+test('settings.html offers Light, Dark, and System appearance modes and eight-color palette selector', () => {
   const html = fs.readFileSync(path.join(__dirname, '..', 'settings', 'settings.html'), 'utf8');
   const modeMatch = html.match(/<select[^>]*data-theme-mode[^>]*>([\s\S]*?)<\/select>/i);
   assert.ok(modeMatch, 'themeMode select element exists');
   const optionValues = [...modeMatch[1].matchAll(/value="([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(optionValues, ['light', 'dark']);
+  assert.deepEqual(optionValues, ['light', 'dark', 'system']);
 
-  const optionTexts = [...modeMatch[1].matchAll(/<option[^>]*>([^<]+)<\/option>/g)].map((m) => m[1].trim());
-  assert.deepEqual(optionTexts, ['Light mode', 'Dark mode']);
+  // Palette selector in settings.html
+  assert.ok(html.includes('data-theme-color'), 'data-theme-color must be present in settings.html');
+  assert.ok(html.includes('id="themeColor"'), 'themeColor id must be present in settings.html');
+  assert.ok(html.includes('data-palette-picker'), 'data-palette-picker must be present in settings.html');
 
-  // No accent palette selector in settings.html
-  assert.equal(html.includes('data-theme-color'), false, 'data-theme-color must not be present in settings.html');
-  assert.equal(html.includes('id="themeColor"'), false, 'themeColor id must not be present in settings.html');
-  assert.equal(html.includes('theme-swatches-legend'), false, 'theme-swatches-legend must not be present in settings.html');
-  assert.equal(html.includes('Colour palette'), false, 'Colour palette label must not be present in settings.html');
+  // Verify all 8 palettes are present
+  const expectedPalettes = ['teal', 'blue', 'violet', 'plum', 'rose', 'orange', 'jade', 'indigo'];
+  for (const pal of expectedPalettes) {
+    assert.ok(html.includes(`data-palette="${pal}"`), `palette button for ${pal} must be present`);
+  }
 });
 
-test('applyTheme toggles between light and dark modes with canonical teal accent and persists spendsenseThemeMode', () => {
+test('applyTheme toggles between light, dark, and system modes and persists user preferences', () => {
   const { settings, root, storage } = loadSettings();
 
   settings.applyTheme('dark');
   assert.equal(root.dataset.themeColor, 'teal');
   assert.equal(root.dataset.mode, 'dark');
   assert.equal(storage.get('spendsenseThemeMode'), 'dark');
-  assert.equal(storage.get('spendsenseThemeColor'), undefined);
+  assert.equal(storage.get('spendsenseThemeColor'), 'teal');
 
   settings.applyTheme('light');
   assert.equal(root.dataset.themeColor, 'teal');
   assert.equal(root.dataset.mode, 'light');
   assert.equal(storage.get('spendsenseThemeMode'), 'light');
-  assert.equal(storage.get('spendsenseThemeColor'), undefined);
+  assert.equal(storage.get('spendsenseThemeColor'), 'teal');
+
+  settings.applyTheme('system');
+  assert.equal(root.dataset.themeColor, 'teal');
+  assert.equal(storage.get('spendsenseThemeMode'), 'system');
+  assert.ok(['light', 'dark'].includes(root.dataset.mode));
 });
 
-test('existing alternate spendsenseThemeColor values are safely cleaned up and canonical teal is always enforced', () => {
-  const storageMap = new Map([
-    ['spendsenseThemeColor', 'red'],
-    ['spendsenseThemeMode', 'dark']
-  ]);
+test('eight selectable accent palettes are supported with immediate switching and persistence', () => {
+  const { settings, root, storage } = loadSettings();
+  const palettes = ['teal', 'blue', 'violet', 'plum', 'rose', 'orange', 'jade', 'indigo'];
 
-  const root = { dataset: {} };
-  const context = {
-    document: { documentElement: root, addEventListener() {}, querySelectorAll() { return []; } },
-    localStorage: {
-      getItem(key) { return storageMap.get(key) || null; },
-      setItem(key, value) { storageMap.set(key, String(value)); },
-      removeItem(key) { storageMap.delete(key); }
-    },
-    getComputedStyle() { return { getPropertyValue() { return ''; } }; },
-    NodeFilter: { SHOW_TEXT: 4, FILTER_REJECT: 2, FILTER_ACCEPT: 1 },
-    CustomEvent: class CustomEvent { constructor(type, opt = {}) { this.type = type; this.detail = opt.detail; } }
-  };
-  context.window = context;
-  context.window.dispatchEvent = () => {};
-  context.window.addEventListener = () => {};
-  vm.createContext(context);
-  vm.runInContext(fs.readFileSync(THEME_JS, 'utf8'), context, { filename: 'theme.js' });
+  for (const pal of palettes) {
+    settings.applyTheme(null, pal);
+    assert.equal(root.dataset.themeColor, pal, `root dataset must be ${pal}`);
+    assert.equal(storage.get('spendsenseThemeColor'), pal, `storage must persist ${pal}`);
+    assert.equal(settings.themeColor(), pal);
+  }
 
-  // Stored obsolete color must be removed and canonical teal enforced
-  assert.equal(root.dataset.themeColor, 'teal');
-  assert.equal(root.dataset.mode, 'dark');
-  assert.equal(storageMap.has('spendsenseThemeColor'), false, 'spendsenseThemeColor must be removed from storage');
-  assert.equal(storageMap.get('spendsenseThemeMode'), 'dark', 'spendsenseThemeMode must be preserved');
+  // Fallback for invalid palette
+  settings.applyTheme(null, 'nonexistent_palette');
+  assert.equal(root.dataset.themeColor, 'teal', 'invalid palette must fall back to default teal');
 });
 
 test('styles.css contains fixed viewport height and flex column rules for sidebar', () => {
@@ -208,19 +200,19 @@ test('styles.css contains fixed viewport height and flex column rules for sideba
   assert.match(css, /@media\s*\(\s*max-height:\s*750px\s*\)/i);
 });
 
-test('styles.css defines canonical teal accent tokens for light and dark modes and contains no alternate blue/red/amber palette selectors', () => {
+test('styles.css defines complete 12-step tonal scales for all eight palettes in light and dark modes', () => {
   const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+  const expectedPalettes = ['teal', 'blue', 'violet', 'plum', 'rose', 'orange', 'jade', 'indigo'];
 
-  // Canonical teal token verification (#10B981)
-  assert.match(css, /--primary:\s*#10B981;/i, 'primary accent must be canonical teal #10B981');
+  for (const pal of expectedPalettes) {
+    assert.match(css, new RegExp(`:root\\[data-theme-color=["']?${pal}["']?\\]`, 'i'), `${pal} light palette selector must exist`);
+    assert.match(css, new RegExp(`:root\\[data-mode=["']?dark["']?\\]\\[data-theme-color=["']?${pal}["']?\\]`, 'i'), `${pal} dark palette selector must exist`);
+  }
 
-  // Alternate palette selectors must NOT exist in styles.css
-  assert.doesNotMatch(css, /:root\[data-theme-color=["']?blue["']?\]/i, 'blue palette must be removed');
-  assert.doesNotMatch(css, /:root\[data-theme-color=["']?red["']?\]/i, 'red palette must be removed');
-  assert.doesNotMatch(css, /:root\[data-theme-color=["']?amber["']?\]/i, 'amber palette must be removed');
-  assert.doesNotMatch(css, /:root\[data-mode=["']?dark["']?\]\[data-theme-color=["']?blue["']?\]/i);
-  assert.doesNotMatch(css, /:root\[data-mode=["']?dark["']?\]\[data-theme-color=["']?red["']?\]/i);
-  assert.doesNotMatch(css, /:root\[data-mode=["']?dark["']?\]\[data-theme-color=["']?amber["']?\]/i);
+  // Verify 12-step scale tokens are defined
+  for (let i = 1; i <= 12; i++) {
+    assert.match(css, new RegExp(`--palette-${i}:`, 'i'), `--palette-${i} token must be defined`);
+  }
 
   // Near-black background token verification (#090B0F and surface #14171D)
   assert.match(css, /--bg:\s*#090B0F;/i, 'dark background must be #090B0F');
@@ -299,3 +291,100 @@ test('settings.js manages themeModeSelect without throwing or referencing obsole
 });
 
 
+
+test('System mode resolves according to OS preference and updates on live changes', () => {
+  const storage = new Map([['spendsenseThemeMode', 'system'], ['spendsenseThemeColor', 'teal']]);
+  const root = { dataset: {} };
+  let osDark = true;
+  let mqlListener = null;
+
+  const context = {
+    document: { documentElement: root, addEventListener() {}, querySelectorAll() { return []; } },
+    localStorage: {
+      getItem(k) { return storage.get(k) || null; },
+      setItem(k, v) { storage.set(k, String(v)); },
+      removeItem(k) { storage.delete(k); }
+    },
+    matchMedia(query) {
+      return {
+        matches: osDark,
+        addEventListener(evt, fn) { mqlListener = fn; },
+        addListener(fn) { mqlListener = fn; }
+      };
+    },
+    getComputedStyle() { return { getPropertyValue() { return ''; } }; },
+    NodeFilter: { SHOW_TEXT: 4, FILTER_REJECT: 2, FILTER_ACCEPT: 1 },
+    CustomEvent: class CustomEvent { constructor(t, opt = {}) { this.type = t; this.detail = opt.detail; } }
+  };
+  context.window = context;
+  let lastEvent = null;
+  context.window.dispatchEvent = (e) => { lastEvent = e; };
+  context.window.addEventListener = () => {};
+
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync(THEME_JS, 'utf8'), context);
+
+  // Initial load with OS dark:
+  assert.equal(root.dataset.themeMode, 'system', 'saved mode must be system');
+  assert.equal(root.dataset.mode, 'dark', 'effective mode must be dark when OS is dark');
+
+  // Live change to Light:
+  osDark = false;
+  if (mqlListener) {
+    mqlListener({ matches: false });
+  }
+  assert.equal(root.dataset.themeMode, 'system', 'saved mode remains system');
+  assert.equal(root.dataset.mode, 'light', 'effective mode updates to light');
+  assert.equal(lastEvent?.detail?.effectiveMode, 'light');
+  assert.equal(lastEvent?.detail?.mode, 'system');
+});
+
+test('Contrast ratios for all eight palettes in light and dark modes satisfy WCAG 2.2 AA (>= 4.5:1)', () => {
+  function sRGBtoLin(c) { c /= 255; return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+  function lum(hex) {
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return 0.2126 * sRGBtoLin(r) + 0.7152 * sRGBtoLin(g) + 0.0722 * sRGBtoLin(b);
+  }
+  function contrast(h1, h2) {
+    const l1 = lum(h1), l2 = lum(h2);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  }
+
+  const css = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
+  const palettes = ['teal', 'blue', 'violet', 'plum', 'rose', 'orange', 'jade', 'indigo'];
+
+  for (const pal of palettes) {
+    // Extract light mode button background (--primary-600)
+    const lightMatch = css.match(new RegExp(`:root\\[data-theme-color=["']?${pal}["']?\\][^{]*\\{[^}]*--primary-600:\\s*(#[0-9a-fA-F]{6});`, 'i'));
+    assert.ok(lightMatch, `Light mode --primary-600 must exist for ${pal}`);
+    const lightBtnBg = lightMatch[1];
+    const lightBtnContrast = contrast(lightBtnBg, '#FFFFFF');
+    assert.ok(lightBtnContrast >= 4.5, `Light button for ${pal} (${lightBtnBg}) against white must exceed 4.5:1 (got ${lightBtnContrast.toFixed(2)})`);
+
+    // Extract dark mode text accent (--primary)
+    const darkMatch = css.match(new RegExp(`:root\\[data-mode=["']?dark["']?\\]\\[data-theme-color=["']?${pal}["']?\\][^{]*\\{[^}]*--primary:\\s*(#[0-9a-fA-F]{6});`, 'i'));
+    assert.ok(darkMatch, `Dark mode --primary must exist for ${pal}`);
+    const darkPrimary = darkMatch[1];
+    // Dark surface is #14171D
+    const darkTextContrast = contrast(darkPrimary, '#14171D');
+    assert.ok(darkTextContrast >= 4.5, `Dark text for ${pal} (${darkPrimary}) against #14171D must exceed 4.5:1 (got ${darkTextContrast.toFixed(2)})`);
+  }
+});
+
+test('Theme-change event dispatches correct details for both mode and palette changes', () => {
+  const { settings } = loadSettings();
+  let received = null;
+  global.window = {
+    dispatchEvent(evt) { if (evt.type === 'spendsense:theme-change') received = evt.detail; }
+  };
+
+  settings.applyTheme('dark', 'rose');
+  assert.equal(settings.themeMode(), 'dark');
+  assert.equal(settings.themeColor(), 'rose');
+  assert.equal(settings.effectiveMode(), 'dark');
+
+  settings.applyTheme('light', 'violet');
+  assert.equal(settings.themeMode(), 'light');
+  assert.equal(settings.themeColor(), 'violet');
+  assert.equal(settings.effectiveMode(), 'light');
+});

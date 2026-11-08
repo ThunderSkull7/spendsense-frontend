@@ -1,3 +1,14 @@
+// Immediate deep-link redirection for promoted features
+(() => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const legacyTab = urlParams.get('tab') || (window.location.hash ? window.location.hash.replace('#', '') : null);
+  if (legacyTab === 'recurring' || legacyTab === 'bills') {
+    window.location.replace('../recurring-transactions/recurring-transactions.html');
+  } else if (legacyTab === 'calendar' || legacyTab === 'bill-calendar') {
+    window.location.replace('../financial-calendar/financial-calendar.html');
+  }
+})();
+
 // Expense management — API-backed (expenses.html list + add-expense.html form).
 document.addEventListener('DOMContentLoaded', () => {
   if (!window.SpendSenseAPI || !window.SpendSenseUI) return;

@@ -4,6 +4,8 @@ const settingsForm = document.querySelector('[data-settings-form]');
 const currencySelect = document.querySelector('[data-currency-select]');
 const currencyPreview = document.querySelector('[data-currency-preview]');
 const themeModeSelect = document.querySelector('select#themeMode, select[data-theme-mode-select], select[data-theme-mode]');
+const themeColorSelect = document.querySelector('select#themeColor, select[data-theme-color-select], select[data-theme-color]');
+const paletteButtons = document.querySelectorAll('[data-palette]');
 const settingsMessage = document.querySelector('[data-settings-message]');
 const nameInput = document.querySelector('#name');
 const emailInput = document.querySelector('#email');
@@ -45,6 +47,15 @@ if (currencySelect) {
   });
 }
 
+const updatePaletteUI = (color) => {
+  if (themeColorSelect) themeColorSelect.value = color;
+  paletteButtons.forEach((btn) => {
+    const isSelected = btn.dataset.palette === color;
+    btn.classList.toggle('is-active', isSelected);
+    btn.setAttribute('aria-checked', String(isSelected));
+  });
+};
+
 if (themeModeSelect) {
   themeModeSelect.value = (settings && settings.themeMode) ? settings.themeMode() : "light";
   themeModeSelect.addEventListener("change", (e) => {
@@ -55,9 +66,34 @@ if (themeModeSelect) {
   });
 }
 
+if (themeColorSelect) {
+  const currentColor = (settings && settings.themeColor) ? settings.themeColor() : "teal";
+  themeColorSelect.value = currentColor;
+  updatePaletteUI(currentColor);
+
+  themeColorSelect.addEventListener("change", (e) => {
+    const color = (e && e.target && e.target.value) || themeColorSelect.value;
+    if (settings && typeof settings.applyTheme === 'function') {
+      settings.applyTheme(null, color);
+    }
+    updatePaletteUI(color);
+  });
+}
+
+paletteButtons.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const color = btn.dataset.palette;
+    if (settings && typeof settings.applyTheme === 'function') {
+      settings.applyTheme(null, color);
+    }
+    updatePaletteUI(color);
+  });
+});
+
 window.addEventListener("spendsense:theme-change", (event) => {
   if (event.detail) {
     if (themeModeSelect && event.detail.mode) themeModeSelect.value = event.detail.mode;
+    if (event.detail.color) updatePaletteUI(event.detail.color);
   }
 });
 

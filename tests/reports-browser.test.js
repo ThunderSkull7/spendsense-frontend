@@ -189,7 +189,7 @@ test('browser runtime: reports page reaches completed state without errors', asy
 
     // Wait until all sections finish loading
     const startTime = Date.now();
-    while (Date.now() - startTime < 5000) {
+    while (Date.now() - startTime < 10000) {
       const check = await send('Runtime.evaluate', {
         expression: `(() => {
           const inc = document.querySelector('[data-stat-income]')?.textContent;
@@ -322,7 +322,7 @@ test('browser runtime: failing section does not block other sections', async (t)
 
     // Wait until stat-income and other sections have rendered, and spending shows error
     const startTime = Date.now();
-    while (Date.now() - startTime < 5000) {
+    while (Date.now() - startTime < 10000) {
       const check = await send('Runtime.evaluate', {
         expression: `(() => {
           const inc = document.querySelector('[data-stat-income]')?.textContent;

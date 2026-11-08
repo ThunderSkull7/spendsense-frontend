@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="api-base-url" content="http://127.0.0.1:8002" />
+    <title>Net Worth | SpendSense</title>
+    <script src="../theme.js"></script>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body class="app-body">
+    <aside class="sidebar" data-sidebar>
+      <a class="sidebar-brand" href="../dashboard/dashboard.html">
+        <span class="brand-mark">S</span>
+        <span>SpendSense</span>
+      </a>
+      <nav class="sidebar-nav" aria-label="Main navigation">
+        <p class="sidebar-group">Overview</p>
+        <a class="sidebar-link" href="../dashboard/dashboard.html" data-nav="dashboard"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Dashboard</a>
+
+        <p class="sidebar-group">Money</p>
+        <a class="sidebar-link" href="../expense-management/expenses.html" data-nav="expenses"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>Expenses</a>
+        <a class="sidebar-link" href="../income-management/income.html" data-nav="income"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income</a>
+        <a class="sidebar-link" href="../budget-planning/budget.html" data-nav="budgets"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budgets</a>
+        <a class="sidebar-link" href="../categories-management/categories.html" data-nav="categories"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h6l10 10-8 8L3 11z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg></span>Categories</a>
+        <a class="sidebar-link" href="../recurring-transactions/recurring-transactions.html" data-nav="recurring"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg></span>Recurring Transactions</a>
+        <a class="sidebar-link" href="../savings-goals/savings-goals.html" data-nav="goals"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/></svg></span>Savings Goals</a>
+        <a class="sidebar-link" href="../debts-loans/debts-loans.html" data-nav="debts"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Debts &amp; Loans</a>
+        <a class="sidebar-link" href="../subscriptions/subscriptions.html" data-nav="subscriptions"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9a4 4 0 0 0-4 4v1"/><path d="M17 4l3 3-3 3"/><path d="M4 17h9a4 4 0 0 0 4-4v-1"/><path d="M7 20l-3-3 3-3"/></svg></span>Subscriptions</a>
+        <a class="sidebar-link active" href="../net-worth/net-worth.html" data-nav="net-worth"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M19 9l-5 5-4-4-3 3"/></svg></span>Net Worth</a>
+
+        <p class="sidebar-group">Insights</p>
+        <a class="sidebar-link" href="../reports-analytics/reports.html" data-nav="reports"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg></span>Reports</a>
+        <a class="sidebar-link" href="../spending-trends/spending-trends.html" data-nav="insights-trends"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Spending Trends</a>
+        <a class="sidebar-link" href="../income-analysis/income-analysis.html" data-nav="insights-income"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income Analysis</a>
+        <a class="sidebar-link" href="../budget-performance/budget-performance.html" data-nav="insights-budgets"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budget Performance</a>
+        <a class="sidebar-link" href="../cash-flow-forecast/cash-flow-forecast.html" data-nav="forecast"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Cash Flow Forecast</a>
+        <a class="sidebar-link" href="../financial-health/financial-health.html" data-nav="health"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>Financial Health</a>
+
+        <p class="sidebar-group">Planning</p>
+        <a class="sidebar-link" href="../financial-calendar/financial-calendar.html" data-nav="calendar"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Financial Calendar</a>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay" data-sidebar-overlay></div>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
+        <div class="topbar-titles">
+          <h1 class="topbar-title">Net Worth</h1>
+          <span class="topbar-sub">Track assets, liabilities, and long-term financial position</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+          <button class="btn secondary sm" type="button" id="refresh-net-worth-btn" data-refresh data-refresh-btn>Refresh</button>
+          <button class="btn primary sm" type="button" id="open-entry-modal-btn" data-open-entry-modal><span class="label-desktop">+ Add Asset / Liability</span><span class="label-mobile">Add Entry</span></button>
+        </div>
+      </header>
+
+      <main class="content">
+        <div id="view-net-worth" role="region" aria-label="Net worth tracker">
+          <!-- Summary Cards -->
+          <section class="grid grid-4" style="margin-bottom: 20px;" aria-label="Net worth summary statistics">
+            <article class="card stat-card">
+              <span class="stat-label">Net Worth</span>
+              <span id="stat-net-worth" class="stat-value">₹0.00</span>
+              <span class="stat-sub">Assets minus liabilities</span>
+            </article>
+            <article class="card stat-card">
+              <span class="stat-label">Total Assets</span>
+              <span id="stat-total-assets" class="stat-value" style="color: var(--success, #16a34a);">₹0.00</span>
+              <span id="stat-assets-count" class="stat-sub">0 active assets</span>
+            </article>
+            <article class="card stat-card">
+              <span class="stat-label">Total Liabilities</span>
+              <span id="stat-total-liabilities" class="stat-value" style="color: var(--danger, #dc2626);">₹0.00</span>
+              <span id="stat-liabilities-count" class="stat-sub">0 active liabilities</span>
+            </article>
+            <article class="card stat-card">
+              <span class="stat-label">Active Records</span>
+              <span id="stat-active-count" class="stat-value">0</span>
+              <span id="stat-as-of-date" class="stat-sub">As of today</span>
+            </article>
+          </section>
+
+          <!-- Financial Integrity Guidance Notices -->
+          <section class="grid grid-2" style="margin-bottom: 20px;" aria-label="Financial guidelines">
+            <article class="card" style="padding: 16px 18px; border-left: 4px solid var(--accent);">
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="color: var(--accent); font-size: 1.3rem; line-height: 1;">ℹ</div>
+                <div>
+                  <h2 style="margin: 0 0 4px; font-size: 0.95rem; font-weight: 600;">Debts &amp; Loans Integration</h2>
+                  <p style="margin: 0; font-size: 0.82rem; color: var(--muted); line-height: 1.45;">
+                    Debts and loans recorded on the <a href="../debts-loans/debts-loans.html" style="color: var(--accent); font-weight: 500;">Debts &amp; Loans</a> page automatically appear as liabilities in your Net Worth. Never create a duplicate liability entry here for an existing debt already tracked there.
+                  </p>
+                </div>
+              </div>
+            </article>
+            <article class="card" style="padding: 16px 18px; border-left: 4px solid var(--warning, #f59e0b);">
+              <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <div style="color: var(--warning, #f59e0b); font-size: 1.3rem; line-height: 1;">🔒</div>
+                <div>
+                  <h2 style="margin: 0 0 4px; font-size: 0.95rem; font-weight: 600;">Manual Valuations &amp; Bank Disclaimers</h2>
+                  <p style="margin: 0; font-size: 0.82rem; color: var(--muted); line-height: 1.45;">
+                    All valuations are user-entered snapshots, not live bank balances or live market quotes. SpendSense does not connect to live banking APIs. Valuations are append-only to preserve your financial audit trail.
+                  </p>
+                </div>
+              </div>
+            </article>
+          </section>
+
+          <!-- Historical Trend Section -->
+          <section class="card" style="padding: 18px 20px; margin-bottom: 20px;" aria-label="Historical net worth trend">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <h2 style="margin: 0; font-size: 1.05rem; font-weight: 600;">Net Worth Trend</h2>
+                <p style="margin: 2px 0 0; font-size: 0.82rem; color: var(--muted);">Month-end historical valuation progression</p>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="trend-months-select" style="font-size: 0.82rem; color: var(--muted); font-weight: 500;">History Range:</label>
+                <select id="trend-months-select" class="form-control" style="font-size: 0.82rem; padding: 4px 8px;">
+                  <option value="6">6 Months</option>
+                  <option value="12" selected>12 Months</option>
+                  <option value="24">24 Months</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Trend Container -->
+            <div id="trend-container" role="region" aria-label="Net Worth Trend Chart" style="min-height: 180px; position: relative;">
+              <div id="trend-state-container"></div>
+              <div id="trend-chart-wrap" style="display: none;"></div>
+            </div>
+          </section>
+
+          <!-- Category Breakdown Bar -->
+          <section class="card" id="category-breakdown-card" style="padding: 16px 20px; margin-bottom: 20px; display: none;" aria-label="Category totals breakdown">
+            <h2 style="margin: 0 0 10px; font-size: 0.92rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);">Valuation by Category</h2>
+            <div id="category-pills-wrap" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+          </section>
+
+          <!-- Filter Toolbar -->
+          <div class="card" style="padding: 14px 16px; margin-bottom: 16px;">
+            <form id="net-worth-filter-form" class="filter-toolbar" style="margin-bottom: 0;" role="search" aria-label="Filter net worth records">
+              <div class="filter-field search-field" style="flex: 1 1 240px; min-width: 200px;">
+                <label for="net-worth-search">Search</label>
+                <input id="net-worth-search" type="search" placeholder="Search name, institution, notes…" autocomplete="off" />
+              </div>
+              <div class="filter-field" style="flex: 0 1 160px;">
+                <label for="net-worth-type-filter">Type</label>
+                <select id="net-worth-type-filter" aria-label="Filter by type">
+                  <option value="">All Types</option>
+                  <option value="asset">Assets Only</option>
+                  <option value="liability">Liabilities Only</option>
+                </select>
+              </div>
+              <div class="filter-field" style="flex: 0 1 180px;">
+                <label for="net-worth-category-filter">Category</label>
+                <select id="net-worth-category-filter" aria-label="Filter by category">
+                  <option value="">All Categories</option>
+                  <optgroup label="Assets">
+                    <option value="cash">Cash and savings</option>
+                    <option value="investment">Investments</option>
+                    <option value="other_asset">Other assets</option>
+                  </optgroup>
+                  <optgroup label="Liabilities">
+                    <option value="loan">Loan</option>
+                    <option value="other_liability">Other liabilities</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="filter-field" style="flex: 0 1 140px;">
+                <label for="net-worth-status-filter">Status</label>
+                <select id="net-worth-status-filter" aria-label="Filter by status">
+                  <option value="active" selected>Active</option>
+                  <option value="archived">Archived</option>
+                  <option value="all">All</option>
+                </select>
+              </div>
+              <div class="filter-field" style="display: flex; align-items: flex-end;">
+                <button type="button" id="net-worth-clear-filters" class="btn ghost sm" style="display: none;">Clear</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Async State Container -->
+          <div id="net-worth-state-container" role="status" aria-live="polite"></div>
+
+          <!-- Entries Container (Dual Assets & Liabilities Sections) -->
+          <div id="net-worth-tables-wrap" style="display: none;">
+            <!-- Assets Section -->
+            <section class="card" style="margin-bottom: 24px;" aria-label="Assets list">
+              <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <h2 style="margin: 0; font-size: 1.05rem; font-weight: 600;">Assets</h2>
+                  <span id="assets-count-badge" class="pill success" style="font-size: 0.75rem;">0 assets</span>
+                </div>
+                <div id="assets-subtotal" style="font-weight: 700; color: var(--success, #16a34a); font-size: 1rem;">₹0.00</div>
+              </div>
+              <div class="table-wrap">
+                <table class="table data-table" id="assets-table">
+                  <thead>
+                    <tr>
+                      <th>Asset Name &amp; Institution</th>
+                      <th class="col-tight">Category</th>
+                      <th class="num col-tight">Current Value</th>
+                      <th class="col-tight">Valuation Date</th>
+                      <th class="col-tight text-center">Snapshots</th>
+                      <th class="col-tight text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="assets-table-body"></tbody>
+                </table>
+              </div>
+            </section>
+
+            <!-- Liabilities Section -->
+            <section class="card" style="margin-bottom: 24px;" aria-label="Liabilities list">
+              <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <h2 style="margin: 0; font-size: 1.05rem; font-weight: 600;">Liabilities</h2>
+                  <span id="liabilities-count-badge" class="pill danger" style="font-size: 0.75rem;">0 liabilities</span>
+                </div>
+                <div id="liabilities-subtotal" style="font-weight: 700; color: var(--danger, #dc2626); font-size: 1rem;">₹0.00</div>
+              </div>
+              <div class="table-wrap">
+                <table class="table data-table" id="liabilities-table">
+                  <thead>
+                    <tr>
+                      <th>Liability Name &amp; Institution</th>
+                      <th class="col-tight">Category</th>
+                      <th class="num col-tight">Current Balance</th>
+                      <th class="col-tight">Valuation Date</th>
+                      <th class="col-tight text-center">Snapshots</th>
+                      <th class="col-tight text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="liabilities-table-body"></tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Create / Edit Net Worth Entry Modal -->
+    <div id="net-worth-modal" class="modal-backdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-entry-title" style="max-width: 520px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+          <div>
+            <h2 id="modal-entry-title" style="margin: 0; font-size: 1.3rem;">Add Net Worth Entry</h2>
+            <p id="modal-entry-sub" style="margin: 4px 0 0; font-size: 0.85rem; color: var(--muted);">Track a financial asset or liability</p>
+          </div>
+          <button type="button" class="modal-close" data-close-entry-modal aria-label="Close dialog">&times;</button>
+        </div>
+
+        <form id="net-worth-form">
+          <input type="hidden" id="entry-form-id" />
+
+          <!-- Type Selector -->
+          <fieldset id="entry-type-container" style="margin-bottom: 16px; border: none; padding: 0;">
+            <legend style="display: block; font-weight: 600; font-size: 0.88rem; margin-bottom: 8px;">Entry Type *</legend>
+            <div style="display: flex; gap: 16px;">
+              <label for="entry-type-asset" style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; cursor: pointer;">
+                <input type="radio" name="entry_type" value="asset" checked id="entry-type-asset" />
+                Asset (Positive value)
+              </label>
+              <label for="entry-type-liability" style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; cursor: pointer;">
+                <input type="radio" name="entry_type" value="liability" id="entry-type-liability" />
+                Liability (Amount owed)
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Common: Name & Institution -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+            <div class="field">
+              <label for="entry-name" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Entry Name *</label>
+              <input type="text" id="entry-name" required maxlength="120" placeholder="e.g. Mutual Funds or Auto Loan" style="width: 100%;" />
+            </div>
+            <div class="field">
+              <label for="entry-institution" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Institution / Lender <span style="font-weight: 400; color: var(--muted);">(optional)</span></label>
+              <input type="text" id="entry-institution" maxlength="120" placeholder="e.g. HDFC Bank, Zerodha" style="width: 100%;" />
+            </div>
+          </div>
+
+          <!-- Category -->
+          <div style="margin-bottom: 14px;">
+            <label for="entry-category" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Category *</label>
+            <select id="entry-category" required style="width: 100%;">
+              <!-- Populated dynamically based on type -->
+            </select>
+          </div>
+
+          <!-- Opening Valuation Fields (Only shown on Create) -->
+          <div id="entry-opening-valuation-section" style="background: var(--surface-2); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 14px;">
+            <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 8px;">Opening Valuation Snapshot</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px;">
+              <div class="field">
+                <label for="entry-value" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Current Value / Balance (₹) *</label>
+                <input type="number" id="entry-value" min="0" step="0.01" placeholder="10000.00" style="width: 100%;" />
+              </div>
+              <div class="field">
+                <label for="entry-valuation-date" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">As of Date</label>
+                <input type="date" id="entry-valuation-date" style="width: 100%;" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="entry-valuation-note" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Valuation Note <span style="font-weight: 400; color: var(--muted);">(optional)</span></label>
+              <input type="text" id="entry-valuation-note" maxlength="1000" placeholder="Opening valuation" style="width: 100%;" />
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div style="margin-bottom: 16px;">
+            <label for="entry-notes" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Notes <span style="font-weight: 400; color: var(--muted);">(optional)</span></label>
+            <textarea id="entry-notes" rows="2" maxlength="2000" placeholder="Account identifiers, valuation methodology, terms…" style="width: 100%; resize: vertical;"></textarea>
+          </div>
+
+          <!-- Error Box -->
+          <div id="entry-form-error" role="status" aria-live="polite" style="display: none; padding: 10px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 0.85rem; background: var(--danger-100); color: var(--danger);"></div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn ghost" data-close-entry-modal>Cancel</button>
+            <button type="submit" id="entry-submit-btn" class="btn primary">Save Entry</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Record Valuation Snapshot Modal -->
+    <div id="valuation-modal" class="modal-backdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-valuation-title" style="max-width: 480px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+          <div>
+            <h2 id="modal-valuation-title" style="margin: 0; font-size: 1.3rem;">Record Valuation Snapshot</h2>
+            <p id="modal-valuation-sub" style="margin: 4px 0 0; font-size: 0.85rem; color: var(--muted);">Append a new valuation snapshot</p>
+          </div>
+          <button type="button" class="modal-close" data-close-valuation-modal aria-label="Close dialog">&times;</button>
+        </div>
+
+        <form id="valuation-form">
+          <input type="hidden" id="valuation-entry-id" />
+
+          <!-- Current Context Box -->
+          <div style="background: var(--surface-2); padding: 12px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span id="valuation-target-name" style="font-weight: 600; font-size: 0.95rem; color: var(--ink);">Entry</span>
+                <span id="valuation-target-type-badge" class="pill success" style="margin-left: 6px; font-size: 0.72rem;">Asset</span>
+              </div>
+              <div style="text-align: right;">
+                <div style="font-size: 0.75rem; color: var(--muted);">Last Valuation</div>
+                <div id="valuation-target-last-val" style="font-weight: 600; font-size: 0.95rem;">₹0.00</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+            <div class="field">
+              <label for="val-amount" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">New Valuation (₹) *</label>
+              <input type="number" id="val-amount" required min="0" step="0.01" placeholder="0.00" style="width: 100%;" />
+            </div>
+            <div class="field">
+              <label for="val-date" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Valuation Date *</label>
+              <input type="date" id="val-date" required style="width: 100%;" />
+            </div>
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label for="val-note" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Valuation Note <span style="font-weight: 400; color: var(--muted);">(optional)</span></label>
+            <input type="text" id="val-note" maxlength="1000" placeholder="Quarterly statement, manual audit, etc." style="width: 100%;" />
+          </div>
+
+          <p style="margin: 0 0 16px; font-size: 0.78rem; color: var(--muted); line-height: 1.4;">
+            Valuation snapshots are append-only. Only one valuation snapshot is allowed per calendar day. Recording a valuation does not alter expense or income transaction records.
+          </p>
+
+          <!-- Error Box -->
+          <div id="val-form-error" role="status" aria-live="polite" style="display: none; padding: 10px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 0.85rem; background: var(--danger-100); color: var(--danger);"></div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn ghost" data-close-valuation-modal>Cancel</button>
+            <button type="submit" id="val-submit-btn" class="btn primary">Record Valuation</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- History Modal / Drawer -->
+    <div id="history-modal" class="modal-backdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-history-title" style="max-width: 580px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+          <div>
+            <h2 id="modal-history-title" style="margin: 0; font-size: 1.3rem;">Valuation History</h2>
+            <p id="modal-history-sub" style="margin: 4px 0 0; font-size: 0.85rem; color: var(--muted);">Append-only snapshots over time</p>
+          </div>
+          <button type="button" class="modal-close" data-close-history-modal aria-label="Close dialog">&times;</button>
+        </div>
+
+        <div id="history-list-container" style="max-height: 380px; overflow-y: auto;">
+          <table class="data-table" style="width: 100%;">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th class="num">Snapshot Value</th>
+                <th>Note</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body"></tbody>
+          </table>
+        </div>
+
+        <div style="margin-top: 16px; display: flex; justify-content: flex-end;">
+          <button type="button" class="btn secondary" data-close-history-modal>Close</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="../script.js"></script>
+    <script src="net-worth.js"></script>
+  </body>
+</html>
+

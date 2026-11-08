@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="api-base-url" content="http://127.0.0.1:8002" />
+    <title>Subscriptions | SpendSense</title>
+    <script src="../theme.js"></script>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body class="app-body">
+    <aside class="sidebar" data-sidebar>
+      <a class="sidebar-brand" href="../dashboard/dashboard.html">
+        <span class="brand-mark">S</span>
+        <span>SpendSense</span>
+      </a>
+      <nav class="sidebar-nav" aria-label="Main navigation">
+        <p class="sidebar-group">Overview</p>
+        <a class="sidebar-link" href="../dashboard/dashboard.html" data-nav="dashboard"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>Dashboard</a>
+
+        <p class="sidebar-group">Money</p>
+        <a class="sidebar-link" href="../expense-management/expenses.html" data-nav="expenses"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>Expenses</a>
+        <a class="sidebar-link" href="../income-management/income.html" data-nav="income"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income</a>
+        <a class="sidebar-link" href="../budget-planning/budget.html" data-nav="budgets"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budgets</a>
+        <a class="sidebar-link" href="../categories-management/categories.html" data-nav="categories"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h6l10 10-8 8L3 11z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg></span>Categories</a>
+        <a class="sidebar-link" href="../recurring-transactions/recurring-transactions.html" data-nav="recurring"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/></svg></span>Recurring Transactions</a>
+        <a class="sidebar-link" href="../savings-goals/savings-goals.html" data-nav="goals"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v2"/><path d="M12 19v2"/><path d="M3 12h2"/><path d="M19 12h2"/></svg></span>Savings Goals</a>
+        <a class="sidebar-link" href="../debts-loans/debts-loans.html" data-nav="debts"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Debts &amp; Loans</a>
+        <a class="sidebar-link active" href="../subscriptions/subscriptions.html" data-nav="subscriptions"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7h-9a4 4 0 0 0-4 4v1"/><path d="M17 4l3 3-3 3"/><path d="M4 17h9a4 4 0 0 0 4-4v-1"/><path d="M7 20l-3-3 3-3"/></svg></span>Subscriptions</a>
+        <a class="sidebar-link" href="../net-worth/net-worth.html" data-nav="net-worth"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="M19 9l-5 5-4-4-3 3"/></svg></span>Net Worth</a>
+
+        <p class="sidebar-group">Insights</p>
+        <a class="sidebar-link" href="../reports-analytics/reports.html" data-nav="reports"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-6"/><path d="M11 20V8"/><path d="M17 20v-9"/><path d="M3 20h18"/></svg></span>Reports</a>
+        <a class="sidebar-link" href="../spending-trends/spending-trends.html" data-nav="insights-trends"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Spending Trends</a>
+        <a class="sidebar-link" href="../income-analysis/income-analysis.html" data-nav="insights-income"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>Income Analysis</a>
+        <a class="sidebar-link" href="../budget-performance/budget-performance.html" data-nav="insights-budgets"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg></span>Budget Performance</a>
+        <a class="sidebar-link" href="../cash-flow-forecast/cash-flow-forecast.html" data-nav="forecast"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 3 7-8"/><path d="M17 7h4v4"/><path d="M21 21H3"/></svg></span>Cash Flow Forecast</a>
+        <a class="sidebar-link" href="../financial-health/financial-health.html" data-nav="health"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>Financial Health</a>
+
+        <p class="sidebar-group">Planning</p>
+        <a class="sidebar-link" href="../financial-calendar/financial-calendar.html" data-nav="calendar"><span class="nav-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Financial Calendar</a>
+      </nav>
+    </aside>
+    <div class="sidebar-overlay" data-sidebar-overlay></div>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn topbar-toggle" type="button" data-sidebar-toggle aria-label="Toggle navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
+        <div class="topbar-titles">
+          <h1 class="topbar-title">Subscriptions</h1>
+          <span class="topbar-sub">Manage recurring service plans, renewal countdowns, and linked bills</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" type="button" data-theme-toggle aria-label="Toggle dark mode"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+          <button class="btn secondary sm" type="button" id="refresh-subscriptions-btn" data-refresh data-refresh-btn>Refresh</button>
+          <button class="btn primary sm" type="button" id="open-subscription-modal-btn" data-open-subscription-modal><span class="label-desktop">+ Add Subscription</span><span class="label-mobile">+ Add</span></button>
+        </div>
+      </header>
+
+      <main class="content">
+        <div id="view-subscriptions" role="region" aria-label="Subscriptions tracker">
+          <!-- Summary Cards -->
+          <section class="grid grid-4" style="margin-bottom: 20px;" aria-label="Subscription summary statistics">
+            <article class="card stat-card">
+              <span class="stat-label">Active Subscriptions</span>
+              <span id="stat-active-count" class="stat-value">0</span>
+              <span id="stat-counts-sub" class="stat-sub">0 linked, 0 standalone</span>
+            </article>
+            <article class="card stat-card">
+              <span class="stat-label">Estimated Monthly Cost</span>
+              <span id="stat-monthly-cost" class="stat-value">₹0.00</span>
+              <span class="stat-sub">Normalized monthly estimate</span>
+            </article>
+            <article class="card stat-card">
+              <span class="stat-label">Estimated Annual Cost</span>
+              <span id="stat-annual-cost" class="stat-value">₹0.00</span>
+              <span class="stat-sub">Projected 12-month cost</span>
+            </article>
+            <article class="card stat-card">
+              <span class="stat-label">Due Next 30 Days</span>
+              <span id="stat-due-soon-count" class="stat-value">0</span>
+              <span id="stat-due-soon-amount" class="stat-sub">₹0.00 estimated</span>
+            </article>
+          </section>
+
+          <!-- Filter Toolbar -->
+          <div class="card" style="padding: 14px 16px; margin-bottom: 16px;">
+            <form id="subscription-filter-form" class="filter-toolbar" style="margin-bottom: 0;" role="search" aria-label="Filter subscriptions">
+              <div class="filter-field search-field" style="flex: 1 1 240px; min-width: 200px;">
+                <label for="subscription-search">Search</label>
+                <input id="subscription-search" type="search" placeholder="Search name, provider, notes…" autocomplete="off" />
+              </div>
+              <div class="filter-field" style="flex: 0 1 160px;">
+                <label for="subscription-status-filter">Status</label>
+                <select id="subscription-status-filter" aria-label="Filter by status">
+                  <option value="">All statuses</option>
+                  <option value="active">Active</option>
+                  <option value="paused">Paused</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div class="filter-field" style="flex: 0 1 160px;">
+                <label for="subscription-link-filter">Linkage</label>
+                <select id="subscription-link-filter" aria-label="Filter by linkage">
+                  <option value="">All subscriptions</option>
+                  <option value="linked">Linked to Bill</option>
+                  <option value="standalone">Standalone Tracker</option>
+                </select>
+              </div>
+              <div class="filter-actions" style="margin-left: auto; display: flex; align-items: flex-end; gap: 8px;">
+                <button type="button" class="btn ghost sm" id="subscription-clear-filters" style="display: none;">Clear filters</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Subscriptions Table Section -->
+          <section class="card" style="margin-bottom: 24px;">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Subscriptions</h2>
+                <p id="subscriptions-count-label" class="card-sub">Loading subscriptions…</p>
+              </div>
+              <button type="button" class="btn primary sm" data-open-subscription-modal>+ New Subscription</button>
+            </div>
+
+            <div id="subscriptions-state-container">
+              <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading subscriptions…</p></div>
+            </div>
+
+            <div id="subscriptions-table-wrap" class="table-wrap" style="display: none;">
+              <table class="table" aria-label="Subscriptions table">
+                <thead>
+                  <tr>
+                    <th scope="col" style="min-width: 160px;">Subscription</th>
+                    <th scope="col" class="col-tight">Type</th>
+                    <th scope="col">Category</th>
+                    <th scope="col" class="col-tight">Frequency</th>
+                    <th scope="col" class="num col-tight">Amount</th>
+                    <th scope="col" class="num col-tight">Monthly Est.</th>
+                    <th scope="col" style="min-width: 150px;">Next Renewal</th>
+                    <th scope="col" class="col-tight">Status</th>
+                    <th scope="col" class="col-tight text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="subscriptions-table-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Upcoming Renewals (60 Days Window) -->
+          <section class="card" style="margin-bottom: 24px;">
+            <div class="card-head">
+              <div>
+                <h2 class="card-title">Upcoming Renewals</h2>
+                <p class="card-sub">Next 60 days, including any overdue renewals</p>
+              </div>
+              <span id="upcoming-renewals-badge" class="pill neutral" style="font-weight: 600;">0</span>
+            </div>
+
+            <div id="upcoming-renewals-wrap" class="table-wrap">
+              <table class="table compact" aria-label="Upcoming renewals table">
+                <thead>
+                  <tr>
+                    <th scope="col" style="min-width: 140px;">Renewal Date</th>
+                    <th scope="col">Subscription</th>
+                    <th scope="col">Provider</th>
+                    <th scope="col" class="num col-tight">Amount</th>
+                    <th scope="col" class="num col-tight">Monthly Cost</th>
+                    <th scope="col" class="col-tight">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="upcoming-renewals-body">
+                  <tr><td colspan="6" class="cell-sub" style="text-align: center; padding: 24px;">No upcoming renewals in the next 60 days.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Financial Integrity Guidance Section -->
+          <section class="grid grid-2 section-gap" aria-label="Financial integrity guidance">
+            <article class="card">
+              <div class="card-head">
+                <h2 class="card-title">Linkage and Expense Isolation</h2>
+              </div>
+              <div class="card-body">
+                <ul class="note-list" style="margin: 0; padding-left: 20px; line-height: 1.6; color: var(--ink-2); font-size: 0.9rem;">
+                  <li><strong>Linked Subscriptions:</strong> Derive amount, billing frequency, category, and renewal dates directly from their recurring expense schedule. Each bill can be linked to at most one subscription tracker.</li>
+                  <li><strong>Standalone Trackers:</strong> Maintain their own renewal date and amount. They are tracking entries only and <em>never</em> write to the expense ledger.</li>
+                  <li><strong>No Duplicate Expenses:</strong> Modifying, pausing, or cancelling a subscription tracker never creates, alters, or pays an expense transaction.</li>
+                </ul>
+              </div>
+            </article>
+            <article class="card">
+              <div class="card-head">
+                <h2 class="card-title">External Provider Notice</h2>
+              </div>
+              <div class="card-body">
+                <div style="background: var(--surface-2); border-left: 4px solid var(--primary); padding: 12px 14px; border-radius: 6px; font-size: 0.9rem; line-height: 1.5; color: var(--ink);">
+                  <strong>SpendSense is a tracking tool, not a payment gateway.</strong>
+                  <p style="margin: 6px 0 0; color: var(--muted); font-size: 0.85rem;">
+                    Cancelling or pausing a subscription here updates your financial tracking only. You must cancel or modify memberships directly with the service provider (e.g., Netflix, Spotify).
+                  </p>
+                </div>
+              </div>
+            </article>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Create / Edit Subscription Modal -->
+    <div id="subscription-modal" class="modal-backdrop" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-subscription-title" style="max-width: 520px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+          <div>
+            <h2 id="modal-subscription-title" style="margin: 0; font-size: 1.3rem;">Add Subscription</h2>
+            <p id="modal-subscription-sub" style="margin: 4px 0 0; font-size: 0.85rem; color: var(--muted);">Track a recurring service plan</p>
+          </div>
+          <button type="button" class="modal-close" data-close-subscription-modal aria-label="Close dialog">&times;</button>
+        </div>
+
+        <form id="subscription-form">
+          <input type="hidden" id="sub-form-id" />
+
+          <!-- Linkage Mode Selector -->
+          <fieldset id="sub-mode-container" style="margin-bottom: 16px; border: none; padding: 0;">
+            <legend style="display: block; font-weight: 600; font-size: 0.88rem; margin-bottom: 8px;">Subscription Type</legend>
+            <div style="display: flex; gap: 12px;">
+              <label for="sub-type-standalone" style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; cursor: pointer;">
+                <input type="radio" name="sub_link_type" value="standalone" checked id="sub-type-standalone" />
+                Standalone Tracker
+              </label>
+              <label for="sub-type-linked" style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; cursor: pointer;">
+                <input type="radio" name="sub_link_type" value="linked" id="sub-type-linked" />
+                Linked to Recurring Bill
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Linked Schedule Selection -->
+          <div id="sub-linked-section" style="display: none; margin-bottom: 16px; background: var(--surface-2); padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+            <label for="sub-recurring-expense-id" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px;">Select Recurring Bill *</label>
+            <select id="sub-recurring-expense-id" class="form-control" style="width: 100%;">
+              <option value="">-- Choose a recurring bill --</option>
+            </select>
+            <p style="margin: 8px 0 0; font-size: 0.78rem; color: var(--muted); line-height: 1.4;">
+              Amount, billing frequency, category, and renewal date are synchronized automatically from the selected recurring bill schedule.
+            </p>
+          </div>
+
+          <!-- Common: Name & Provider -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+            <div class="field">
+              <label for="sub-name" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Subscription Name *</label>
+              <input type="text" id="sub-name" required maxlength="120" placeholder="e.g. Netflix Premium" style="width: 100%;" />
+            </div>
+            <div class="field">
+              <label for="sub-provider" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Provider <span style="font-weight: 400; color: var(--muted);">(optional)</span></label>
+              <input type="text" id="sub-provider" maxlength="120" placeholder="e.g. Netflix Inc." style="width: 100%;" />
+            </div>
+          </div>
+
+          <!-- Standalone-Only Fields -->
+          <div id="sub-standalone-fields">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+              <div class="field">
+                <label for="sub-amount" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Amount (₹) *</label>
+                <input type="number" id="sub-amount" min="0.01" step="0.01" placeholder="649.00" style="width: 100%;" />
+              </div>
+              <div class="field">
+                <label for="sub-frequency" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Billing Frequency *</label>
+                <select id="sub-frequency" style="width: 100%;">
+                  <option value="monthly" selected>Monthly</option>
+                  <option value="yearly">Yearly</option>
+                  <option value="quarterly">Quarterly</option>
+                  <option value="half-yearly">Half-yearly (Every 6 months)</option>
+                  <option value="biweekly">Bi-weekly (Every 2 weeks)</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="daily">Daily</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+              <div class="field">
+                <label for="sub-renewal-date" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Next Renewal Date *</label>
+                <input type="date" id="sub-renewal-date" style="width: 100%;" />
+              </div>
+              <div class="field">
+                <label for="sub-category-id" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Category <span style="font-weight: 400; color: var(--muted);">(optional)</span></label>
+                <select id="sub-category-id" style="width: 100%;">
+                  <option value="">No category</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Status & Notes -->
+          <div style="margin-bottom: 14px;">
+            <label for="sub-status" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Status</label>
+            <select id="sub-status" style="width: 100%;">
+              <option value="active" selected>Active</option>
+              <option value="paused">Paused</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label for="sub-notes" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">Notes <span style="font-weight: 400; color: var(--muted);">(optional)</span></label>
+            <textarea id="sub-notes" rows="2" maxlength="2000" placeholder="Plan tier, cancellation notice period, shared family members…" style="width: 100%; resize: vertical;"></textarea>
+          </div>
+
+          <!-- Error / Notice Box -->
+          <div id="sub-form-error" role="status" aria-live="polite" style="display: none; padding: 10px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 0.85rem; background: var(--danger-100); color: var(--danger);"></div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button type="button" class="btn ghost" data-close-subscription-modal>Cancel</button>
+            <button type="submit" id="sub-submit-btn" class="btn primary">Save Subscription</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="../script.js"></script>
+    <script src="subscriptions.js"></script>
+  </body>
+</html>
+

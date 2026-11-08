@@ -283,7 +283,7 @@ class ChromeClient {
   }
 }
 
-test('browser runtime: recurring bills tab navigation, add bill modal live preview, and calendar grid interactions', async (t) => {
+test('browser runtime: standalone recurring transactions page, bill modal live preview, financial calendar interactions, expenses tab removal, and legacy redirects', async (t) => {
   const chromePath = findChrome();
   if (!chromePath) {
     t.skip('Chrome not available in test environment');
@@ -306,7 +306,7 @@ test('browser runtime: recurring bills tab navigation, add bill modal live previ
     `--user-data-dir=${userDataDir}`,
     '--no-sandbox',
     '--disable-background-networking',
-    `http://127.0.0.1:${serverPort}/expense-management/expenses.html`
+    `http://127.0.0.1:${serverPort}/recurring-transactions/recurring-transactions.html`
   ], { stdio: 'ignore' });
 
   const client = new ChromeClient(cdpPort);
@@ -327,22 +327,17 @@ test('browser runtime: recurring bills tab navigation, add bill modal live previ
     await client.send('Runtime.enable');
     await client.send('Console.enable');
 
-    // Wait for DOM load
-    await new Promise(r => setTimeout(r, 600));
+    // Wait for DOM load and data population
+    const startTime = Date.now();
+    while (Date.now() - startTime < 10000) {
+      const isPopulated = await client.evaluate(`!!document.querySelector('[data-stat-monthly-commitment]')?.textContent && !!document.querySelector('[data-recurring-rows] .cell-main')`);
+      if (isPopulated) break;
+      await new Promise(r => setTimeout(r, 100));
+    }
 
-    // 1. Verify Sub-Nav Tabs exist and default to "All expenses"
-    const initialTab = await client.evaluate(`document.getElementById('tab-all-expenses').classList.contains('active')`);
-    assert.strictEqual(initialTab, true, 'Default active tab is All Expenses');
-
-    // 2. Click "Recurring bills" tab
-    await client.evaluate(`document.getElementById('tab-recurring-bills').click()`);
-    await new Promise(r => setTimeout(r, 300));
-
-    const recActive = await client.evaluate(`document.getElementById('tab-recurring-bills').classList.contains('active')`);
-    assert.strictEqual(recActive, true, 'Recurring bills tab is active');
-
+    // 1. Verify Standalone Recurring Transactions page
     const recVisible = await client.evaluate(`!document.getElementById('view-recurring-bills').hidden`);
-    assert.strictEqual(recVisible, true, 'view-recurring-bills is visible');
+    assert.strictEqual(recVisible, true, 'view-recurring-bills is visible on recurring-transactions.html');
 
     // Verify recurring summary stat cards populated
     const monthlyEst = await client.evaluate(`document.querySelector('[data-stat-monthly-commitment]').textContent`);
@@ -352,7 +347,7 @@ test('browser runtime: recurring bills tab navigation, add bill modal live previ
     const schedDesc = await client.evaluate(`document.querySelector('[data-recurring-rows] .cell-main').textContent`);
     assert.strictEqual(schedDesc, 'Broadband Internet', 'Schedule description matches mock data');
 
-    // 3. Open Add Recurring Bill modal
+    // 2. Open Add Recurring Bill modal
     await client.evaluate(`document.getElementById('open-add-recurring-btn').click()`);
     await new Promise(r => setTimeout(r, 200));
 
@@ -376,15 +371,12 @@ test('browser runtime: recurring bills tab navigation, add bill modal live previ
     const modalClosed = await client.evaluate(`document.getElementById('recurring-modal').hidden`);
     assert.strictEqual(modalClosed, true, 'Modal closes on cancel');
 
-    // 4. Switch to "Bill calendar" tab
-    await client.evaluate(`document.getElementById('tab-bill-calendar').click()`);
-    await new Promise(r => setTimeout(r, 300));
-
-    const calActive = await client.evaluate(`document.getElementById('tab-bill-calendar').classList.contains('active')`);
-    assert.strictEqual(calActive, true, 'Bill calendar tab is active');
+    // 3. Navigate to standalone Financial Calendar page
+    await client.send('Page.navigate', { url: `http://127.0.0.1:${serverPort}/financial-calendar/financial-calendar.html` });
+    await new Promise(r => setTimeout(r, 800));
 
     const calVisible = await client.evaluate(`!document.getElementById('view-bill-calendar').hidden`);
-    assert.strictEqual(calVisible, true, 'view-bill-calendar is visible');
+    assert.strictEqual(calVisible, true, 'view-bill-calendar is visible on financial-calendar.html');
 
     // Verify calendar header and grid
     const calHeading = await client.evaluate(`document.getElementById('calendar-month-heading').textContent`);
@@ -407,6 +399,166 @@ test('browser runtime: recurring bills tab navigation, add bill modal live previ
 
     const dayPanelItem = await client.evaluate(`document.querySelector('[data-calendar-day-list]').textContent`);
     assert.match(dayPanelItem, /Broadband Internet/, 'Day detail panel lists Broadband Internet');
+
+    // 4. Test legacy redirect from expenses.html?tab=recurring
+    await client.send('Page.navigate', { url: `http://127.0.0.1:${serverPort}/expense-management/expenses.html?tab=recurring` });
+    await new Promise(r => setTimeout(r, 800));
+    const redirectedRec = await client.evaluate(`window.location.href`);
+    assert.match(redirectedRec, /recurring-transactions\.html/, 'Legacy ?tab=recurring redirects to standalone page');
+
+    // 5. Test legacy redirect from expenses.html?tab=calendar
+    await client.send('Page.navigate', { url: `http://127.0.0.1:${serverPort}/expense-management/expenses.html?tab=calendar` });
+    await new Promise(r => setTimeout(r, 800));
+    const redirectedCal = await client.evaluate(`window.location.href`);
+    assert.match(redirectedCal, /financial-calendar\.html/, 'Legacy ?tab=calendar redirects to standalone page');
+
+    // 6. Navigate directly to expenses.html and verify tab removals and header dropdown
+    await client.send('Page.navigate', { url: `http://127.0.0.1:${serverPort}/expense-management/expenses.html` });
+    await new Promise(r => setTimeout(r, 800));
+
+    const expensesState = await client.evaluate(`({
+      hasRecurringTab: document.getElementById('tab-recurring-bills') !== null,
+      hasCalendarTab: document.getElementById('tab-bill-calendar') !== null,
+      hasRecurringView: document.getElementById('view-recurring-bills') !== null,
+      hasCalendarView: document.getElementById('view-bill-calendar') !== null,
+      hasExpensesView: document.getElementById('view-all-expenses') !== null,
+      hasSidebarAccount: document.querySelector('.sidebar-nav')?.textContent.includes('Account'),
+      hasSidebarFooter: document.querySelector('.sidebar-footer') !== null,
+      groups: Array.from(document.querySelectorAll('.sidebar-group')).map(g => g.textContent.trim())
+    })`);
+
+    assert.equal(expensesState.hasRecurringTab, false, 'expenses.html must not contain recurring bills tab');
+    assert.equal(expensesState.hasCalendarTab, false, 'expenses.html must not contain bill calendar tab');
+    assert.equal(expensesState.hasRecurringView, false, 'expenses.html must not contain recurring bills view panel');
+    assert.equal(expensesState.hasCalendarView, false, 'expenses.html must not contain bill calendar view panel');
+    assert.equal(expensesState.hasExpensesView, true, 'expenses.html must retain view-all-expenses panel');
+    assert.equal(expensesState.hasSidebarAccount, false, 'expenses.html must not contain sidebar Account heading');
+    assert.equal(expensesState.hasSidebarFooter, false, 'expenses.html must not contain sidebar footer');
+    assert.deepEqual(expensesState.groups, ['Overview', 'Money', 'Insights', 'Planning'], 'expenses.html must have exact 4 sidebar groups');
+
+    // 7. Verify the six future Batch 2 sidebar entries: visible, disabled, non-navigating, and styled
+    const futureNavChecks = await client.evaluate(`({
+      subscriptions: (() => {
+        const el = document.querySelector('[data-nav="subscriptions"]');
+        if (!el) return null;
+        const style = window.getComputedStyle(el);
+        return {
+          tagName: el.tagName,
+          hasHref: el.hasAttribute('href'),
+          isDisabled: el.classList.contains('is-disabled'),
+          ariaDisabled: el.getAttribute('aria-disabled'),
+          role: el.getAttribute('role'),
+          cursor: style.cursor,
+          text: el.textContent.trim(),
+          visible: style.display !== 'none' && style.visibility !== 'hidden'
+        };
+      })(),
+      netWorth: (() => {
+        const el = document.querySelector('[data-nav="net-worth"]');
+        if (!el) return null;
+        const style = window.getComputedStyle(el);
+        return {
+          tagName: el.tagName,
+          hasHref: el.hasAttribute('href'),
+          isDisabled: el.classList.contains('is-disabled'),
+          ariaDisabled: el.getAttribute('aria-disabled'),
+          role: el.getAttribute('role'),
+          cursor: style.cursor,
+          text: el.textContent.trim(),
+          visible: style.display !== 'none' && style.visibility !== 'hidden'
+        };
+      })(),
+      trends: (() => {
+        const el = document.querySelector('[data-nav="insights-trends"]');
+        if (!el) return null;
+        const style = window.getComputedStyle(el);
+        return {
+          tagName: el.tagName,
+          hasHref: el.hasAttribute('href'),
+          isDisabled: el.classList.contains('is-disabled'),
+          ariaDisabled: el.getAttribute('aria-disabled'),
+          role: el.getAttribute('role'),
+          cursor: style.cursor,
+          text: el.textContent.trim(),
+          visible: style.display !== 'none' && style.visibility !== 'hidden'
+        };
+      })(),
+      income: (() => {
+        const el = document.querySelector('[data-nav="insights-income"]');
+        if (!el) return null;
+        const style = window.getComputedStyle(el);
+        return {
+          tagName: el.tagName,
+          hasHref: el.hasAttribute('href'),
+          isDisabled: el.classList.contains('is-disabled'),
+          ariaDisabled: el.getAttribute('aria-disabled'),
+          role: el.getAttribute('role'),
+          cursor: style.cursor,
+          text: el.textContent.trim(),
+          visible: style.display !== 'none' && style.visibility !== 'hidden'
+        };
+      })(),
+      budgets: (() => {
+        const el = document.querySelector('[data-nav="insights-budgets"]');
+        if (!el) return null;
+        const style = window.getComputedStyle(el);
+        return {
+          tagName: el.tagName,
+          hasHref: el.hasAttribute('href'),
+          isDisabled: el.classList.contains('is-disabled'),
+          ariaDisabled: el.getAttribute('aria-disabled'),
+          role: el.getAttribute('role'),
+          cursor: style.cursor,
+          text: el.textContent.trim(),
+          visible: style.display !== 'none' && style.visibility !== 'hidden'
+        };
+      })(),
+      forecast: (() => {
+        const el = document.querySelector('[data-nav="forecast"]');
+        if (!el) return null;
+        const style = window.getComputedStyle(el);
+        return {
+          tagName: el.tagName,
+          hasHref: el.hasAttribute('href'),
+          isDisabled: el.classList.contains('is-disabled'),
+          ariaDisabled: el.getAttribute('aria-disabled'),
+          role: el.getAttribute('role'),
+          cursor: style.cursor,
+          text: el.textContent.trim(),
+          visible: style.display !== 'none' && style.visibility !== 'hidden'
+        };
+      })()
+    })`);
+
+    for (const [key, item] of Object.entries(futureNavChecks)) {
+      assert.ok(item, `${key} element must exist in DOM`);
+      assert.equal(item.tagName, 'A', `${key} must be an active anchor element`);
+      assert.equal(item.hasHref, true, `${key} must possess an href attribute`);
+      assert.equal(item.isDisabled, false, `${key} must not have is-disabled class`);
+      assert.equal(item.visible, true, `${key} must be visible in viewport`);
+      assert.doesNotMatch(item.text, /Soon/, `${key} must not display Soon pill`);
+    }
+
+    // Verify clicking on subscriptions navigates to standalone subscriptions page
+    await client.evaluate(`document.querySelector('[data-nav="subscriptions"]').click()`);
+    await new Promise(r => setTimeout(r, 600));
+    const navUrl = await client.evaluate(`window.location.href`);
+    assert.match(navUrl, /subscriptions\/subscriptions\.html/, 'Clicking subscriptions navigates to subscriptions page');
+
+    // Capture screenshot of the sidebar demonstrating the disabled items
+    try {
+      const clip = await client.evaluate(`(() => {
+        const rect = document.querySelector('.sidebar').getBoundingClientRect();
+        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, scale: 2 };
+      })()`);
+      const screenshot = await client.send('Page.captureScreenshot', { format: 'png', clip });
+      const artifactDir = 'C:\\Users\\shaha\\.gemini\\antigravity\\brain\\02c120f8-2df8-4396-a7ef-9e5022e7c64f';
+      if (fs.existsSync(artifactDir)) {
+        fs.writeFileSync(path.join(artifactDir, 'batch1-disabled-nav-sidebar.png'), Buffer.from(screenshot.data, 'base64'));
+      }
+    } catch (e) {
+      // screenshot capture is auxiliary
+    }
 
   } finally {
     try { if (client.ws) client.ws.close(); } catch {}

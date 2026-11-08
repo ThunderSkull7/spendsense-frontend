@@ -62,16 +62,72 @@
 
   const skipTags = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "OPTION", "TEXTAREA"]);
 
-  // Canonical Teal Accent: sole accent colour supported across all modes.
-  const CANONICAL_ACCENT = "teal";
+  // Eight supported accent color palettes with 12-step tonal scales.
+  const VALID_PALETTES = ["teal", "blue", "violet", "plum", "rose", "orange", "jade", "indigo"];
+  const DEFAULT_PALETTE = "teal";
+  const VALID_MODES = ["light", "dark", "system"];
+  const DEFAULT_MODE = "light";
 
-  // Clean up obsolete stored palette preference from existing installations.
-  if (safeStorage.getItem(KEYS.color)) {
-    safeStorage.removeItem(KEYS.color);
-  }
+  const normalizePalette = (palette) => {
+    if (!palette) return DEFAULT_PALETTE;
+    const p = String(palette).toLowerCase().trim();
+    if (VALID_PALETTES.includes(p)) return p;
+    if (p === "green") return "teal";
+    if (p === "emerald") return "jade";
+    if (p === "amber") return "orange";
+    if (p === "slate") return "plum";
+    return DEFAULT_PALETTE;
+  };
 
-  const savedMode = safeStorage.getItem(KEYS.mode) === "dark" ? "dark" : "light";
+  const resolveEffectiveMode = (mode) => {
+    if (mode === "system") {
+      if (typeof window !== "undefined" && window.matchMedia) {
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+      return "light";
+    }
+    return mode === "dark" ? "dark" : "light";
+  };
+
+  const rawSavedMode = safeStorage.getItem(KEYS.mode);
+  const savedMode = VALID_MODES.includes(rawSavedMode) ? rawSavedMode : DEFAULT_MODE;
+  const rawSavedColor = safeStorage.getItem(KEYS.color);
+  const savedColor = normalizePalette(rawSavedColor);
   const savedCurrency = safeStorage.getItem(KEYS.currency) || "INR";
+
+  // Apply effective mode and palette to <html> immediately before first paint to prevent FOUC
+  const initialEffectiveMode = resolveEffectiveMode(savedMode);
+  root.dataset.themeColor = savedColor;
+  root.dataset.mode = initialEffectiveMode;
+  root.dataset.themeMode = savedMode;
+
+  // Live listener for OS preference changes when System mode is active
+  if (typeof window !== "undefined" && window.matchMedia) {
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleOSChange = (e) => {
+      const currentSavedMode = safeStorage.getItem(KEYS.mode) || DEFAULT_MODE;
+      if (currentSavedMode === "system") {
+        const newEffective = e.matches ? "dark" : "light";
+        root.dataset.mode = newEffective;
+        window.dispatchEvent(
+          new CustomEvent("spendsense:theme-change", {
+            detail: {
+              mode: "system",
+              effectiveMode: newEffective,
+              color: safeStorage.getItem(KEYS.color) || DEFAULT_PALETTE,
+              palette: safeStorage.getItem(KEYS.color) || DEFAULT_PALETTE,
+              isDark: newEffective === "dark"
+            }
+          })
+        );
+      }
+    };
+    if (mql.addEventListener) {
+      mql.addEventListener("change", handleOSChange);
+    } else if (mql.addListener) {
+      mql.addListener(handleOSChange);
+    }
+  }
 
   const symbolFor = (code) => currencySymbols[code] || currencySymbols.INR;
 
@@ -104,30 +160,51 @@
     });
   };
 
-  const applyTheme = (modeOrColor, legacyMode) => {
-    let chosenMode = "light";
-    if (legacyMode !== undefined) {
-      chosenMode = legacyMode === "dark" ? "dark" : "light";
-    } else if (modeOrColor === "dark" || modeOrColor === "light") {
-      chosenMode = modeOrColor;
-    } else {
-      chosenMode = safeStorage.getItem(KEYS.mode) === "dark" ? "dark" : "light";
-    }
+  const applyTheme = (modeOrColor, secondArg) => {
+    let targetMode = safeStorage.getItem(KEYS.mode) || DEFAULT_MODE;
+    let targetColor = safeStorage.getItem(KEYS.color) || DEFAULT_PALETTE;
 
-    root.dataset.themeColor = CANONICAL_ACCENT;
-    root.dataset.mode = chosenMode;
-    safeStorage.setItem(KEYS.mode, chosenMode);
-    safeStorage.removeItem(KEYS.color);
+    const parseArg = (val) => {
+      if (val === undefined || val === null) return;
+      const str = String(val).toLowerCase().trim();
+      if (VALID_MODES.includes(str)) {
+        targetMode = str;
+      } else {
+        targetColor = normalizePalette(str);
+      }
+    };
+
+    parseArg(modeOrColor);
+    parseArg(secondArg);
+
+    if (!VALID_MODES.includes(targetMode)) targetMode = DEFAULT_MODE;
+    targetColor = normalizePalette(targetColor);
+
+    const newEffective = resolveEffectiveMode(targetMode);
+
+    root.dataset.themeColor = targetColor;
+    root.dataset.mode = newEffective;
+    root.dataset.themeMode = targetMode;
+
+    safeStorage.setItem(KEYS.mode, targetMode);
+    safeStorage.setItem(KEYS.color, targetColor);
 
     window.dispatchEvent(
       new CustomEvent("spendsense:theme-change", {
-        detail: { mode: chosenMode, color: CANONICAL_ACCENT }
+        detail: {
+          mode: targetMode,
+          effectiveMode: newEffective,
+          color: targetColor,
+          palette: targetColor,
+          isDark: newEffective === "dark"
+        }
       })
     );
   };
 
-  const themeColor = () => CANONICAL_ACCENT;
-  const themeMode = () => root.dataset.mode || safeStorage.getItem(KEYS.mode) || "light";
+  const themeColor = () => root.dataset.themeColor || safeStorage.getItem(KEYS.color) || DEFAULT_PALETTE;
+  const themeMode = () => safeStorage.getItem(KEYS.mode) || DEFAULT_MODE;
+  const effectiveMode = () => root.dataset.mode || resolveEffectiveMode(themeMode());
 
   const applyCurrency = (currency) => {
     safeStorage.setItem(KEYS.currency, currency);
@@ -422,21 +499,21 @@
         </div>
         <div class="account-menu-items">
           <a class="account-menu-link" href="../settings/settings.html" role="menuitem" data-account-link>
-            <span class="account-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="8" cy="17" r="2"/></svg></span>
+            <span class="account-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="12" r="2"/><circle cx="8" cy="17" r="2"/></svg></span>
             <span>Settings</span>
           </a>
           <a class="account-menu-link" href="../notifications/notifications.html" role="menuitem" data-account-link>
-            <span class="account-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>
+            <span class="account-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></span>
             <span>Notifications</span>
           </a>
           <a class="account-menu-link" href="../support/support.html" role="menuitem" data-account-link>
-            <span class="account-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 1 1 3.8 2.6c-.8.3-1 .9-1 1.6v.4"/><path d="M12 17.2v.01"/></svg></span>
+            <span class="account-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.8 2.8 0 1 1 3.8 2.6c-.8.3-1 .9-1 1.6v.4"/><path d="M12 17.2v.01"/></svg></span>
             <span>Support</span>
           </a>
         </div>
         <div class="account-menu-separator" role="separator"></div>
         <button class="account-menu-link account-logout" type="button" role="menuitem" data-logout data-account-logout>
-          <span class="account-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span>
+          <span class="account-menu-icon" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span>
           <span>Log out</span>
         </button>
       </div>
@@ -619,9 +696,6 @@
     applyMoneySymbols();
   };
 
-  root.dataset.themeColor = CANONICAL_ACCENT;
-  root.dataset.mode = savedMode;
-
   window.SpendSenseSettings = {
     currency: savedCurrency,
     symbol: symbolFor(savedCurrency),
@@ -634,6 +708,10 @@
     todayInputValue,
     themeColor,
     themeMode,
+    effectiveMode,
+    applyPalette: (palette) => applyTheme(null, palette),
+    applyMode: (mode) => applyTheme(mode, null),
+    palettes: () => [...VALID_PALETTES],
     categoryTones,
     chartColors,
     getCategoryTone,

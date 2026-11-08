@@ -573,32 +573,103 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Keyboard accessibility: Escape to dismiss, Tab key trapping inside modal
+  // --- Universal Accessible Modal Manager (Focus Trap & Restoration) ---
+  let lastUniversalTrigger = null;
+
+  document.addEventListener('click', (event) => {
+    const trigger = event.target.closest('button, [role="button"], a[href]');
+    if (trigger && !trigger.closest('.modal-backdrop:not([hidden]), .modal:not([hidden]), [role="dialog"]:not([hidden])')) {
+      lastUniversalTrigger = trigger;
+    }
+  }, true);
+
+  function getActiveModalElement() {
+    if (authModal && !authModal.hasAttribute('aria-hidden') && authModal.style.display !== 'none' && window.getComputedStyle(authModal).display !== 'none') {
+      return authModal.querySelector('.modal') || authModal;
+    }
+    const backdrops = Array.from(document.querySelectorAll('.modal-backdrop, .modal-overlay, [data-modal-backdrop]'));
+    for (const b of backdrops) {
+      if (b.closest('#auth-modal, .auth-modal')) continue;
+      if (!b.hidden && b.style.display !== 'none' && window.getComputedStyle(b).display !== 'none') {
+        return b.querySelector('.modal, [role="dialog"]') || b;
+      }
+    }
+    const dialogs = Array.from(document.querySelectorAll('[role="dialog"]:not(.modal)'));
+    for (const d of dialogs) {
+      if (d.closest('#auth-modal, .auth-modal')) continue;
+      if (!d.hidden && d.style.display !== 'none' && window.getComputedStyle(d).display !== 'none') {
+        return d;
+      }
+    }
+    return null;
+  }
+
+  function getModalInteractiveElements(container) {
+    if (!container) return [];
+    return Array.from(container.querySelectorAll(
+      'button:not([disabled]):not([hidden]), [href]:not([hidden]), input:not([disabled]):not([type="hidden"]):not([hidden]), select:not([disabled]):not([hidden]), textarea:not([disabled]):not([hidden]), [tabindex]:not([tabindex="-1"]):not([disabled]):not([hidden])'
+    )).filter((el) => {
+      if (el.tabIndex < 0 || el.disabled) return false;
+      const s = window.getComputedStyle(el);
+      if (s.display === 'none' || s.visibility === 'hidden') return false;
+      return el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;
+    });
+  }
+
+  // Keyboard accessibility: Escape to dismiss, Tab key trapping inside any active modal
   document.addEventListener('keydown', (event) => {
-    if (!authModal || authModal.hasAttribute('aria-hidden')) return;
+    const active = getActiveModalElement();
+    if (!active) return;
 
     if (event.key === 'Escape') {
       event.preventDefault();
-      toggleAuthModal(false);
+      if (authModal && !authModal.hasAttribute('aria-hidden')) {
+        toggleAuthModal(false);
+        return;
+      }
+      const closeBtn = active.querySelector(
+        '.modal-close, [data-modal-close], [data-close-subscription-modal], [data-close-entry-modal], [data-close-valuation-modal], [data-close-history-modal], [data-close-recurring-modal], [data-close-pay-modal], [data-close-occurrences-modal], [data-close-goal-modal], [data-close-contrib-modal], [data-close-debt-modal], [data-close-repay-modal], [data-import-close]'
+      );
+      if (closeBtn) {
+        closeBtn.click();
+      } else {
+        const backdrop = active.closest('.modal-backdrop') || active;
+        backdrop.hidden = true;
+      }
+      if (lastUniversalTrigger && typeof lastUniversalTrigger.focus === 'function' && document.body.contains(lastUniversalTrigger)) {
+        setTimeout(() => lastUniversalTrigger.focus(), 40);
+      }
       return;
     }
 
     if (event.key === 'Tab') {
-      const focusable = getModalFocusableElements();
+      const focusable = getModalInteractiveElements(active);
       if (focusable.length === 0) return;
       const first = focusable[0];
       const last = focusable[focusable.length - 1];
 
       if (event.shiftKey) {
-        if (document.activeElement === first || !authModal.contains(document.activeElement)) {
+        if (document.activeElement === first || !active.contains(document.activeElement)) {
           event.preventDefault();
           last.focus();
         }
       } else {
-        if (document.activeElement === last || !authModal.contains(document.activeElement)) {
+        if (document.activeElement === last || !active.contains(document.activeElement)) {
           event.preventDefault();
           first.focus();
         }
+      }
+    }
+  });
+
+  // Focus restoration on any modal close button click
+  document.addEventListener('click', (event) => {
+    const closeBtn = event.target.closest(
+      '.modal-close, [data-modal-close], [data-close-subscription-modal], [data-close-entry-modal], [data-close-valuation-modal], [data-close-history-modal], [data-close-recurring-modal], [data-close-pay-modal], [data-close-occurrences-modal], [data-close-goal-modal], [data-close-contrib-modal], [data-close-debt-modal], [data-close-repay-modal], [data-import-close]'
+    );
+    if (closeBtn && !closeBtn.matches('[data-auth-close]')) {
+      if (lastUniversalTrigger && typeof lastUniversalTrigger.focus === 'function' && document.body.contains(lastUniversalTrigger)) {
+        setTimeout(() => lastUniversalTrigger.focus(), 40);
       }
     }
   });
@@ -804,9 +875,9 @@ window.SpendSenseUI = {
     const icons = {
       loading: '<span class="spinner" aria-hidden="true"></span>',
       empty:
-        '<span class="state-ico"><svg viewBox="0 0 24 24"><path d="M3 8l3-4h12l3 4v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 8h18"/><path d="M9 12h6"/></svg></span>',
+        '<span class="state-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8l3-4h12l3 4v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 8h18"/><path d="M9 12h6"/></svg></span>',
       error:
-        '<span class="state-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg></span>',
+        '<span class="state-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5"/><path d="M12 16.5v.01"/></svg></span>',
     };
 
     state.innerHTML = icons[type] || icons.empty;
@@ -845,6 +916,41 @@ window.SpendSenseUI = {
       if (!stack.childElementCount) stack.remove();
     }, 3200);
   },
+
+  getFocusableElements(container) {
+    if (!container) return [];
+    return Array.from(container.querySelectorAll(
+      'button:not([disabled]):not([hidden]), [href]:not([hidden]), input:not([disabled]):not([type="hidden"]):not([hidden]), select:not([disabled]):not([hidden]), textarea:not([disabled]):not([hidden]), [tabindex]:not([tabindex="-1"]):not([disabled]):not([hidden])'
+    )).filter((el) => {
+      if (el.tabIndex < 0 || el.disabled) return false;
+      const s = typeof window !== 'undefined' && window.getComputedStyle ? window.getComputedStyle(el) : el.style;
+      if (s && (s.display === 'none' || s.visibility === 'hidden')) return false;
+      return true;
+    });
+  },
+
+  trapFocus(container, event) {
+    if (!container || !event || event.key !== 'Tab') return;
+    const focusable = this.getFocusableElements(container);
+    if (!focusable.length) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (event.shiftKey) {
+      if (document.activeElement === first || !container.contains(document.activeElement)) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last || !container.contains(document.activeElement)) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+  },
 };
 
 // Export for use by other modules
@@ -857,3 +963,12 @@ window.auth = {
   getUser: API.getUser.bind(API),
 };
 window.refreshStats = refreshStats;
+
+// Prevent interaction on disabled sidebar links
+document.addEventListener('click', (event) => {
+  const disabledLink = event.target.closest('.sidebar-link.is-disabled');
+  if (disabledLink) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+});
