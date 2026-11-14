@@ -85,7 +85,7 @@
 
             <div class="card" style="padding: 16px; margin-bottom: 16px;">
               <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                <input type="text" id="debts-search" class="form-control" placeholder="Search debts..." aria-label="Search debts and loans" style="max-width: 240px;" />
+                <input type="text" id="debts-search-input" class="form-control" placeholder="Search debts..." aria-label="Search debts and loans" style="max-width: 240px;" />
                 <select id="debts-filter-status" class="form-control" aria-label="Filter debts and loans by status" style="max-width: 150px;">
                   <option value="active">Active Debts</option>
                   <option value="cleared">Cleared Debts</option>
@@ -119,15 +119,16 @@
           <button type="button" class="modal-close" data-close-debt-modal aria-label="Close dialog">&times;</button>
         </div>
         <form id="debt-form" class="modal-body">
-          <input type="hidden" id="debt-id" />
+          <div id="debt-form-error" class="notice error" style="display: none; margin-bottom: 12px;"></div>
+          <input type="hidden" id="debt-id" name="id" />
           <div class="field" style="margin-bottom: 12px;">
             <label for="debt-name">Account / Loan Name *</label>
-            <input type="text" id="debt-name" class="form-control" required placeholder="e.g. HDFC Home Loan, Car Loan" />
+            <input type="text" id="debt-name" name="name" class="form-control" required placeholder="e.g. HDFC Home Loan, Car Loan" />
           </div>
           <div class="grid grid-2" style="gap: 12px; margin-bottom: 12px;">
             <div class="field">
               <label for="debt-type">Type *</label>
-              <select id="debt-type" class="form-control" required>
+              <select id="debt-type" name="category" class="form-control" required>
                 <option value="loan">Term Loan</option>
                 <option value="credit_card">Credit Card</option>
                 <option value="mortgage">Mortgage</option>
@@ -137,32 +138,32 @@
             </div>
             <div class="field">
               <label for="debt-principal">Principal Amount (₹) *</label>
-              <input type="number" id="debt-principal" class="form-control" min="1" step="0.01" required placeholder="100000" />
+              <input type="number" id="debt-principal" name="original_amount" class="form-control" min="1" step="0.01" required placeholder="100000" />
             </div>
           </div>
           <div class="grid grid-2" style="gap: 12px; margin-bottom: 12px;">
             <div class="field">
               <label for="debt-rate">Interest Rate (%)</label>
-              <input type="number" id="debt-rate" class="form-control" min="0" max="100" step="0.01" placeholder="8.5" />
+              <input type="number" id="debt-rate" name="interest_rate" class="form-control" min="0" max="100" step="0.01" placeholder="8.5" />
             </div>
             <div class="field">
               <label for="debt-minimum-payment">Monthly Payment / EMI (₹)</label>
-              <input type="number" id="debt-minimum-payment" class="form-control" min="0" step="0.01" placeholder="5000" />
+              <input type="number" id="debt-minimum-payment" name="minimum_payment" class="form-control" min="0" step="0.01" placeholder="5000" />
             </div>
           </div>
           <div class="grid grid-2" style="gap: 12px; margin-bottom: 12px;">
             <div class="field">
               <label for="debt-due-date">Next Due Date</label>
-              <input type="date" id="debt-due-date" class="form-control" />
+              <input type="date" id="debt-due-date" name="next_due_date" class="form-control" />
             </div>
             <div class="field">
               <label for="debt-lender">Lender / Institution</label>
-              <input type="text" id="debt-lender" class="form-control" placeholder="Bank or lender name" />
+              <input type="text" id="debt-lender" name="lender" class="form-control" placeholder="Bank or lender name" />
             </div>
           </div>
           <div class="field" style="margin-bottom: 16px;">
             <label for="debt-notes">Notes</label>
-            <textarea id="debt-notes" class="form-control" rows="2" placeholder="Account reference or terms"></textarea>
+            <textarea id="debt-notes" name="notes" class="form-control" rows="2" placeholder="Account reference or terms"></textarea>
           </div>
           <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
             <button type="button" class="btn ghost" data-close-debt-modal>Cancel</button>
@@ -180,23 +181,24 @@
           <button type="button" class="modal-close" data-close-repay-modal aria-label="Close dialog">&times;</button>
         </div>
         <form id="debt-repayment-form" class="modal-body">
-          <input type="hidden" id="repay-debt-id" />
+          <div id="repay-form-error" class="notice error" style="display: none; margin-bottom: 12px;"></div>
+          <input type="hidden" id="repay-debt-id" name="debt_id" />
           <p id="repay-debt-name" class="sub" style="margin-bottom: 12px; font-weight: 600;"></p>
           <div class="field" style="margin-bottom: 12px;">
             <label for="repay-amount">Repayment Amount (₹) *</label>
-            <input type="number" id="repay-amount" class="form-control" min="0.01" step="0.01" required placeholder="5000" />
+            <input type="number" id="repay-amount" name="amount" class="form-control" min="0.01" step="0.01" required placeholder="5000" />
           </div>
           <div class="field" style="margin-bottom: 12px;">
             <label for="repay-date">Payment Date *</label>
-            <input type="date" id="repay-date" class="form-control" required />
+            <input type="date" id="repay-date" name="payment_date" class="form-control" required />
           </div>
           <div class="field" style="margin-bottom: 16px;">
             <label for="repay-notes">Notes</label>
-            <input type="text" id="repay-notes" class="form-control" placeholder="e.g. EMI payment" />
+            <input type="text" id="repay-notes" name="note" class="form-control" placeholder="e.g. EMI payment" />
           </div>
           <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
             <button type="button" class="btn ghost" data-close-repay-modal>Cancel</button>
-            <button type="submit" class="btn primary">Record Payment</button>
+            <button type="submit" class="btn primary" id="repay-submit-btn">Record Payment</button>
           </div>
         </form>
       </div>

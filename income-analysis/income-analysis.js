@@ -296,7 +296,7 @@
 
       if (!sources.length) {
         this.dom.sourcesBody.innerHTML = `
-          <tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--muted);">No income sources recorded in this period.</td></tr>
+          <tr><td colspan="5" class="income-empty-cell">No income sources recorded in this period.</td></tr>
         `;
         return;
       }
@@ -306,23 +306,23 @@
       const rowsHtml = sources.map(src => {
         const srcName = this.escapeHtml(src.source || 'General Income');
         const actFmt = formatVal(src.actual_amount);
-        const priorFmt = formatVal(src.previous_amount);
+        const priorFmt = src.previous_amount !== null && src.previous_amount !== undefined ? formatVal(src.previous_amount) : '—';
 
-        let changeBadge = '<span style="color: var(--muted);">—</span>';
+        let changeBadge = '<span class="income-prior-val">—</span>';
         if (src.change_percent !== null && src.change_percent !== undefined) {
           const isUp = src.change_percent >= 0;
           const sign = isUp ? '+' : '';
           const pillClass = isUp ? 'success' : 'danger';
-          changeBadge = `<span class="pill ${pillClass}" style="font-size: 0.72rem;">${sign}${src.change_percent}%</span>`;
+          changeBadge = `<span class="pill ${pillClass}" style="font-size: 0.74rem;">${sign}${src.change_percent}%</span>`;
         }
 
         return `
           <tr>
-            <td><strong>${srcName}</strong></td>
-            <td class="num col-tight" style="font-weight: 600; color: var(--success, #16a34a);">${actFmt}</td>
-            <td class="num col-tight" style="color: var(--muted);">${priorFmt}</td>
+            <td><div class="income-source-name">${srcName}</div></td>
+            <td class="num col-tight income-amount-val">${actFmt}</td>
+            <td class="num col-tight income-prior-val">${priorFmt}</td>
             <td class="num col-tight">${changeBadge}</td>
-            <td class="col-tight text-center">${src.transaction_count}</td>
+            <td class="col-tight text-center" style="font-variant-numeric: tabular-nums;">${src.transaction_count}</td>
           </tr>
         `;
       }).join('');
@@ -336,7 +336,7 @@
 
       if (!frequencies.length) {
         this.dom.frequencyBody.innerHTML = `
-          <tr><td colspan="3" style="text-align: center; padding: 20px; color: var(--muted);">No income frequency data recorded.</td></tr>
+          <tr><td colspan="3" class="income-empty-cell">No income frequency data recorded.</td></tr>
         `;
         return;
       }
@@ -344,16 +344,21 @@
       const formatVal = (v) => UI ? UI.formatMoney(v || 0) : `₹${v}`;
 
       const rowsHtml = frequencies.map(freq => {
-        const label = this.escapeHtml(freq.frequency.charAt(0).toUpperCase() + freq.frequency.slice(1));
+        const rawFreq = (freq.frequency || 'other').toLowerCase();
+        const label = this.escapeHtml(rawFreq.charAt(0).toUpperCase() + rawFreq.slice(1));
         const amtFmt = formatVal(freq.amount);
+
+        let badgeModifier = 'monthly';
+        if (rawFreq.includes('one') || rawFreq.includes('single')) badgeModifier = 'one-time';
+        else if (rawFreq.includes('week')) badgeModifier = 'weekly';
 
         return `
           <tr>
             <td>
-              <span class="pill neutral" style="font-weight: 600; font-size: 0.78rem;">${label}</span>
+              <span class="income-freq-badge ${badgeModifier}">${label}</span>
             </td>
-            <td class="num col-tight" style="font-weight: 600;">${amtFmt}</td>
-            <td class="col-tight text-center">${freq.transaction_count}</td>
+            <td class="num col-tight income-amount-val">${amtFmt}</td>
+            <td class="col-tight text-center" style="font-variant-numeric: tabular-nums;">${freq.transaction_count}</td>
           </tr>
         `;
       }).join('');

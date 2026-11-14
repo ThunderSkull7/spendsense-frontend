@@ -1,0 +1,241 @@
+/* SpendSense — Budget Performance Styles */
+
+/* Header & Filter Bar */
+.budget-filter-form {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3, 12px);
+  flex-wrap: wrap;
+}
+
+.budget-filter-form .field {
+  margin-bottom: 0;
+  flex: 0 1 auto;
+}
+
+/* Trajectory Chart Card */
+.budget-chart-card {
+  padding: 20px;
+  margin-bottom: var(--space-5, 24px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md, 8px);
+  box-shadow: var(--shadow-sm);
+}
+
+.budget-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.budget-chart-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.budget-chart-subtitle {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.budget-chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.budget-chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.budget-chart-track-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+
+/* Category Budget Performance Table */
+.budget-table-card {
+  margin-bottom: var(--space-5, 24px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md, 8px);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.budget-table-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.budget-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Table Column Widths & Alignments */
+#budget-items-table th.col-month {
+  width: 110px;
+  white-space: nowrap;
+}
+
+#budget-items-table th.col-category {
+  min-width: 140px;
+  font-weight: 650;
+}
+
+#budget-items-table th.col-limit,
+#budget-items-table th.col-spent,
+#budget-items-table th.col-rem {
+  width: 120px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#budget-items-table th.col-util {
+  min-width: 190px;
+}
+
+#budget-items-table th.col-status {
+  width: 110px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Progress bar inside table */
+.budget-util-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.budget-util-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.budget-util-pct {
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.budget-util-threshold {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.budget-progress-track {
+  height: 6px;
+  background: var(--surface-3, rgba(0, 0, 0, 0.08));
+  border-radius: 3px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.budget-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* Lower Panels: Repeated Overspending & Threshold Alerts */
+.budget-lower-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4, 20px);
+  margin-bottom: var(--space-5, 24px);
+}
+
+@media (min-width: 900px) {
+  .budget-lower-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.budget-lower-card {
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md, 8px);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.budget-lower-card .table-wrap {
+  flex: 0 0 auto !important;
+  height: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.budget-lower-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.budget-lower-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.budget-lower-sub {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* Financial Integrity Panel */
+.budget-integrity-card {
+  padding: 18px 20px;
+  border-left: 4px solid var(--accent);
+  background: var(--surface);
+  border-radius: var(--r-md, 8px);
+  box-shadow: var(--shadow-sm);
+}
+
+.budget-integrity-title {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.budget-integrity-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.6;
+}

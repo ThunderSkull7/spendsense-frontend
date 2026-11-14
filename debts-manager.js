@@ -250,10 +250,19 @@
     });
 
     // Search input
-    var searchInput = document.getElementById('debts-search-input');
+    var searchInput = document.getElementById('debts-search-input') || document.getElementById('debts-search');
     if (searchInput) {
       searchInput.addEventListener('input', function (e) {
         self.searchQuery = e.target.value.trim();
+        self.renderDebts();
+      });
+    }
+
+    // Status filter select
+    var statusSelect = document.getElementById('debts-filter-status');
+    if (statusSelect) {
+      statusSelect.addEventListener('change', function (e) {
+        self.currentFilter = e.target.value || 'active';
         self.renderDebts();
       });
     }
@@ -331,17 +340,20 @@
     if (!modal) return;
 
     var title = document.getElementById('debt-modal-title');
-    var idInput = document.getElementById('debt-form-id');
-    var nameInput = document.getElementById('debt-form-name');
-    var lenderInput = document.getElementById('debt-form-lender');
-    var principalInput = document.getElementById('debt-form-principal');
-    var balanceInput = document.getElementById('debt-form-balance');
-    var rateInput = document.getElementById('debt-form-rate');
-    var minPayInput = document.getElementById('debt-form-min-payment');
-    var notesInput = document.getElementById('debt-form-notes');
+    var idInput = document.getElementById('debt-id') || document.getElementById('debt-form-id');
+    var nameInput = document.getElementById('debt-name') || document.getElementById('debt-form-name');
+    var lenderInput = document.getElementById('debt-lender') || document.getElementById('debt-form-lender');
+    var principalInput = document.getElementById('debt-principal') || document.getElementById('debt-form-principal');
+    var balanceInput = document.getElementById('debt-balance') || document.getElementById('debt-form-balance');
+    var rateInput = document.getElementById('debt-rate') || document.getElementById('debt-form-rate');
+    var minPayInput = document.getElementById('debt-minimum-payment') || document.getElementById('debt-form-min-payment');
+    var notesInput = document.getElementById('debt-notes') || document.getElementById('debt-form-notes');
     var errorMsg = document.getElementById('debt-form-error');
 
-    if (errorMsg) errorMsg.textContent = '';
+    if (errorMsg) {
+      errorMsg.textContent = '';
+      errorMsg.style.display = 'none';
+    }
 
     if (debt) {
       if (title) title.textContent = 'Edit Liability / Loan';
@@ -349,7 +361,7 @@
       if (nameInput) nameInput.value = debt.name || '';
       if (lenderInput) lenderInput.value = debt.lender || debt.institution || '';
       if (principalInput) {
-        principalInput.value = debt.original_principal || '';
+        principalInput.value = debt.original_principal || debt.original_amount || '';
         principalInput.disabled = true; // Principal cannot be modified after creation
       }
       if (balanceInput) {
@@ -465,7 +477,12 @@
   SpendSenseDebts.prototype.saveDebt = async function (formData) {
     var self = this;
     var errorMsg = document.getElementById('debt-form-error');
-    if (errorMsg) errorMsg.textContent = '';
+    var submitBtn = document.getElementById('debt-submit-btn');
+
+    if (errorMsg) {
+      errorMsg.textContent = '';
+      errorMsg.style.display = 'none';
+    }
 
     var id = formData.get('id');
     var isEdit = Boolean(id);
@@ -483,7 +500,10 @@
     if (minPay !== null && minPay !== '') payload.minimum_payment = parseFloat(minPay);
 
     if (!payload.name) {
-      if (errorMsg) errorMsg.textContent = 'Please provide a loan or liability name.';
+      if (errorMsg) {
+        errorMsg.textContent = 'Please provide a loan or liability name.';
+        errorMsg.style.display = 'block';
+      }
       return;
     }
 
@@ -494,9 +514,18 @@
         payload.current_balance = parseFloat(curBal);
       }
       if (isNaN(payload.original_amount) || payload.original_amount <= 0) {
-        if (errorMsg) errorMsg.textContent = 'Original principal must be greater than zero.';
+        if (errorMsg) {
+          errorMsg.textContent = 'Original principal must be greater than zero.';
+          errorMsg.style.display = 'block';
+        }
         return;
       }
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.dataset.originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Saving…';
     }
 
     try {
@@ -509,8 +538,14 @@
       self.loadDebts();
     } catch (err) {
       if (errorMsg) {
-        var detail = (err.data && err.data.message) || 'Failed to save debt record.';
+        var detail = (err.data && (err.data.message || (err.data.errors && Object.values(err.data.errors)[0][0]))) || 'Failed to save debt record.';
         errorMsg.textContent = detail;
+        errorMsg.style.display = 'block';
+      }
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = submitBtn.dataset.originalText || 'Save Debt Record';
       }
     }
   };
@@ -518,7 +553,12 @@
   SpendSenseDebts.prototype.saveRepayment = async function (formData) {
     var self = this;
     var errorMsg = document.getElementById('repay-form-error');
-    if (errorMsg) errorMsg.textContent = '';
+    var submitBtn = document.getElementById('repay-submit-btn');
+
+    if (errorMsg) {
+      errorMsg.textContent = '';
+      errorMsg.style.display = 'none';
+    }
 
     var debtId = formData.get('debt_id');
     var payload = {
@@ -528,8 +568,17 @@
     };
 
     if (isNaN(payload.amount) || payload.amount <= 0) {
-      if (errorMsg) errorMsg.textContent = 'Repayment amount must be greater than zero.';
+      if (errorMsg) {
+        errorMsg.textContent = 'Repayment amount must be greater than zero.';
+        errorMsg.style.display = 'block';
+      }
       return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.dataset.originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Saving…';
     }
 
     try {
@@ -538,8 +587,14 @@
       self.loadDebts();
     } catch (err) {
       if (errorMsg) {
-        var detail = (err.data && err.data.message) || 'Failed to record repayment.';
+        var detail = (err.data && (err.data.message || (err.data.errors && Object.values(err.data.errors)[0][0]))) || 'Failed to record repayment.';
         errorMsg.textContent = detail;
+        errorMsg.style.display = 'block';
+      }
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = submitBtn.dataset.originalText || 'Record Payment';
       }
     }
   };

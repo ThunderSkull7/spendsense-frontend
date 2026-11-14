@@ -242,8 +242,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const dot = document.createElement('span');
         dot.className = 'dot';
         dot.style.backgroundColor = categoryColors[index];
+
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'legend-label';
+        labelSpan.textContent = item.category_name;
+
+        const metaSpan = document.createElement('span');
+        metaSpan.className = 'legend-meta';
         const pct = Math.round((item.total_spent / total) * 100);
-        entry.append(dot, document.createTextNode(`${item.category_name} · ${money(item.total_spent)} (${pct}%)`));
+        metaSpan.textContent = `· ${money(item.total_spent)} (${pct}%)`;
+
+        entry.append(dot, labelSpan, metaSpan);
         spendingLegend.appendChild(entry);
       });
     }
@@ -281,6 +290,9 @@ document.addEventListener('DOMContentLoaded', () => {
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+              duration: 400,
+            },
             cutout: '64%',
             plugins: {
               legend: { display: false },
