@@ -629,6 +629,12 @@
     document.querySelectorAll("[data-user-avatar]").forEach((el) => {
       el.textContent = avatar;
     });
+    document.querySelectorAll("[data-sidebar-user-avatar]").forEach((el) => {
+      el.textContent = avatar;
+    });
+    document.querySelectorAll("[data-sidebar-user-name]").forEach((el) => {
+      el.textContent = name;
+    });
     document.querySelectorAll("[data-account-trigger]").forEach((el) => {
       const label = identityLabel ? `Account menu for ${identityLabel}` : "Account menu";
       el.setAttribute("aria-label", label);
@@ -636,8 +642,175 @@
     });
   };
 
+  const SIDEBAR_MODE_KEY = "spendsense_sidebar_mode";
+
+  const initSidebar = () => {
+    const sidebar = document.querySelector(".sidebar[data-sidebar], aside.sidebar");
+    if (!sidebar) return;
+
+    // 1. Desktop Mode (Expanded vs Compact) Toggle & Persistence
+    let sidebarHeader = sidebar.querySelector(".sidebar-header");
+    let modeToggle = sidebar.querySelector("[data-sidebar-mode-toggle]");
+
+    if (!modeToggle) {
+      const brand = sidebar.querySelector(".sidebar-brand");
+      if (brand && !sidebarHeader) {
+        sidebarHeader = document.createElement("div");
+        sidebarHeader.className = "sidebar-header";
+        brand.parentNode.insertBefore(sidebarHeader, brand);
+        sidebarHeader.appendChild(brand);
+      }
+
+      modeToggle = document.createElement("button");
+      modeToggle.type = "button";
+      modeToggle.className = "sidebar-mode-toggle";
+      modeToggle.setAttribute("data-sidebar-mode-toggle", "");
+      modeToggle.setAttribute("aria-label", "Collapse sidebar to compact mode");
+      modeToggle.setAttribute("title", "Toggle compact sidebar mode");
+      modeToggle.setAttribute("data-tooltip", "Toggle sidebar");
+      modeToggle.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>`;
+
+      if (sidebarHeader) {
+        sidebarHeader.appendChild(modeToggle);
+      } else {
+        sidebar.insertBefore(modeToggle, sidebar.firstChild);
+      }
+    }
+
+    const savedMode = safeStorage.getItem(SIDEBAR_MODE_KEY) || "expanded";
+    const applySidebarMode = (mode) => {
+      const isCompact = mode === "compact";
+      document.body.classList.toggle("sidebar-compact", isCompact);
+      safeStorage.setItem(SIDEBAR_MODE_KEY, mode);
+      if (modeToggle) {
+        const label = isCompact ? "Expand sidebar" : "Collapse sidebar";
+        modeToggle.setAttribute("aria-label", label);
+        modeToggle.setAttribute("title", label);
+        modeToggle.setAttribute("data-tooltip", label);
+      }
+    };
+    applySidebarMode(savedMode);
+
+    if (modeToggle && !modeToggle._hasListener) {
+      modeToggle._hasListener = true;
+      modeToggle.addEventListener("click", () => {
+        const currentIsCompact = document.body.classList.contains("sidebar-compact");
+        applySidebarMode(currentIsCompact ? "expanded" : "compact");
+      });
+    }
+
+    // Add tooltips to sidebar links for compact rail accessibility
+    sidebar.querySelectorAll(".sidebar-link").forEach((link) => {
+      const labelText = link.textContent.trim().replace(/\s+/g, " ");
+      if (!link.getAttribute("data-tooltip")) {
+        link.setAttribute("data-tooltip", labelText);
+      }
+      if (!link.getAttribute("title")) {
+        link.setAttribute("title", labelText);
+      }
+    });
+
+    // 2. Collapsible Navigation Groups (Accordion)
+    const nav = sidebar.querySelector(".sidebar-nav");
+    if (nav && !nav.dataset.accordionInitialized) {
+      nav.dataset.accordionInitialized = "true";
+
+      const rawGroups = Array.from(nav.querySelectorAll(".sidebar-group"));
+      rawGroups.forEach((groupEl, idx) => {
+        const groupName = groupEl.textContent.trim();
+        const contentId = `sidebar-group-content-${idx}`;
+        const section = document.createElement("div");
+        section.className = "sidebar-group-section";
+        section.setAttribute("data-group-name", groupName);
+
+        const content = document.createElement("div");
+        content.className = "sidebar-group-content";
+        content.id = contentId;
+
+        // Gather all siblings until the next .sidebar-group
+        let sibling = groupEl.nextElementSibling;
+        const itemsToMove = [];
+        while (sibling && !sibling.classList.contains("sidebar-group") && !sibling.classList.contains("sidebar-group-section")) {
+          itemsToMove.push(sibling);
+          sibling = sibling.nextElementSibling;
+        }
+
+        // Insert section before groupEl, then wrap
+        groupEl.parentNode.insertBefore(section, groupEl);
+        section.appendChild(groupEl);
+        section.appendChild(content);
+        itemsToMove.forEach((item) => content.appendChild(item));
+
+        // Create interactive chevron button inside .sidebar-group while preserving exact text
+        const hasActive = Boolean(content.querySelector(".sidebar-link.active"));
+        groupEl.style.cursor = "pointer";
+        groupEl.setAttribute("role", "button");
+        groupEl.setAttribute("tabindex", "0");
+        groupEl.setAttribute("aria-expanded", hasActive ? "true" : "false");
+        groupEl.setAttribute("aria-controls", contentId);
+        groupEl.setAttribute("title", `Toggle ${groupName} section`);
+
+        const chevron = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        chevron.setAttribute("class", "sidebar-group-chevron");
+        chevron.setAttribute("viewBox", "0 0 24 24");
+        chevron.setAttribute("aria-hidden", "true");
+        chevron.innerHTML = `<polyline points="6 9 12 15 18 9"></polyline>`;
+        groupEl.appendChild(chevron);
+
+        // State: keep active route's group open, others can be collapsed
+        if (!hasActive) {
+          section.setAttribute("data-collapsed", "true");
+          groupEl.setAttribute("data-collapsed", "true");
+          groupEl.setAttribute("aria-expanded", "false");
+        } else {
+          section.setAttribute("data-collapsed", "false");
+          groupEl.setAttribute("data-collapsed", "false");
+          groupEl.setAttribute("aria-expanded", "true");
+        }
+
+        const toggleGroup = () => {
+          const isCollapsed = section.getAttribute("data-collapsed") === "true";
+          const newState = isCollapsed ? "false" : "true";
+          section.setAttribute("data-collapsed", newState);
+          groupEl.setAttribute("data-collapsed", newState);
+          groupEl.setAttribute("aria-expanded", isCollapsed ? "true" : "false");
+        };
+
+        groupEl.addEventListener("click", toggleGroup);
+        groupEl.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleGroup();
+          }
+        });
+      });
+    }
+
+    // 3. In-Sidebar Account Footer (anchored at bottom)
+    let footer = sidebar.querySelector(".sidebar-account-footer");
+    if (!footer) {
+      footer = document.createElement("div");
+      footer.className = "sidebar-account-footer";
+      footer.innerHTML = `
+        <div class="user-chip" title="Current signed-in account">
+          <span class="user-avatar" data-sidebar-user-avatar aria-hidden="true">S</span>
+          <div class="user-meta">
+            <strong data-sidebar-user-name>Account</strong>
+          </div>
+        </div>
+        <button type="button" class="btn" data-logout data-tooltip="Log out" title="Log out" aria-label="Log out of SpendSense">
+          <span class="logout-ico nav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></span>
+          <span>Log out</span>
+        </button>
+      `;
+      sidebar.appendChild(footer);
+    }
+  };
+
   const initShell = () => {
     const body = document.body;
+
+    initSidebar();
 
     const sidebarToggle = document.querySelector("[data-sidebar-toggle]");
     const overlay = document.querySelector("[data-sidebar-overlay]");

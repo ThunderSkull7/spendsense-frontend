@@ -248,10 +248,19 @@
     });
 
     // Search input
-    var searchInput = document.getElementById('goals-search-input');
+    var searchInput = document.getElementById('goals-search-input') || document.getElementById('goals-search');
     if (searchInput) {
       searchInput.addEventListener('input', function (e) {
         self.searchQuery = e.target.value.trim();
+        self.renderGoals();
+      });
+    }
+
+    // Status filter select
+    var statusSelect = document.getElementById('goals-filter-status');
+    if (statusSelect) {
+      statusSelect.addEventListener('change', function (e) {
+        self.currentFilter = e.target.value || 'active';
         self.renderGoals();
       });
     }
@@ -336,14 +345,17 @@
     if (!modal) return;
 
     var title = document.getElementById('goal-modal-title');
-    var idInput = document.getElementById('goal-form-id');
-    var nameInput = document.getElementById('goal-form-name');
-    var targetInput = document.getElementById('goal-form-target');
-    var dateInput = document.getElementById('goal-form-date');
-    var notesInput = document.getElementById('goal-form-notes');
+    var idInput = document.getElementById('goal-id') || document.getElementById('goal-form-id');
+    var nameInput = document.getElementById('goal-name') || document.getElementById('goal-form-name');
+    var targetInput = document.getElementById('goal-target') || document.getElementById('goal-form-target');
+    var dateInput = document.getElementById('goal-target-date') || document.getElementById('goal-form-date');
+    var notesInput = document.getElementById('goal-notes') || document.getElementById('goal-form-notes');
     var errorMsg = document.getElementById('goal-form-error');
 
-    if (errorMsg) errorMsg.textContent = '';
+    if (errorMsg) {
+      errorMsg.textContent = '';
+      errorMsg.style.display = 'none';
+    }
 
     if (goal) {
       if (title) title.textContent = 'Edit Financial Goal';
@@ -458,7 +470,12 @@
   SpendSenseGoals.prototype.saveGoal = async function (formData) {
     var self = this;
     var errorMsg = document.getElementById('goal-form-error');
-    if (errorMsg) errorMsg.textContent = '';
+    var submitBtn = document.getElementById('goal-submit-btn');
+
+    if (errorMsg) {
+      errorMsg.textContent = '';
+      errorMsg.style.display = 'none';
+    }
 
     var id = formData.get('id');
     var payload = {
@@ -469,12 +486,24 @@
     };
 
     if (!payload.name) {
-      if (errorMsg) errorMsg.textContent = 'Please provide a goal name.';
+      if (errorMsg) {
+        errorMsg.textContent = 'Please provide a goal name.';
+        errorMsg.style.display = 'block';
+      }
       return;
     }
     if (isNaN(payload.target_amount) || payload.target_amount <= 0) {
-      if (errorMsg) errorMsg.textContent = 'Target amount must be greater than zero.';
+      if (errorMsg) {
+        errorMsg.textContent = 'Target amount must be greater than zero.';
+        errorMsg.style.display = 'block';
+      }
       return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.dataset.originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Saving…';
     }
 
     try {
@@ -487,8 +516,14 @@
       self.loadGoals();
     } catch (err) {
       if (errorMsg) {
-        var detail = (err.data && err.data.message) || 'Failed to save goal.';
+        var detail = (err.data && (err.data.message || (err.data.errors && Object.values(err.data.errors)[0][0]))) || 'Failed to save goal.';
         errorMsg.textContent = detail;
+        errorMsg.style.display = 'block';
+      }
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = submitBtn.dataset.originalText || 'Save Goal';
       }
     }
   };
@@ -496,7 +531,12 @@
   SpendSenseGoals.prototype.saveContribution = async function (formData) {
     var self = this;
     var errorMsg = document.getElementById('contrib-form-error');
-    if (errorMsg) errorMsg.textContent = '';
+    var submitBtn = document.getElementById('contrib-submit-btn');
+
+    if (errorMsg) {
+      errorMsg.textContent = '';
+      errorMsg.style.display = 'none';
+    }
 
     var goalId = formData.get('goal_id');
     var type = formData.get('type') || 'contribution';
@@ -507,7 +547,10 @@
     };
 
     if (isNaN(payload.amount) || payload.amount <= 0) {
-      if (errorMsg) errorMsg.textContent = 'Amount must be greater than zero.';
+      if (errorMsg) {
+        errorMsg.textContent = 'Amount must be greater than zero.';
+        errorMsg.style.display = 'block';
+      }
       return;
     }
 
@@ -515,14 +558,26 @@
       '/savings-goals/' + goalId + '/corrections' :
       '/savings-goals/' + goalId + '/contributions';
 
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.dataset.originalText = submitBtn.textContent;
+      submitBtn.textContent = 'Saving…';
+    }
+
     try {
       await this.api.post(endpoint, payload);
       self.closeModals();
       self.loadGoals();
     } catch (err) {
       if (errorMsg) {
-        var detail = (err.data && err.data.message) || 'Failed to record entry.';
+        var detail = (err.data && (err.data.message || (err.data.errors && Object.values(err.data.errors)[0][0]))) || 'Failed to record transaction.';
         errorMsg.textContent = detail;
+        errorMsg.style.display = 'block';
+      }
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = submitBtn.dataset.originalText || 'Record Contribution';
       }
     }
   };

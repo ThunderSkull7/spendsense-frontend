@@ -1,29 +1,7 @@
-/* Income page — refinements on top of the shared design system. */
-
-.grid-main-side {
-  grid-template-columns: minmax(0, 1.4fr) minmax(360px, 1fr);
-  gap: 22px;
-}
+/* SpendSense — Income Management Styles */
 
 [data-income-state] {
-  padding: 8px 0;
-}
-
-.income-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.income-form .field {
-  gap: 7px;
-}
-
-.income-form .field-hint {
-  font-size: 0.78rem;
-  color: var(--muted);
-  line-height: 1.45;
-  margin-top: 2px;
+  padding: var(--space-4) 0;
 }
 
 .card-footer.center {
@@ -31,26 +9,570 @@
   justify-content: center;
 }
 
-.pill.recurring {
-  background: var(--primary-100);
-  color: var(--primary);
-  font-weight: 650;
+/* ---------- Desktop Layout & Table Proportions (3.0) ---------- */
+/* Intermediate desktop (<= 1360px): Stack Add Income below Income History
+   so the 5-column table has ample horizontal space without clipping Date or Actions.
+   Wide desktop (>= 1360px): Side-by-side layout with fixed 360px form sidebar. */
+.income-grid {
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+
+@media (min-width: 1360px) {
+  .income-grid {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+  }
+}
+
+/* ---------- Toolbar organization (4.1 & Mobile Spacing) ---------- */
+.income-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.income-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.income-filter-bar .search-wrap {
+  position: relative;
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+.income-filter-bar .search-wrap .toolbar-ico {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.income-filter-bar .search-wrap input[type="search"] {
+  padding-left: calc(var(--space-3) + 20px);
+  height: 38px;
+  font-size: var(--text-sm);
+}
+
+.date-filter-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.date-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.date-filter-group .date-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.date-filter-group input[type="date"] {
+  height: 38px;
+  padding: 4px var(--space-2);
+  font-size: var(--text-sm);
+  width: auto;
+  min-width: 130px;
+}
+
+.reset-btn {
+  height: 38px;
+  padding: 0 var(--space-3);
+}
+
+.income-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.income-action-bar .btn-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.income-action-bar .btn.sm,
+.income-action-bar .csv-btn {
+  height: 36px;
+  min-width: auto;
+  padding: 6px var(--space-3);
+  font-size: var(--text-xs);
   display: inline-flex;
   align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.sort-indicator {
+  font-size: 0.82rem;
+  line-height: 1;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+/* Status banner for CSV import / notices */
+.income-status-banner {
+  margin: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--r-sm);
+  font-size: var(--text-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--ink);
+}
+
+.income-status-banner.success {
+  background: var(--income-100);
+  border-color: var(--income);
+  color: var(--income);
+}
+
+.income-status-banner.error {
+  background: var(--expense-100);
+  border-color: var(--expense);
+  color: var(--expense);
+}
+
+.income-status-banner.info {
+  background: var(--info-100);
+  border-color: var(--info);
+  color: var(--info);
+}
+
+/* ---------- Table Improvements & Sizing (4.2) ---------- */
+.income-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.income-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  table-layout: auto;
+}
+
+.income-table th {
+  padding: var(--space-3) var(--space-3);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.income-table td {
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.income-table tbody tr {
+  transition: background 0.12s ease;
+}
+
+.income-table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+.income-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Stable column sizing preventing clipped values */
+.col-date {
+  width: 110px;
+  min-width: 95px;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.col-source {
+  min-width: 160px;
+}
+
+.col-source .cell-main {
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+}
+
+/* Source & Notes Accessible Disclosure */
+.notes-container {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.col-source .cell-notes {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.col-source .cell-notes.is-expanded {
+  max-width: none;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: break-word;
+  color: var(--ink);
+}
+
+.notes-expand-btn {
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.notes-expand-btn:hover {
+  background: var(--primary-100);
+  text-decoration: underline;
+}
+
+.notes-expand-btn:focus-visible {
+  outline: 2px solid var(--primary);
+}
+
+.col-frequency {
+  width: 110px;
+  min-width: 95px;
+  white-space: nowrap;
+}
+
+.col-frequency .pill {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+}
+
+.col-amount {
+  width: 120px;
+  min-width: 100px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-weight: 650;
+}
+
+.col-actions {
+  width: 130px;
+  min-width: 115px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.income-table .row-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.income-table .row-btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.income-table .row-btn:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.income-table .row-btn.danger {
+  color: var(--danger);
+  border-color: transparent;
+}
+
+.income-table .row-btn.danger:hover {
+  background: var(--danger-100);
+  border-color: var(--danger-100);
+}
+
+/* ---------- Add Income Form (4.4) ---------- */
+.income-form-card .card-body {
+  padding: var(--space-4) var(--space-5);
+}
+
+.income-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.form-grid-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.income-form .field {
+  display: flex;
+  flex-direction: column;
   gap: 5px;
 }
 
-.pill.onetime {
-  background: var(--surface-3);
-  color: var(--muted);
+.income-form .field label {
+  font-size: var(--text-sm);
   font-weight: 600;
+  color: var(--ink-2);
 }
 
-@media (max-width: 1180px) {
-  .grid-main-side {
+.income-form .field label .req {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.income-form input,
+.income-form select,
+.income-form textarea {
+  height: 42px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.income-form textarea {
+  height: auto;
+  min-height: 68px;
+}
+
+.income-form input:focus,
+.income-form select:focus,
+.income-form textarea:focus {
+  border-color: var(--primary);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+.income-form input[aria-invalid="true"],
+.income-form select[aria-invalid="true"] {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 2px var(--danger-100);
+}
+
+.income-form .field-hint {
+  font-size: var(--text-xs);
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.form-submit-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.income-message {
+  font-size: var(--text-sm);
+  min-height: 1.3em;
+  line-height: 1.4;
+}
+
+.income-message.error {
+  color: var(--danger);
+}
+
+.income-message.success {
+  color: var(--success);
+}
+
+/* ---------- Mobile Layout & Compact Toolbar (4.0) ---------- */
+@media (max-width: 760px) {
+  .income-toolbar {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  /* Row 1: Search field full width */
+  .income-filter-bar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    width: 100%;
+  }
+
+  .income-filter-bar .search-wrap {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  /* Row 2: From Date & To Date side-by-side */
+  .date-filter-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+    width: 100%;
+  }
+
+  .date-filter-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .date-filter-group .date-label {
+    font-size: 0.68rem;
+  }
+
+  .date-filter-group input[type="date"] {
+    width: 100%;
+    min-width: 0;
+    height: 36px;
+    font-size: var(--text-xs);
+  }
+
+  .reset-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 32px;
+  }
+
+  /* Rows 3 & 4: Compact paired actions */
+  .income-action-bar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    width: 100%;
+  }
+
+  /* Row 3: Date sorting & Amount sorting */
+  .income-action-bar .sort-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+    width: 100%;
+  }
+
+  .income-action-bar .sort-group .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Row 4: Import CSV & Export CSV */
+  .income-action-bar .csv-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+    width: 100%;
+  }
+
+  .income-action-bar .csv-group .btn,
+  .income-action-bar .csv-group .csv-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-grid-pair {
     grid-template-columns: 1fr;
   }
-  .grid-main-side > aside .card-body {
-    padding-bottom: 24px;
+}
+
+@media (max-width: 640px) {
+  /* On mobile screens, keep table readable and scrollable without page overflow */
+  .card.income-history-card {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  .income-table-wrap,
+  .table-wrap[data-income-table-wrap] {
+    overflow-x: auto !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: block !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .income-table {
+    display: table !important;
+    min-width: 540px;
+  }
+
+  .income-table thead {
+    display: table-header-group !important;
+  }
+
+  .income-table tbody {
+    display: table-row-group !important;
+  }
+
+  .income-table tr {
+    display: table-row !important;
+    background: transparent !important;
+    border: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .income-table td {
+    display: table-cell !important;
+    padding: var(--space-2) var(--space-2) !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  .income-table td::before {
+    display: none !important;
+  }
+
+  .income-table .col-amount {
+    text-align: right !important;
+  }
+}
+
+@media (max-width: 340px) {
+  .date-filter-row {
+    grid-template-columns: 1fr;
   }
 }

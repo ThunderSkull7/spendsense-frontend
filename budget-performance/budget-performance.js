@@ -379,11 +379,11 @@
         // Status badge
         let statusBadge = '';
         if (status === 'over') {
-          statusBadge = '<span class="pill danger">Overspent</span>';
+          statusBadge = '<span class="pill danger" style="font-size: 0.74rem;">Overspent</span>';
         } else if (status === 'near_limit') {
-          statusBadge = '<span class="pill warning">Near Limit</span>';
+          statusBadge = '<span class="pill warning" style="font-size: 0.74rem;">Near Limit</span>';
         } else {
-          statusBadge = '<span class="pill success">On Track</span>';
+          statusBadge = '<span class="pill success" style="font-size: 0.74rem;">On Track</span>';
         }
 
         // Progress bar styling
@@ -395,9 +395,9 @@
         // Remaining text
         let remainingHtml = '';
         if (status === 'over') {
-          remainingHtml = `<span style="color: var(--danger, #ef4444); font-weight: 600;">+ ${formatVal(item.overspent_by)} over</span>`;
+          remainingHtml = `<span style="color: var(--danger, #ef4444); font-weight: 650; font-variant-numeric: tabular-nums;">+ ${formatVal(item.overspent_by)} over</span>`;
         } else {
-          remainingHtml = `<span style="color: var(--success, #10b981);">${formatVal(remaining)}</span>`;
+          remainingHtml = `<span style="color: var(--success, #10b981); font-weight: 600; font-variant-numeric: tabular-nums;">${formatVal(remaining)}</span>`;
         }
 
         const utilText = util !== null ? `${util.toFixed(1)}%` : 'No limit';
@@ -410,20 +410,22 @@
               ${this.escapeHtml(item.month)}
               ${item.is_current_month ? ' <span class="pill neutral" style="font-size: 0.68rem; padding: 1px 5px;">Current</span>' : ''}
             </td>
-            <td style="font-weight: 600;">${this.escapeHtml(item.category_name)}</td>
-            <td class="num">${formatVal(limit)}</td>
-            <td class="num" style="font-weight: 600;">${formatVal(spent)}</td>
+            <td style="font-weight: 600; color: var(--ink);">${this.escapeHtml(item.category_name)}</td>
+            <td class="num" style="font-variant-numeric: tabular-nums;">${formatVal(limit)}</td>
+            <td class="num" style="font-weight: 650; font-variant-numeric: tabular-nums;">${formatVal(spent)}</td>
             <td class="num">${remainingHtml}</td>
             <td>
-              <div style="display: flex; justify-content: space-between; font-size: 0.74rem; margin-bottom: 4px;">
-                <span style="font-weight: 600;">${utilText}</span>
-                <span style="color: var(--muted); font-size: 0.7rem;">${this.escapeHtml(thresholdText)}</span>
-              </div>
-              <div style="height: 6px; background: var(--border, #e2e8f0); border-radius: 3px; overflow: hidden; width: 100%;">
-                <div style="height: 100%; width: ${progressPct}%; background: ${barColor}; border-radius: 3px;"></div>
+              <div class="budget-util-bar-wrap">
+                <div class="budget-util-meta">
+                  <span class="budget-util-pct">${utilText}</span>
+                  <span class="budget-util-threshold">${this.escapeHtml(thresholdText)}</span>
+                </div>
+                <div class="budget-progress-track">
+                  <div class="budget-progress-fill" style="width: ${progressPct}%; background: ${barColor};"></div>
+                </div>
               </div>
             </td>
-            <td class="col-tight">${statusBadge}</td>
+            <td class="col-tight" style="text-align: center;">${statusBadge}</td>
           </tr>
         `;
       }).join('');

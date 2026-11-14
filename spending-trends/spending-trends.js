@@ -99,12 +99,24 @@
       });
 
       // Synchronize visualization dynamically with theme changes
+      // Responsive resize handler with debouncing to recompute bar width & label stride
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          if (this.trendsData && this.trendsData.buckets) {
+            this.renderChart();
+          }
+        }, 150);
+      });
+
+      // Synchronize visualization dynamically with theme changes
       window.addEventListener('spendsense:theme-change', () => {
         if (this.trendsData) {
           this.renderChart();
           this.renderCategories();
           this.renderAnomalies();
-          this.renderTopExpenses();
+          this.renderLargest();
         }
       });
     },
@@ -249,16 +261,43 @@
     },
 
     renderChart() {
-      const buckets = this.trendsData.buckets || [];
-      if (!buckets.length) return;
+      const buckets = this.trendsData?.buckets || [];
+      if (!this.dom.chartContainer) return;
 
-      const formatVal = (v) => UI ? UI.formatMoney(v || 0) : `₹${v}`;
+      if (!buckets.length) {
+        this.dom.chartContainer.innerHTML = `
+          <div class="trends-empty-cell" style="padding: 40px 16px;">
+            No spending trajectory data recorded for this period.
+          </div>
+        `;
+        if (this.dom.chartSub) {
+          this.dom.chartSub.textContent = 'No interval data available';
+        }
+        return;
+      }
 
-      const maxExpense = Math.max(
+      const formatVal = (v) => UI ? UI.formatMoney(v || 0) : ('₹' + Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+      const maxVal = Math.max(
         ...buckets.map(b => Math.max(parseFloat(b.expenses_amount || 0), parseFloat(b.rolling_average_expense || 0)))
-      ) || 100;
+      );
+      // Clean baseline: round maxExpense up slightly to give comfortable ceiling without empty space
+      const maxExpense = maxVal > 0 ? (maxVal * 1.05) : 100;
 
-      const barsHtml = buckets.map(b => {
+      // Container-width derived layout & label stride calculation
+      const containerWrap = this.dom.chartContainer.parentElement || this.dom.chartContainer;
+      const availWidth = containerWrap.clientWidth || 800;
+      const count = buckets.length;
+      const slotWidth = count > 0 ? (availWidth / count) : 40;
+
+      // Label width is approx 44px for MM-DD or 36px for W/M. We ensure at least 8px margin between visible labels.
+      const labelEstimatedWidth = (this.trendsData.granularity === 'day') ? 44 : 36;
+      let stride = Math.max(1, Math.ceil((labelEstimatedWidth + 8) / slotWidth));
+      if (stride === 4) stride = 5;
+      else if (stride > 5 && stride < 10) stride = 7;
+      else if (stride >= 10) stride = Math.ceil(stride / 5) * 5;
+
+      const barsHtml = buckets.map((b, idx) => {
         const exp = parseFloat(b.expenses_amount || 0);
         const roll = parseFloat(b.rolling_average_expense || 0);
 
@@ -266,20 +305,26 @@
         const rollHeight = Math.max(2, Math.round((roll / maxExpense) * 160));
 
         let label = b.key;
-        if (this.trendsData.granularity === 'day' && b.key.length >= 10) {
+        if (this.trendsData.granularity === 'day' && b.key && b.key.length >= 10) {
           label = b.key.slice(5); // MM-DD
         }
 
+        const isVisibleLabel = (idx % stride === 0) || (idx === buckets.length - 1);
+        const displayLabel = isVisibleLabel ? label : '&nbsp;';
+
+        const fullDateRange = (b.start === b.end) ? b.start : (b.start + ' to ' + b.end);
+        const tooltipText = 'Interval: ' + fullDateRange + '&#10;Actual Expenses: ' + formatVal(b.expenses_amount) + '&#10;Rolling Average: ' + formatVal(b.rolling_average_expense);
+
         return `
-          <div style="flex: 1 1 0; min-width: 28px; max-width: 50px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; position: relative;" title="Bucket: ${b.start} to ${b.end}&#10;Expenses: ${formatVal(b.expenses_amount)}&#10;Rolling Avg: ${formatVal(b.rolling_average_expense)}">
-            <div style="height: 180px; width: 100%; display: flex; align-items: flex-end; justify-content: center; position: relative; border-bottom: 2px solid var(--border);">
+          <div class="trends-bar-slot" title="${tooltipText}" role="button" tabindex="0" aria-label="${fullDateRange}: ${formatVal(b.expenses_amount)}">
+            <div class="trends-bar-plot">
               <!-- Rolling Average Indicator Line Marker -->
-              <div style="position: absolute; bottom: ${rollHeight}px; left: 0; right: 0; height: 3px; background: var(--warning, #f59e0b); border-radius: 2px; z-index: 2;" title="Rolling Avg: ${formatVal(b.rolling_average_expense)}"></div>
+              <div class="trends-roll-marker" style="bottom: ${rollHeight}px;" title="Rolling Avg: ${formatVal(b.rolling_average_expense)}"></div>
               <!-- Expense Bar -->
-              <div style="width: 14px; height: ${expHeight}px; background: var(--accent); border-radius: 3px 3px 0 0; z-index: 1;" title="Expense: ${formatVal(b.expenses_amount)}"></div>
+              <div class="trends-bar-pillar" style="height: ${expHeight}px;" title="Actual: ${formatVal(b.expenses_amount)}"></div>
             </div>
-            <div style="font-size: 0.68rem; color: var(--muted); margin-top: 6px; white-space: nowrap; text-align: center; overflow: hidden; text-overflow: ellipsis; max-width: 48px;">
-              ${label}
+            <div class="trends-bar-label" title="${label}">
+              ${displayLabel}
             </div>
           </div>
         `;
@@ -294,7 +339,7 @@
       `).join('');
 
       this.dom.chartContainer.innerHTML = `
-        <div style="display: flex; gap: 4px; justify-content: space-between; align-items: flex-end; padding: 20px 8px 8px; min-width: max-content; width: 100%;">
+        <div class="trends-chart-bars-track">
           ${barsHtml}
         </div>
         <table class="sr-only" aria-label="Spending trajectory by interval">
@@ -308,8 +353,10 @@
         </table>
       `;
 
+      const hasRollingAverage = buckets.some(b => parseFloat(b.rolling_average_expense || 0) > 0);
       if (this.dom.chartSub) {
-        this.dom.chartSub.textContent = `${this.trendsData.granularity.toUpperCase()} view • ${buckets.length} intervals • Rolling average baseline`;
+        const baselineNotice = hasRollingAverage ? 'Rolling average baseline' : 'Insufficient data for rolling average (requires prior history)';
+        this.dom.chartSub.textContent = (this.trendsData.granularity || 'day').toUpperCase() + ' view • ' + buckets.length + ' intervals • ' + baselineNotice;
       }
     },
 
@@ -319,7 +366,7 @@
 
       if (!categories.length) {
         this.dom.categoryBody.innerHTML = `
-          <tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--muted);">No category expenditures recorded in this period.</td></tr>
+          <tr><td colspan="6" class="trends-empty-cell">No category expenditures recorded in this period.</td></tr>
         `;
         return;
       }
@@ -330,6 +377,10 @@
         const nameEsc = this.escapeHtml(cat.category_name);
         const currFmt = formatVal(cat.amount);
         const priorFmt = formatVal(cat.previous_amount);
+
+        const tone = window.SpendSenseSettings && window.SpendSenseSettings.getCategoryTone
+          ? window.SpendSenseSettings.getCategoryTone({ id: cat.category_id, name: cat.category_name })
+          : { color: '#059669' };
 
         let changeBadge = '<span style="color: var(--muted);">—</span>';
         if (cat.change_percent !== null && cat.change_percent !== undefined) {
@@ -343,7 +394,12 @@
 
         return `
           <tr>
-            <td><strong>${nameEsc}</strong></td>
+            <td>
+              <span class="category-name-cell">
+                <span class="category-dot" style="background-color: ${tone.color};"></span>
+                <strong>${nameEsc}</strong>
+              </span>
+            </td>
             <td class="num col-tight" style="font-weight: 600;">${currFmt}</td>
             <td class="num col-tight" style="color: var(--muted);">${priorFmt}</td>
             <td class="num col-tight">${changeBadge}</td>
@@ -366,7 +422,7 @@
 
       if (!anomalies.length) {
         this.dom.anomaliesBody.innerHTML = `
-          <tr><td colspan="3" style="text-align: center; padding: 20px; color: var(--muted);">No transactions exceeded the review threshold in this period.</td></tr>
+          <tr><td colspan="3" class="trends-empty-cell">No transactions exceeded the review threshold in this period.</td></tr>
         `;
         return;
       }
@@ -378,14 +434,24 @@
         const descEsc = this.escapeHtml(row.description || 'Expense');
         const catEsc = this.escapeHtml(row.category_name || 'Uncategorized');
         const amtFmt = formatVal(row.amount);
+        const tone = window.SpendSenseSettings && window.SpendSenseSettings.getCategoryTone
+          ? window.SpendSenseSettings.getCategoryTone({ id: row.category_id, name: row.category_name })
+          : { color: '#64748b' };
 
         return `
           <tr>
             <td>
-              <div style="font-weight: 600;">${descEsc}</div>
-              <div style="font-size: 0.75rem; color: var(--muted);">${dateStr}</div>
+              <div class="expense-row-group">
+                <div class="expense-desc">${descEsc}</div>
+                <div class="expense-date-sub">${dateStr}</div>
+              </div>
             </td>
-            <td class="col-tight"><span class="pill neutral" style="font-size: 0.72rem;">${catEsc}</span></td>
+            <td class="col-tight">
+              <span class="pill neutral" style="font-size: 0.72rem; gap: 5px;">
+                <span class="category-dot" style="background-color: ${tone.color}; width: 6px; height: 6px;"></span>
+                ${catEsc}
+              </span>
+            </td>
             <td class="num col-tight" style="font-weight: 700; color: var(--danger, #dc2626);">${amtFmt}</td>
           </tr>
         `;
@@ -400,7 +466,7 @@
 
       if (!largest.length) {
         this.dom.largestBody.innerHTML = `
-          <tr><td colspan="3" style="text-align: center; padding: 20px; color: var(--muted);">No transactions recorded in this period.</td></tr>
+          <tr><td colspan="3" class="trends-empty-cell">No transactions recorded in this period.</td></tr>
         `;
         return;
       }
@@ -412,15 +478,25 @@
         const descEsc = this.escapeHtml(row.description || 'Expense');
         const catEsc = this.escapeHtml(row.category_name || 'Uncategorized');
         const amtFmt = formatVal(row.amount);
+        const tone = window.SpendSenseSettings && window.SpendSenseSettings.getCategoryTone
+          ? window.SpendSenseSettings.getCategoryTone({ id: row.category_id, name: row.category_name })
+          : { color: '#64748b' };
 
         return `
           <tr>
             <td>
-              <div style="font-weight: 600;">${descEsc}</div>
-              <div style="font-size: 0.75rem; color: var(--muted);">${dateStr}</div>
+              <div class="expense-row-group">
+                <div class="expense-desc">${descEsc}</div>
+                <div class="expense-date-sub">${dateStr}</div>
+              </div>
             </td>
-            <td class="col-tight"><span class="pill neutral" style="font-size: 0.72rem;">${catEsc}</span></td>
-            <td class="num col-tight" style="font-weight: 700;">${amtFmt}</td>
+            <td class="col-tight">
+              <span class="pill neutral" style="font-size: 0.72rem; gap: 5px;">
+                <span class="category-dot" style="background-color: ${tone.color}; width: 6px; height: 6px;"></span>
+                ${catEsc}
+              </span>
+            </td>
+            <td class="num col-tight" style="font-weight: 700; color: var(--ink);">${amtFmt}</td>
           </tr>
         `;
       }).join('');
