@@ -27,6 +27,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const barTones = ['', 'teal', 'amber', 'blue', 'rose'];
 
+  // Distinct palette for Dashboard spending-by-category chart
+  // Ensures distinct hues per category across Chart.js doughnut, SVG fallback,
+  // legend indicators, and progress bars.
+  const DASHBOARD_CATEGORY_PALETTE = {
+    dark: [
+      '#A78BFA', // Violet
+      '#14B8A6', // Teal
+      '#F59E0B', // Amber
+      '#F472B6', // Pink
+      '#60A5FA', // Blue
+      '#22C55E', // Green
+      '#FB923C', // Orange
+      '#818CF8', // Indigo
+      '#A3E635', // Lime
+      '#06B6D4', // Cyan
+    ],
+    light: [
+      '#7C3AED', // Violet
+      '#0D9488', // Teal
+      '#D97706', // Amber
+      '#DB2777', // Pink
+      '#2563EB', // Blue
+      '#16A34A', // Green
+      '#EA580C', // Orange
+      '#4F46E5', // Indigo
+      '#65A30D', // Lime
+      '#0891B2', // Cyan
+    ],
+  };
+
+  const hslToHex = (h, s, l) => {
+    l /= 100;
+    const a = (s * Math.min(l, 1 - l)) / 100;
+    const f = (n) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color)
+        .toString(16)
+        .padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`.toUpperCase();
+  };
+
+  const getDashboardCategoryColors = (items) => {
+    const isDark = document.documentElement.dataset.mode === 'dark';
+    const basePalette = isDark ? DASHBOARD_CATEGORY_PALETTE.dark : DASHBOARD_CATEGORY_PALETTE.light;
+    return items.map((_, index) => {
+      if (index < basePalette.length) {
+        return basePalette[index];
+      }
+      // Dynamic fallback for > 10 categories: golden-ratio hue distribution
+      const step = index - basePalette.length;
+      const hue = Math.round((step * 137.5 + 45) % 360);
+      const sat = isDark ? 75 : 70;
+      const light = isDark ? 65 : 45;
+      return hslToHex(hue, sat, light);
+    });
+  };
+
   const monthName = (month, year) =>
     new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 
@@ -95,13 +154,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let spendingChartInstance = null;
 
-  const renderSpendingDonut = (chartBox, items, total) => {
+  const renderSpendingDonut = (chartBox, items, total, categoryColors) => {
     if (!chartBox) return;
     const isDark = document.documentElement.dataset.mode === 'dark';
-    const categoryColors = items.map((item) => {
-      const tone = window.SpendSenseSettings.getCategoryTone({ id: item.category_id, name: item.category_name });
-      return tone.color;
-    });
+    const colors = categoryColors || getDashboardCategoryColors(items);
 
     if (spendingChartInstance) {
       try {
@@ -130,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
             datasets: [
               {
                 data: items.map((item) => item.total_spent),
-                backgroundColor: categoryColors,
+                backgroundColor: colors,
                 borderColor: isDark ? '#14171D' : '#FFFFFF',
                 borderWidth: 2,
                 hoverOffset: 6,
@@ -196,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
       circle.setAttribute('cy', String(size / 2));
       circle.setAttribute('r', String(radius));
       circle.setAttribute('fill', 'transparent');
-      circle.setAttribute('stroke', categoryColors[idx]);
+      circle.setAttribute('stroke', colors[idx]);
       circle.setAttribute('stroke-width', String(strokeWidth));
       circle.setAttribute('stroke-dasharray', strokeDasharray);
       circle.setAttribute('stroke-dashoffset', String(strokeDashoffset));
@@ -228,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const max = items[0].total_spent || 1;
     const total = items.reduce((sum, item) => sum + item.total_spent, 0) || 1;
+    const categoryColors = getDashboardCategoryColors(items);
 
     const grid = document.createElement('div');
     grid.className = 'dashboard-spending-grid';
@@ -254,8 +311,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const list = document.createElement('div');
     list.className = 'bar-list';
 
-    items.forEach((item) => {
-      const tone = window.SpendSenseSettings.getCategoryTone({ id: item.category_id, name: item.category_name });
+    items.forEach((item, index) => {
+      const color = categoryColors[index];
       const row = document.createElement('div');
       row.className = 'bar-row';
 
@@ -263,8 +320,8 @@ document.addEventListener('DOMContentLoaded', () => {
       meta.className = 'bar-meta';
       const label = document.createElement('span');
       const dot = document.createElement('span');
-      dot.className = 'dot ' + tone.toneName;
-      dot.style.backgroundColor = tone.color;
+      dot.className = 'dot';
+      dot.style.backgroundColor = color;
       label.append(dot, document.createTextNode(' ' + item.category_name));
       const value = document.createElement('strong');
       const pct = Math.round((item.total_spent / total) * 100);
@@ -274,8 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const track = document.createElement('div');
       track.className = 'progress';
       const fill = document.createElement('span');
-      fill.className = tone.toneName;
-      fill.style.backgroundColor = tone.color;
+      fill.style.backgroundColor = color;
       fill.style.width = Math.max(4, Math.round((item.total_spent / max) * 100)) + '%';
       track.appendChild(fill);
 
@@ -287,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
     grid.append(chartPane, breakdownPane);
     breakdownEl.replaceChildren(grid);
 
-    renderSpendingDonut(donutWrap, items, total);
+    renderSpendingDonut(donutWrap, items, total, categoryColors);
   };
 
   const renderComparison = (result) => {
