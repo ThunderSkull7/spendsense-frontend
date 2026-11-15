@@ -34,35 +34,59 @@ The browser-based interface for **SpendSense**, a personal-finance application t
 
 ## Visual showcase
 
-The SpendSense interface provides a calm, responsive personal finance workspace designed for both desktop and mobile viewports.
+The SpendSense interface provides a calm, responsive personal finance workspace designed for both desktop and mobile viewports, featuring authoritative financial metrics, distinct visualization color palettes, and responsive multi-device layouts.
 
-### Desktop experience
+### Primary dashboard
 
-#### Financial dashboard
-![SpendSense desktop financial dashboard showing monthly income, expenses, net flow summary cards, spending by category progress bars, and recent activity](docs/screenshots/dashboard-desktop.png)
+![SpendSense desktop financial dashboard showing monthly income, expenses, net cash flow summary cards, spending by category donut chart, budget utilization, and recent transactions](docs/screenshots/dashboard-overview.png)
 
-*The dashboard brings monthly cash flow, category-level spending progress, and recent transactions into a single view with Indian Rupee (₹ INR) currency formatting and customizable layout widgets.*
+*The financial dashboard consolidates monthly cash flow, category-level spending breakdown with distinct hue palettes, active budget progress, and unified recent activity with Indian Rupee (₹ INR) currency formatting.*
 
-#### Expense management & tracking
-![SpendSense desktop expenses interface displaying transaction history table with categories, dates, amounts, and action controls](docs/screenshots/expenses-desktop.png)
+---
 
-*A clean ledger interface for filtering, searching, and reviewing categorized expenses with soft-delete safety, trash/restore operations, and pagination.*
+### Core application modules
 
-#### Financial reports & period analytics
-![SpendSense desktop reports and analytics view displaying monthly cash-flow breakdown, category distribution, and export options](docs/screenshots/reports-desktop.png)
+| Expense management | Income management |
+|:---:|:---:|
+| [![SpendSense expenses management](docs/screenshots/expenses-management.png)](docs/screenshots/expenses-management.png) | [![SpendSense income management](docs/screenshots/income-management.png)](docs/screenshots/income-management.png) |
+| **Expense ledger & categorization**<br>Interactive filtering, search, soft-delete safety, and trash/restore actions | **Income ledger & payroll tracking**<br>Source details, recurring frequency indicators, and date-range management |
 
-*Detailed financial analytics providing month-over-month comparisons, budget status tracking, spending trends, and streaming CSV exports.*
+| Reports & analytics | Income analysis |
+|:---:|:---:|
+| [![SpendSense reports and analytics](docs/screenshots/reports-analytics.png)](docs/screenshots/reports-analytics.png) | [![SpendSense income analysis](docs/screenshots/income-analysis.png)](docs/screenshots/income-analysis.png) |
+| **Comprehensive financial reports**<br>Dedicated category palette, cash-flow comparisons, and CSV export | **Income trajectory & frequency breakdown**<br>Actual received income trends separated from scheduled expectation benchmarks |
+
+| Category architecture | Budget performance |
+|:---:|:---:|
+| [![SpendSense categories management](docs/screenshots/categories-management.png)](docs/screenshots/categories-management.png) | [![SpendSense budget performance](docs/screenshots/budget-performance.png)](docs/screenshots/budget-performance.png) |
+| **Category management**<br>Unified card heights, system and custom tags, and expense/income separation | **Budget trajectory & utilization**<br>Monthly budget limits, spending pace alerts, and threshold tracking |
+
+| Spending trends | Savings goals |
+|:---:|:---:|
+| [![SpendSense spending trends](docs/screenshots/spending-trends.png)](docs/screenshots/spending-trends.png) | [![SpendSense savings goals](docs/screenshots/savings-goals.png)](docs/screenshots/savings-goals.png) |
+| **Longitudinal spending trends**<br>Rolling average baselines, historical expense trajectories, and category breakdown | **Goal tracking & contributions**<br>Target progress indicators, liquid reserve milestones, and contribution logs |
+
+---
+
+### Appearance & theme versatility
+
+SpendSense natively adapts to user appearance preferences across Light and Dark interface modes with consistent visual hierarchy, high-contrast typography, and accessible data visualizations.
+
+| Dark theme overview | Light theme overview |
+|:---:|:---:|
+| [![SpendSense dark theme dashboard](docs/screenshots/dashboard-overview.png)](docs/screenshots/dashboard-overview.png) | [![SpendSense light theme dashboard](docs/screenshots/dashboard-overview-light.png)](docs/screenshots/dashboard-overview-light.png) |
+| **Dark mode (Default)**<br>Calibrated for focused, low-eye-strain financial review | **Light mode**<br>Clean, high-contrast daylight presentation meeting WCAG 2.2 AA standards |
 
 ---
 
 ### Mobile responsiveness
 
-SpendSense is fully responsive across tablet and mobile form factors, featuring touch-optimized navigation, collapsible sidebars, and adaptive financial cards.
+SpendSense is fully responsive across tablet and mobile form factors, featuring touch-optimized navigation, collapsible drawer sidebars, and adaptive financial summary cards.
 
-| Mobile dashboard | Mobile transaction management |
+| Mobile dashboard | Mobile expense ledger |
 |:---:|:---:|
-| ![SpendSense mobile dashboard showing monthly summary metrics, category budget bars, and navigation menu on 390px viewport](docs/screenshots/dashboard-mobile.png) | ![SpendSense mobile transactions view displaying expense records and quick action buttons on 390px viewport](docs/screenshots/transactions-mobile.png) |
-| **Mobile dashboard**<br>Touch-friendly cards with instant monthly cash-flow and budget status | **Mobile transactions**<br>Streamlined expense ledger optimized for single-hand mobile interaction |
+| [![SpendSense mobile dashboard](docs/screenshots/dashboard-mobile.png)](docs/screenshots/dashboard-mobile.png) | [![SpendSense mobile expenses](docs/screenshots/expenses-mobile.png)](docs/screenshots/expenses-mobile.png) |
+| **Mobile dashboard (390px)**<br>Touch-friendly cards with instant monthly cash-flow and spending donut | **Mobile transaction ledger (390px)**<br>Streamlined expense ledger optimized for single-hand mobile interaction |
 
 ## Features
 
@@ -71,17 +95,26 @@ The current frontend source contains the following application areas:
 | Area | What it provides |
 |---|---|
 | Landing and authentication | Entry page, login, signup, and password-recovery screens |
-| Dashboard | Financial overview and dashboard preferences |
-| Expense management | Expense history and expense entry |
-| Income management | Income records and recurring-income related UI |
-| Budget planning | Budget management and progress |
-| Categories | Expense and income category management |
-| Reports and analytics | Reporting views and period-based analysis |
-| Notifications | In-app notification interface |
-| Settings | Account and application preferences |
-| Support | Help and support page |
+| Dashboard | Authoritative financial overview, spending donut, and cash flow comparison |
+| Expense management | Paginated expense ledger, category assignment, search, and CSV exports |
+| Income management | Income tracking, frequency indicators, and salary/retainer records |
+| Income analysis | Multi-month income trends, source comparison, and expected vs actual benchmarks |
+| Budget planning & performance | Budget limit configuration, utilization progress, and threshold alerts |
+| Categories | Expense and income category management with system and custom badges |
+| Reports and analytics | Distinct category visualization palette, month-over-month comparisons, and CSV reports |
+| Spending trends | Multi-period spending trajectory, rolling averages, and anomaly tracking |
+| Savings goals | Goal milestone tracking, progress percentages, and contribution history |
+| Debts & loans | Debt amortization tracking, payment plans, and payoff projections |
+| Subscriptions & recurring | Recurring transaction calendar, renewal alerts, and subscription management |
+| Net worth | Asset and liability tracking with historical net worth progression |
+| Cash flow forecast | Predictive financial modeling and scheduled liquidity projection |
+| Financial health | Quantitative financial wellness scoring and actionable metric breakdown |
+| Financial calendar | Calendar view of upcoming bills, income dates, and subscription renewals |
+| Notifications | Real-time and persistent in-app financial alerts |
+| Settings | Appearance modes (Light/Dark/System), accent palettes, and preferences |
+| Support | Help, documentation, and user support resources |
 
-The checked-in HTML page set includes 14 pages. Feature behavior and available actions are implemented across the corresponding JavaScript modules and should be evaluated in the running application.
+The checked-in HTML page set includes 25 application pages organized into a clean 4-group navigation hierarchy (Overview, Money, Planning, and Insights). Feature behavior and available actions are implemented across the corresponding JavaScript modules and should be evaluated in the running application.
 
 ## Design and interaction
 
