@@ -152,19 +152,19 @@
             </section>
 
             <!-- Dual Grid: Income Sources & Income Frequency Breakdown -->
-            <section class="grid grid-2" style="margin-bottom: 24px;" aria-label="Income sources and frequencies">
+            <section class="grid income-analysis-grid" aria-label="Income sources and frequencies">
               <!-- Sources Panel -->
-              <article class="card" style="display: flex; flex-direction: column;">
-                <div style="padding: 16px 20px; border-bottom: 1px solid var(--border);">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2 style="margin: 0; font-size: 1rem; font-weight: 600;">Income Sources</h2>
+              <article class="card income-analysis-card">
+                <div class="card-head" style="padding: 16px 20px; border-bottom: 1px solid var(--border);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <h2 class="card-title" style="margin: 0; font-size: 1rem; font-weight: 600;">Income Sources</h2>
                     <span id="income-source-count-badge" class="pill success" style="font-size: 0.75rem;">0 sources</span>
                   </div>
-                  <p style="margin: 4px 0 0; font-size: 0.78rem; color: var(--muted); line-height: 1.4;">
+                  <p class="card-sub" style="margin: 4px 0 0; font-size: 0.78rem; color: var(--muted); line-height: 1.4;">
                     Income grouped by recorded source and compared with prior equal period.
                   </p>
                 </div>
-                <div class="table-wrap" style="flex: 1 1 auto;">
+                <div class="table-wrap">
                   <table class="data-table" id="income-sources-table">
                     <thead>
                       <tr>
@@ -181,14 +181,14 @@
               </article>
 
               <!-- Frequency Breakdown Panel -->
-              <article class="card" style="display: flex; flex-direction: column;">
-                <div style="padding: 16px 20px; border-bottom: 1px solid var(--border);">
-                  <h2 style="margin: 0; font-size: 1rem; font-weight: 600;">Income by Frequency</h2>
-                  <p style="margin: 4px 0 0; font-size: 0.78rem; color: var(--muted); line-height: 1.4;">
+              <article class="card income-analysis-card">
+                <div class="card-head" style="padding: 16px 20px; border-bottom: 1px solid var(--border);">
+                  <h2 class="card-title" style="margin: 0; font-size: 1rem; font-weight: 600;">Income by Frequency</h2>
+                  <p class="card-sub" style="margin: 4px 0 0; font-size: 0.78rem; color: var(--muted); line-height: 1.4;">
                     Distribution by payment frequency (e.g. monthly salary vs one-time receipts).
                   </p>
                 </div>
-                <div class="table-wrap" style="flex: 1 1 auto;">
+                <div class="table-wrap">
                   <table class="data-table" id="income-frequency-table">
                     <thead>
                       <tr>

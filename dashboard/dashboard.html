@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="api-base-url" content="http://127.0.0.1:8002" />
     <title>Dashboard | SpendSense</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
     <script src="../theme.js"></script>
     <link rel="stylesheet" href="../styles.css" />
     <link rel="stylesheet" href="dashboard.css" />
@@ -91,13 +92,14 @@
         </section>
 
         <section class="grid grid-main-side section-gap">
-          <div class="grid">
+          <div class="grid dashboard-main-col">
             <article class="card">
               <div class="card-head">
                 <div>
                   <h2 class="card-title">Spending by category</h2>
                   <p class="card-sub" data-month-label>Loading…</p>
                 </div>
+                <a class="link small" href="../reports-analytics/reports.html">View report</a>
               </div>
               <div class="card-body" data-breakdown>
                 <div class="state loading"><span class="spinner" aria-hidden="true"></span><p>Loading spending…</p></div>
