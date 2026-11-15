@@ -50,6 +50,40 @@ document.addEventListener('DOMContentLoaded', () => {
   let lastCashflowResult = null;
   let reportingPeriod = periodHelper ? periodHelper.readPeriod() : { month: new Date().getMonth() + 1, year: new Date().getFullYear() };
 
+  // Distinct palette for Reports & Analytics spending-by-category chart
+  const REPORTS_CATEGORY_PALETTE = {
+    dark: [
+      '#14B8A6', // Teal
+      '#F59E0B', // Amber
+      '#F472B6', // Pink
+      '#22C55E', // Green
+      '#38BDF8', // Sky Blue
+      '#A855F7', // Purple
+      '#FB923C', // Orange
+      '#818CF8', // Indigo
+      '#A3E635', // Lime
+      '#06B6D4', // Cyan
+    ],
+    light: [
+      '#0D9488', // Teal
+      '#D97706', // Amber
+      '#DB2777', // Pink
+      '#16A34A', // Green
+      '#0284C7', // Sky Blue
+      '#9333EA', // Purple
+      '#EA580C', // Orange
+      '#4F46E5', // Indigo
+      '#65A30D', // Lime
+      '#0891B2', // Cyan
+    ],
+  };
+
+  const getReportsCategoryColors = (items) => {
+    const isDark = document.documentElement.dataset.mode === 'dark';
+    const palette = isDark ? REPORTS_CATEGORY_PALETTE.dark : REPORTS_CATEGORY_PALETTE.light;
+    return items.map((_, index) => palette[index % palette.length]);
+  };
+
   const monthName = (month, year) =>
     new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
   const shortMonthLabel = (month, year) =>
@@ -98,10 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const buildBars = (items) => {
     const max = items[0].total_spent || 1;
     const total = items.reduce((sum, item) => sum + item.total_spent, 0) || 1;
+    const colors = getReportsCategoryColors(items);
     const list = document.createElement('div');
     list.className = 'bar-list';
-    items.forEach((item) => {
-      const tone = window.SpendSenseSettings.getCategoryTone({ id: item.category_id, name: item.category_name });
+    items.forEach((item, index) => {
+      const color = colors[index];
       const row = document.createElement('div');
       row.className = 'bar-row';
 
@@ -109,8 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
       meta.className = 'bar-meta';
       const label = document.createElement('span');
       const dot = document.createElement('span');
-      dot.className = 'dot ' + tone.toneName;
-      dot.style.backgroundColor = tone.color;
+      dot.className = 'dot';
+      dot.style.backgroundColor = color;
       label.append(dot, document.createTextNode(' ' + item.category_name));
       const value = document.createElement('strong');
       const pct = Math.round((item.total_spent / total) * 100);
@@ -120,8 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const track = document.createElement('div');
       track.className = 'progress';
       const fill = document.createElement('span');
-      fill.className = tone.toneName;
-      fill.style.backgroundColor = tone.color;
+      fill.style.backgroundColor = color;
       fill.style.width = Math.max(4, Math.round((item.total_spent / max) * 100)) + '%';
       track.appendChild(fill);
 
@@ -219,10 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
     showChart(spendingState, spendingChartBox);
 
     const total = items.reduce((sum, item) => sum + item.total_spent, 0) || 1;
-    const categoryColors = items.map((item) => {
-      const tone = window.SpendSenseSettings.getCategoryTone({ id: item.category_id, name: item.category_name });
-      return tone.color;
-    });
+    const categoryColors = getReportsCategoryColors(items);
 
     if (spendingSummaryEl) {
       const periodLabel = payload.month && payload.year
