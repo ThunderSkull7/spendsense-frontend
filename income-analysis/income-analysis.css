@@ -20,6 +20,81 @@
 }
 
 /* Dual Grid: Income Sources & Frequency Breakdown */
+.income-analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5, 20px);
+  align-items: start;
+  margin-bottom: var(--space-5, 24px);
+}
+
+@media (max-width: 900px) {
+  .income-analysis-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4, 16px);
+  }
+}
+
+.income-analysis-card {
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  align-self: start;
+}
+
+.income-analysis-card .card-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.income-analysis-card .card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.income-analysis-card .card-sub {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.income-analysis-card .table-wrap {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  flex: 0 0 auto !important;
+  height: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.income-analysis-card .data-table th {
+  padding: 10px 14px;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.income-analysis-card .data-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+
+.income-analysis-card .data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
 .income-breakdown-grid {
   display: grid;
   grid-template-columns: 1fr;

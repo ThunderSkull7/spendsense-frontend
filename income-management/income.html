@@ -57,7 +57,7 @@
       </header>
 
       <main class="content">
-        <div class="grid grid-main-side">
+        <div class="grid grid-main-side income-grid">
           <article class="card">
             <div class="card-head">
               <div>
@@ -107,14 +107,14 @@
             </div>
 
             <div class="table-wrap" data-income-table-wrap hidden>
-              <table class="table" data-income-table>
+              <table class="table income-table" data-income-table>
                 <thead>
                   <tr>
-                    <th class="col-tight">Date</th>
-                    <th class="cell-wrap">Source</th>
-                    <th class="col-tight">Frequency</th>
-                    <th class="num col-tight">Amount</th>
-                    <th class="col-tight text-right">Actions</th>
+                    <th class="col-date">Date</th>
+                    <th class="col-source cell-wrap">Source</th>
+                    <th class="col-frequency text-center">Frequency</th>
+                    <th class="num col-amount">Amount</th>
+                    <th class="col-actions text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody data-income-rows></tbody>
@@ -126,7 +126,7 @@
             </div>
           </article>
 
-          <aside class="card">
+          <aside class="card income-form-card">
             <div class="card-head">
               <div>
                 <h2 class="card-title">Add income</h2>

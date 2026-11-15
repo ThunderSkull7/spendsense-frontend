@@ -288,16 +288,16 @@
 
   // --- Category-to-Color deterministic mapping & Chart Colors ---
   const DEFAULT_CHART_COLORS = [
-    "#059669", // Slot 0: Emerald (Food & Dining)
-    "#65A30D", // Slot 1: Lime Green (Groceries)
-    "#2563EB", // Slot 2: Blue (Transport)
-    "#D97706", // Slot 3: Amber (Bills & Utilities)
-    "#7C3AED", // Slot 4: Violet (Education)
-    "#EA580C", // Slot 5: Coral (Entertainment)
-    "#4F46E5", // Slot 6: Indigo (Rent & Housing)
-    "#E11D48", // Slot 7: Rose (Healthcare)
-    "#0284C7", // Slot 8: Cyan / Sky (Shopping)
-    "#9333EA", // Slot 9: Purple (Other / Misc)
+    "#2563EB", // Slot 0: Blue
+    "#7C3AED", // Slot 1: Violet
+    "#0D9488", // Slot 2: Teal
+    "#D97706", // Slot 3: Amber
+    "#E11D48", // Slot 4: Rose
+    "#0891B2", // Slot 5: Cyan
+    "#EA580C", // Slot 6: Orange
+    "#C026D3", // Slot 7: Magenta
+    "#65A30D", // Slot 8: Lime
+    "#4F46E5", // Slot 9: Indigo
   ];
 
   const KNOWN_CATEGORY_NAMES = {
@@ -350,16 +350,16 @@
   };
 
   const TONE_NAMES = [
-    "emerald",
-    "lime",
     "blue",
-    "amber",
     "violet",
-    "coral",
-    "indigo",
+    "teal",
+    "amber",
     "rose",
     "cyan",
-    "purple",
+    "orange",
+    "magenta",
+    "lime",
+    "indigo",
   ];
 
   const categoryTones = (keys = []) => {
@@ -631,9 +631,14 @@
     });
     document.querySelectorAll("[data-sidebar-user-avatar]").forEach((el) => {
       el.textContent = avatar;
+      el.setAttribute("aria-label", `Avatar for ${name}`);
     });
     document.querySelectorAll("[data-sidebar-user-name]").forEach((el) => {
       el.textContent = name;
+      el.setAttribute("title", name);
+    });
+    document.querySelectorAll(".sidebar-account-footer .user-chip").forEach((el) => {
+      el.setAttribute("aria-label", `Current signed-in account: ${name}`);
     });
     document.querySelectorAll("[data-account-trigger]").forEach((el) => {
       const label = identityLabel ? `Account menu for ${identityLabel}` : "Account menu";
@@ -688,6 +693,10 @@
         modeToggle.setAttribute("title", label);
         modeToggle.setAttribute("data-tooltip", label);
       }
+      window.dispatchEvent(new CustomEvent("spendsense:sidebar-toggle", { detail: { mode } }));
+      setTimeout(() => {
+        window.dispatchEvent(new Event("resize"));
+      }, 250);
     };
     applySidebarMode(savedMode);
 
@@ -710,10 +719,19 @@
       }
     });
 
-    // 2. Collapsible Navigation Groups (Accordion)
+    // 2. Collapsible Navigation Groups (Accordion with Active-Route Auto-Expansion and Manual Persistence)
     const nav = sidebar.querySelector(".sidebar-nav");
     if (nav && !nav.dataset.accordionInitialized) {
       nav.dataset.accordionInitialized = "true";
+
+      const GROUP_STATES_KEY = "spendsense_sidebar_group_states";
+      let groupStates = {};
+      try {
+        const raw = safeStorage.getItem(GROUP_STATES_KEY);
+        if (raw) groupStates = JSON.parse(raw) || {};
+      } catch (_) {
+        groupStates = {};
+      }
 
       const rawGroups = Array.from(nav.querySelectorAll(".sidebar-group"));
       rawGroups.forEach((groupEl, idx) => {
@@ -746,7 +764,6 @@
         groupEl.style.cursor = "pointer";
         groupEl.setAttribute("role", "button");
         groupEl.setAttribute("tabindex", "0");
-        groupEl.setAttribute("aria-expanded", hasActive ? "true" : "false");
         groupEl.setAttribute("aria-controls", contentId);
         groupEl.setAttribute("title", `Toggle ${groupName} section`);
 
@@ -757,23 +774,33 @@
         chevron.innerHTML = `<polyline points="6 9 12 15 18 9"></polyline>`;
         groupEl.appendChild(chevron);
 
-        // State: keep active route's group open, others can be collapsed
-        if (!hasActive) {
-          section.setAttribute("data-collapsed", "true");
-          groupEl.setAttribute("data-collapsed", "true");
-          groupEl.setAttribute("aria-expanded", "false");
+        // Active route's group must ALWAYS be expanded so active destination remains visible.
+        // Other groups respect manual user persistence, defaulting to collapsed.
+        let isCollapsed;
+        if (hasActive) {
+          isCollapsed = false;
+        } else if (groupStates[groupName] !== undefined) {
+          isCollapsed = Boolean(groupStates[groupName]);
         } else {
-          section.setAttribute("data-collapsed", "false");
-          groupEl.setAttribute("data-collapsed", "false");
-          groupEl.setAttribute("aria-expanded", "true");
+          isCollapsed = true;
         }
 
+        const applyGroupState = (collapsed) => {
+          section.setAttribute("data-collapsed", collapsed ? "true" : "false");
+          groupEl.setAttribute("data-collapsed", collapsed ? "true" : "false");
+          groupEl.setAttribute("aria-expanded", collapsed ? "false" : "true");
+        };
+
+        applyGroupState(isCollapsed);
+
         const toggleGroup = () => {
-          const isCollapsed = section.getAttribute("data-collapsed") === "true";
-          const newState = isCollapsed ? "false" : "true";
-          section.setAttribute("data-collapsed", newState);
-          groupEl.setAttribute("data-collapsed", newState);
-          groupEl.setAttribute("aria-expanded", isCollapsed ? "true" : "false");
+          const currentlyCollapsed = section.getAttribute("data-collapsed") === "true";
+          const newCollapsed = !currentlyCollapsed;
+          applyGroupState(newCollapsed);
+          groupStates[groupName] = newCollapsed;
+          try {
+            safeStorage.setItem(GROUP_STATES_KEY, JSON.stringify(groupStates));
+          } catch (_) {}
         };
 
         groupEl.addEventListener("click", toggleGroup);
@@ -792,7 +819,7 @@
       footer = document.createElement("div");
       footer.className = "sidebar-account-footer";
       footer.innerHTML = `
-        <div class="user-chip" title="Current signed-in account">
+        <div class="user-chip" role="group" aria-label="Current signed-in user" title="Current signed-in account">
           <span class="user-avatar" data-sidebar-user-avatar aria-hidden="true">S</span>
           <div class="user-meta">
             <strong data-sidebar-user-name>Account</strong>

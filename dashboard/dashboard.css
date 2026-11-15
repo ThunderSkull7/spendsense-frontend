@@ -21,14 +21,118 @@
 .progress > span.blue { background: var(--blue); }
 .progress > span.rose { background: var(--rose); }
 
-[data-comparison] .legend {
-  margin-top: 16px;
+/* ---------- Dashboard Spending by Category Layout ---------- */
+.dashboard-spending-grid {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: center;
+}
+
+.spending-chart-pane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 190px;
+}
+
+.spending-donut-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 190px;
+  height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spending-donut-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 190px;
+  max-height: 190px;
+}
+
+.spending-donut-wrap svg.donut-svg {
+  width: 100%;
+  height: 100%;
+  max-width: 190px;
+  max-height: 190px;
+  transform: rotate(-90deg);
+}
+
+.spending-breakdown-pane {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.dashboard-spending-grid .bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dashboard-spending-grid .bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dashboard-spending-grid .bar-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: 0.84rem;
+}
+
+.dashboard-spending-grid .bar-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-spending-grid .bar-meta strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .dashboard-spending-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  .spending-chart-pane {
+    min-height: 180px;
+  }
+  .spending-donut-wrap {
+    max-width: 180px;
+    height: 180px;
+  }
+}
+
+/* ---------- Cash Flow Card Refinement ---------- */
+[data-comparison] {
+  display: flex;
+  flex-direction: column;
 }
 
 [data-comparison] .delta-line {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   color: var(--muted);
-  margin-bottom: 14px;
+  margin-bottom: var(--space-3);
+}
+
+[data-comparison] .legend {
+  margin-top: var(--space-3);
 }
 
 [data-comparison] .delta-line .up {

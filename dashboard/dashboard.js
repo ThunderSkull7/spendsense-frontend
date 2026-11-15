@@ -93,6 +93,125 @@ document.addEventListener('DOMContentLoaded', () => {
     UI.renderState(transactionsEl, 'loading', { message: 'Loading transactions…' });
   };
 
+  let spendingChartInstance = null;
+
+  const renderSpendingDonut = (chartBox, items, total) => {
+    if (!chartBox) return;
+    const isDark = document.documentElement.dataset.mode === 'dark';
+    const categoryColors = items.map((item) => {
+      const tone = window.SpendSenseSettings.getCategoryTone({ id: item.category_id, name: item.category_name });
+      return tone.color;
+    });
+
+    if (spendingChartInstance) {
+      try {
+        spendingChartInstance.destroy();
+      } catch (e) {
+        /* ignore */
+      }
+      spendingChartInstance = null;
+    }
+
+    chartBox.replaceChildren();
+
+    if (window.Chart) {
+      const canvas = document.createElement('canvas');
+      canvas.id = 'dashboardCategoryChart';
+      canvas.setAttribute('role', 'img');
+      canvas.setAttribute('aria-label', 'Spending by category doughnut chart');
+      canvas.setAttribute('aria-describedby', 'dashboardCategorySummary');
+      chartBox.appendChild(canvas);
+
+      try {
+        spendingChartInstance = new window.Chart(canvas, {
+          type: 'doughnut',
+          data: {
+            labels: items.map((item) => item.category_name),
+            datasets: [
+              {
+                data: items.map((item) => item.total_spent),
+                backgroundColor: categoryColors,
+                borderColor: isDark ? '#14171D' : '#FFFFFF',
+                borderWidth: 2,
+                hoverOffset: 6,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+              duration: 350,
+            },
+            cutout: '62%',
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.95)',
+                titleColor: '#F8FAFC',
+                bodyColor: '#F8FAFC',
+                borderColor: isDark ? '#334155' : '#E2E8F0',
+                borderWidth: 1,
+                padding: 10,
+                boxPadding: 4,
+                usePointStyle: true,
+                callbacks: {
+                  label: (context) => {
+                    const val = context.raw || 0;
+                    const pct = Math.round((val / total) * 100);
+                    return ` ${context.label}: ${money(val)} (${pct}%)`;
+                  },
+                },
+              },
+            },
+          },
+        });
+        return;
+      } catch (err) {
+        console.warn('Chart.js render failed, falling back to SVG doughnut', err);
+      }
+    }
+
+    // SVG Fallback Doughnut (robust against offline/test environments without CDN)
+    const size = 160;
+    const strokeWidth = 24;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    let accumulatedAngle = 0;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+    svg.setAttribute('class', 'donut-svg');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Spending by category doughnut chart');
+
+    items.forEach((item, idx) => {
+      const share = total > 0 ? item.total_spent / total : 0;
+      const strokeDasharray = `${share * circumference} ${circumference}`;
+      const strokeDashoffset = -accumulatedAngle * circumference;
+      accumulatedAngle += share;
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', String(size / 2));
+      circle.setAttribute('cy', String(size / 2));
+      circle.setAttribute('r', String(radius));
+      circle.setAttribute('fill', 'transparent');
+      circle.setAttribute('stroke', categoryColors[idx]);
+      circle.setAttribute('stroke-width', String(strokeWidth));
+      circle.setAttribute('stroke-dasharray', strokeDasharray);
+      circle.setAttribute('stroke-dashoffset', String(strokeDashoffset));
+
+      const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+      const pct = Math.round(share * 100);
+      title.textContent = `${item.category_name}: ${money(item.total_spent)} (${pct}%)`;
+      circle.appendChild(title);
+
+      svg.appendChild(circle);
+    });
+
+    chartBox.appendChild(svg);
+  };
+
   const renderBreakdown = (result) => {
     if (!result || result.status !== 200 || !result.data || !result.data.data) {
       UI.renderState(breakdownEl, 'error', { message: 'Could not load spending breakdown.', retry: loadDashboard });
@@ -109,6 +228,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const max = items[0].total_spent || 1;
     const total = items.reduce((sum, item) => sum + item.total_spent, 0) || 1;
+
+    const grid = document.createElement('div');
+    grid.className = 'dashboard-spending-grid';
+
+    // Left pane: Donut chart
+    const chartPane = document.createElement('div');
+    chartPane.className = 'spending-chart-pane';
+    const donutWrap = document.createElement('div');
+    donutWrap.className = 'spending-donut-wrap';
+    chartPane.appendChild(donutWrap);
+
+    const summarySr = document.createElement('p');
+    summarySr.className = 'sr-only';
+    summarySr.id = 'dashboardCategorySummary';
+    const summaryText = items
+      .map((item) => `${item.category_name}: ${money(item.total_spent)} (${Math.round((item.total_spent / total) * 100)}%)`)
+      .join('. ');
+    summarySr.textContent = `Spending by category: ${summaryText}.`;
+    chartPane.appendChild(summarySr);
+
+    // Right pane: Compact category list
+    const breakdownPane = document.createElement('div');
+    breakdownPane.className = 'spending-breakdown-pane';
     const list = document.createElement('div');
     list.className = 'bar-list';
 
@@ -141,7 +283,11 @@ document.addEventListener('DOMContentLoaded', () => {
       list.appendChild(row);
     });
 
-    breakdownEl.replaceChildren(list);
+    breakdownPane.appendChild(list);
+    grid.append(chartPane, breakdownPane);
+    breakdownEl.replaceChildren(grid);
+
+    renderSpendingDonut(donutWrap, items, total);
   };
 
   const renderComparison = (result) => {
@@ -199,9 +345,10 @@ document.addEventListener('DOMContentLoaded', () => {
       expenseBar.title = `Expenses ${money(month.expenses || 0)}`;
       track.append(incomeBar, expenseBar);
 
+      const netVal = month.net || 0;
       const value = document.createElement('div');
-      value.className = 'col-value';
-      value.textContent = money(month.net || 0);
+      value.className = 'col-value' + (netVal < 0 ? ' neg' : netVal > 0 ? ' pos' : '');
+      value.textContent = (netVal > 0 ? '+' : '') + money(netVal);
 
       const labelEl = document.createElement('div');
       labelEl.className = 'col-label';
@@ -703,12 +850,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  const handleResize = () => {
+    if (spendingChartInstance) {
+      try {
+        spendingChartInstance.resize();
+      } catch (e) {
+        /* ignore */
+      }
+    }
+  };
+
+  window.addEventListener('resize', handleResize);
+  window.addEventListener('spendsense:sidebar-toggle', () => {
+    setTimeout(handleResize, 100);
+    setTimeout(handleResize, 300);
+  });
+
   window.addEventListener('spendsense:theme-change', () => {
     if (lastBreakdownResult) renderBreakdown(lastBreakdownResult);
     if (lastComparisonResult) renderComparison(lastComparisonResult);
     if (lastBudgetsResult) renderBudgets(lastBudgetsResult);
     if (lastExpensesResult || lastIncomesResult) renderTransactions(lastExpensesResult, lastIncomesResult);
     if (lastCalendarResult) renderUpcomingBills(lastCalendarResult);
+  });
+
+  // Re-render if Chart.js deferred script finishes after initial render
+  window.addEventListener('load', () => {
+    if (lastBreakdownResult && !spendingChartInstance && window.Chart) {
+      renderBreakdown(lastBreakdownResult);
+    }
   });
 
   if (refreshButton) {

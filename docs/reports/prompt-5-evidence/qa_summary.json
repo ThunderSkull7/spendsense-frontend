@@ -1,0 +1,435 @@
+{
+  "sidebar": {
+    "initialActiveExpanded": true,
+    "manualCollapse": true,
+    "crossNavPersistence": true,
+    "returnAutoExpanded": true,
+    "reloadActiveSafe": true
+  },
+  "dashboard": {
+    "hasDonut": true,
+    "isSvg": false,
+    "breakdownCount": 5,
+    "cashFlowCardHeight": 337,
+    "cashFlowChartHeight": 0
+  },
+  "income": {
+    "at1024": {
+      "overflow": 0,
+      "tableWidth": 924,
+      "actionsVisible": true,
+      "formStackedUnder": true
+    }
+  },
+  "incomeAnalysis": {
+    "sourcesHeight": 252,
+    "freqHeight": 0,
+    "freqDeadSpace": 0
+  },
+  "categories": {},
+  "responsiveMatrix": [
+    {
+      "viewport": "320px",
+      "page": "Dashboard",
+      "scrollW": 320,
+      "clientW": 320,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "320px",
+      "page": "Income",
+      "scrollW": 320,
+      "clientW": 320,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "320px",
+      "page": "Categories",
+      "scrollW": 320,
+      "clientW": 320,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "320px",
+      "page": "Reports",
+      "scrollW": 320,
+      "clientW": 320,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "320px",
+      "page": "Income Analysis",
+      "scrollW": 320,
+      "clientW": 320,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "320px",
+      "page": "Settings",
+      "scrollW": 320,
+      "clientW": 320,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "375px",
+      "page": "Dashboard",
+      "scrollW": 375,
+      "clientW": 375,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "375px",
+      "page": "Income",
+      "scrollW": 375,
+      "clientW": 375,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "375px",
+      "page": "Categories",
+      "scrollW": 375,
+      "clientW": 375,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "375px",
+      "page": "Reports",
+      "scrollW": 375,
+      "clientW": 375,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "375px",
+      "page": "Income Analysis",
+      "scrollW": 375,
+      "clientW": 375,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "375px",
+      "page": "Settings",
+      "scrollW": 375,
+      "clientW": 375,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "430px",
+      "page": "Dashboard",
+      "scrollW": 430,
+      "clientW": 430,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "430px",
+      "page": "Income",
+      "scrollW": 430,
+      "clientW": 430,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "430px",
+      "page": "Categories",
+      "scrollW": 430,
+      "clientW": 430,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "430px",
+      "page": "Reports",
+      "scrollW": 430,
+      "clientW": 430,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "430px",
+      "page": "Income Analysis",
+      "scrollW": 430,
+      "clientW": 430,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "430px",
+      "page": "Settings",
+      "scrollW": 430,
+      "clientW": 430,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "768px",
+      "page": "Dashboard",
+      "scrollW": 768,
+      "clientW": 768,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "768px",
+      "page": "Income",
+      "scrollW": 768,
+      "clientW": 768,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "768px",
+      "page": "Categories",
+      "scrollW": 768,
+      "clientW": 768,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "768px",
+      "page": "Reports",
+      "scrollW": 768,
+      "clientW": 768,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "768px",
+      "page": "Income Analysis",
+      "scrollW": 768,
+      "clientW": 768,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "768px",
+      "page": "Settings",
+      "scrollW": 768,
+      "clientW": 768,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1024px",
+      "page": "Dashboard",
+      "scrollW": 1024,
+      "clientW": 1024,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1024px",
+      "page": "Income",
+      "scrollW": 1024,
+      "clientW": 1024,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1024px",
+      "page": "Categories",
+      "scrollW": 1024,
+      "clientW": 1024,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1024px",
+      "page": "Reports",
+      "scrollW": 1024,
+      "clientW": 1024,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1024px",
+      "page": "Income Analysis",
+      "scrollW": 1024,
+      "clientW": 1024,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1024px",
+      "page": "Settings",
+      "scrollW": 1024,
+      "clientW": 1024,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280px",
+      "page": "Dashboard",
+      "scrollW": 1280,
+      "clientW": 1280,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280px",
+      "page": "Income",
+      "scrollW": 1280,
+      "clientW": 1280,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280px",
+      "page": "Categories",
+      "scrollW": 1280,
+      "clientW": 1280,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280px",
+      "page": "Reports",
+      "scrollW": 1280,
+      "clientW": 1280,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280px",
+      "page": "Income Analysis",
+      "scrollW": 1280,
+      "clientW": 1280,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1280px",
+      "page": "Settings",
+      "scrollW": 1280,
+      "clientW": 1280,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1440px",
+      "page": "Dashboard",
+      "scrollW": 1440,
+      "clientW": 1440,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1440px",
+      "page": "Income",
+      "scrollW": 1440,
+      "clientW": 1440,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1440px",
+      "page": "Categories",
+      "scrollW": 1440,
+      "clientW": 1440,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1440px",
+      "page": "Reports",
+      "scrollW": 1440,
+      "clientW": 1440,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1440px",
+      "page": "Income Analysis",
+      "scrollW": 1440,
+      "clientW": 1440,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1440px",
+      "page": "Settings",
+      "scrollW": 1440,
+      "clientW": 1440,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1920px",
+      "page": "Dashboard",
+      "scrollW": 1920,
+      "clientW": 1920,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1920px",
+      "page": "Income",
+      "scrollW": 1920,
+      "clientW": 1920,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1920px",
+      "page": "Categories",
+      "scrollW": 1920,
+      "clientW": 1920,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1920px",
+      "page": "Reports",
+      "scrollW": 1920,
+      "clientW": 1920,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1920px",
+      "page": "Income Analysis",
+      "scrollW": 1920,
+      "clientW": 1920,
+      "delta": 0,
+      "status": "PASS"
+    },
+    {
+      "viewport": "1920px",
+      "page": "Settings",
+      "scrollW": 1920,
+      "clientW": 1920,
+      "delta": 0,
+      "status": "PASS"
+    }
+  ],
+  "screenshots": [
+    "02_sidebar_expanded_1440px.png",
+    "03_sidebar_collapsed_1440px.png",
+    "01_dashboard_desktop_1440px.png",
+    "13_dashboard_empty_state.png",
+    "11_dark_theme_dashboard.png",
+    "07_reports_analytics_desktop_1440px.png",
+    "04_income_desktop_1440px.png",
+    "12_income_1024px.png",
+    "05_income_analysis_desktop_1440px.png",
+    "06_categories_desktop_1440px.png",
+    "09_categories_card_variants_comparison.png",
+    "10_dark_theme_categories.png",
+    "08_categories_mobile_375px.png",
+    "08_dashboard_mobile_375px.png",
+    "08_income_mobile_375px.png",
+    "08_income_analysis_mobile_375px.png",
+    "08_mobile_navigation_drawer_375px.png"
+  ]
+}
