@@ -47,7 +47,8 @@ function createMockCategoryServer(rootDir) {
     if (pathname === '/sanctum/csrf-cookie') {
       res.writeHead(204, {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Credentials': 'true'
+        'Access-Control-Allow-Credentials': 'true',
+        'Set-Cookie': 'XSRF-TOKEN=test-csrf-token; Path=/'
       });
       return res.end();
     }
