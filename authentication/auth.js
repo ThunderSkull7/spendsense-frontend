@@ -5,6 +5,35 @@
 const authForm = document.querySelector("[data-auth-form]");
 const authMessage = document.querySelector("[data-auth-message]");
 
+function renderAuthMessage(target, message, verificationUrl = null) {
+  if (!target) return;
+  target.replaceChildren(document.createTextNode(message || ""));
+  if (!verificationUrl) return;
+
+  const link = document.createElement("a");
+  link.href = verificationUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  link.textContent = "Open browser verification in a new tab";
+  target.append(document.createTextNode(" "), link);
+}
+
+const startupMessage = "Starting the service. After inactivity, this can take about a minute.";
+document.addEventListener("spendsense:api-warming", () => {
+  const submitButton = authForm && authForm.querySelector('button[type="submit"]');
+  if (!authMessage || !submitButton || !submitButton.disabled) return;
+  authMessage.textContent = startupMessage;
+  authMessage.classList.remove("error", "success");
+});
+document.addEventListener("spendsense:api-ready", () => {
+  if (authMessage && authMessage.textContent === startupMessage) authMessage.textContent = "";
+});
+document.addEventListener("spendsense:api-warmup-failed", () => {
+  if (!authMessage || authMessage.textContent !== startupMessage) return;
+  authMessage.textContent = "The service is still starting. Please wait a few seconds and try again.";
+  authMessage.classList.add("error");
+});
+
 // Detect if form has a name field (registration form) or just email/password (login form).
 // If a name field exists, treat as registration; otherwise login.
 const isRegistrationForm = authForm && authForm.querySelector('input[name="name"]');
@@ -119,7 +148,12 @@ if (authForm) {
           const errText = window.SpendSenseAPI && typeof window.SpendSenseAPI.formatAuthError === "function"
             ? window.SpendSenseAPI.formatAuthError(status, data, "Registration failed.", response)
             : (data && data.message ? data.message : "Registration failed.");
-          authMessage.textContent = errText;
+          const needsVerification = (data && data.verificationRequired)
+            || (window.SpendSenseAPI && window.SpendSenseAPI.isVerificationResponse(response, data));
+          const verificationUrl = needsVerification && window.SpendSenseAPI
+            ? window.SpendSenseAPI.getCsrfVerificationUrl()
+            : null;
+          renderAuthMessage(authMessage, errText, verificationUrl);
           authMessage.classList.add("error");
           restoreSubmit();
         }
@@ -136,7 +170,7 @@ if (authForm) {
             window.location.href = "../dashboard/dashboard.html";
           }, 800);
         } else {
-          authMessage.textContent = result.message || "Invalid email or password.";
+          renderAuthMessage(authMessage, result.message || "Invalid email or password.", result.verificationUrl);
           authMessage.classList.add("error");
           restoreSubmit();
         }
@@ -273,7 +307,12 @@ if (forgotForm && resetForm) {
           const errText = window.SpendSenseAPI && typeof window.SpendSenseAPI.formatAuthError === "function"
             ? window.SpendSenseAPI.formatAuthError(status, data, "Unable to send reset instructions. Please try again.", response)
             : ((data && data.message) || "Unable to send reset instructions. Please try again.");
-          forgotMessage.textContent = errText;
+          const needsVerification = (data && data.verificationRequired)
+            || (window.SpendSenseAPI && window.SpendSenseAPI.isVerificationResponse(response, data));
+          const verificationUrl = needsVerification && window.SpendSenseAPI
+            ? window.SpendSenseAPI.getCsrfVerificationUrl()
+            : null;
+          renderAuthMessage(forgotMessage, errText, verificationUrl);
           forgotMessage.className = "auth-message error";
         }
       }
@@ -361,7 +400,12 @@ if (forgotForm && resetForm) {
           ? window.SpendSenseAPI.formatAuthError(status, data, "Failed to reset password.", response)
           : "Failed to reset password.";
         if (resetMessage) {
-          resetMessage.textContent = errText;
+          const needsVerification = (data && data.verificationRequired)
+            || (window.SpendSenseAPI && window.SpendSenseAPI.isVerificationResponse(response, data));
+          const verificationUrl = needsVerification && window.SpendSenseAPI
+            ? window.SpendSenseAPI.getCsrfVerificationUrl()
+            : null;
+          renderAuthMessage(resetMessage, errText, verificationUrl);
           resetMessage.className = "auth-message error";
         }
       }
@@ -378,3 +422,4 @@ if (forgotForm && resetForm) {
     }
   });
 }
+

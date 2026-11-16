@@ -49,6 +49,20 @@
   min-height: 1.25rem;
 }
 
+.auth-message a {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: var(--teal, #0f766e);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.auth-message a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -57,5 +71,6 @@
     scroll-behavior: auto !important;
   }
 }
+
 
 
