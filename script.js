@@ -20,28 +20,150 @@ const API = {
   },
 
   _csrfPromise: null,
+  _csrfFailure: null,
+  _backendWarmupPromise: null,
+  _backendWarmupTimeoutMs: 70000,
+  _backendWarmupDelaysMs: [1000, 2000, 4000, 6000, 8000, 10000, 10000, 10000, 10000],
+
+  isBackendStartupResponse(response) {
+    if (!response || !response.headers || typeof response.headers.get !== 'function') return false;
+    if (response.headers.get('cf-mitigated') === 'challenge') return false;
+    if (response.status === 429) return false;
+    const status = response.status;
+    if ([502, 503, 504, 520, 522, 524].includes(status)) return true;
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    return response.ok && contentType.includes('text/html');
+  },
+
+  async fetchStartupRequest(url, options, timeoutMs = 65000) {
+    if (typeof AbortController === 'undefined') return fetch(url, options);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timeout);
+    }
+  },
+
+  async waitForBackend() {
+    if (this._backendWarmupPromise) return this._backendWarmupPromise;
+
+    this._backendWarmupPromise = (async () => {
+      const startedAt = Date.now();
+      let attempt = 0;
+      let ready = false;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('spendsense:api-warming'));
+      }
+
+      try {
+        while (Date.now() - startedAt < this._backendWarmupTimeoutMs) {
+          try {
+            // Render Free services can sleep while idle. This safe, read-only
+            // probe wakes the API and treats a JSON 401 as healthy/unauthed.
+            const response = await this.fetchStartupRequest(`${API_BASE_URL}/api/user`, {
+              method: 'GET',
+              credentials: 'include',
+              cache: 'no-store',
+              headers: { Accept: 'application/json' },
+            }, 12000);
+            if (!this.isBackendStartupResponse(response)) {
+              if (response.status >= 500) continue;
+              ready = response.status !== 429
+                && !(response.headers && response.headers.get('cf-mitigated') === 'challenge');
+              break;
+            }
+          } catch (_) {
+            // Retry transient network failures while the service starts.
+          }
+
+          const delay = this._backendWarmupDelaysMs[Math.min(attempt, this._backendWarmupDelaysMs.length - 1)];
+          attempt += 1;
+          const remaining = this._backendWarmupTimeoutMs - (Date.now() - startedAt);
+          if (remaining <= 0) break;
+          await new Promise((resolve) => setTimeout(resolve, Math.min(delay, remaining)));
+        }
+      } finally {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent(ready ? 'spendsense:api-ready' : 'spendsense:api-warmup-failed'));
+        }
+      }
+      return ready;
+    })().finally(() => {
+      this._backendWarmupPromise = null;
+    });
+
+    return this._backendWarmupPromise;
+  },
+
+  async fetchRead(url, options) {
+    let response;
+    let fetchError = null;
+    try {
+      response = await this.fetchStartupRequest(url, options);
+      if (!this.isBackendStartupResponse(response)) return response;
+    } catch (error) {
+      fetchError = error;
+    }
+
+    if (await this.waitForBackend()) {
+      return this.fetchStartupRequest(url, options);
+    }
+    if (fetchError) throw fetchError;
+    return response;
+  },
 
   // Fetch CSRF cookie from Laravel Sanctum (deduplicated across concurrent calls)
   async fetchXSRFToken() {
     if (this._csrfPromise) return this._csrfPromise;
+    this._csrfFailure = null;
     this._csrfPromise = (async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/sanctum/csrf-cookie`, {
+        const res = await this.fetchRead(`${API_BASE_URL}/sanctum/csrf-cookie`, {
           credentials: 'include',
+          cache: 'no-store',
         });
         if (!res.ok) {
-          // If the endpoint returns an edge challenge (429) or upstream error (502),
-          // return null gracefully without throwing so the client remains resilient.
+          this._csrfFailure = { response: res };
           return null;
         }
-        return this.getCsrfToken();
+        const token = this.getCsrfToken();
+        if (token === null) this._csrfFailure = { response: res };
+        return token;
       } catch (e) {
+        this._csrfFailure = { error: e };
         return null;
       } finally {
         this._csrfPromise = null;
       }
     })();
     return this._csrfPromise;
+  },
+
+  csrfFailureResult() {
+    const response = this._csrfFailure && this._csrfFailure.response ? this._csrfFailure.response : null;
+    const headers = response && response.headers;
+    const verificationRequired = !!(headers && typeof headers.get === 'function'
+      && (headers.get('cf-mitigated') === 'challenge'
+        || (headers.get('content-type') || '').toLowerCase().includes('text/html')));
+    const message = verificationRequired
+      ? 'This request needs browser verification. Complete it, then try again.'
+      : 'The service is still starting or temporarily unavailable. Please wait a moment and try again.';
+    return {
+      response,
+      status: response ? response.status : 0,
+      data: { message, csrfSetupFailed: true, verificationRequired },
+      csrfSetupFailed: true,
+      verificationUrl: verificationRequired ? this.getCsrfVerificationUrl() : null,
+    };
+  },
+
+  getCsrfVerificationUrl() {
+    const origin = typeof window !== 'undefined' && window.location
+      ? window.location.origin
+      : API_BASE_URL;
+    return `${origin}/sanctum/csrf-cookie`;
   },
 
   // Generate a random, backend-valid Idempotency-Key (UUIDv4 or fallback)
@@ -101,10 +223,13 @@ const API = {
       credentials: 'include', // send Sanctum session cookie
       headers,
     };
+    if (method === 'GET') options.cache = 'no-store';
     if (body !== null) {
       options.body = JSON.stringify(body);
     }
-    const response = await fetch(url, options);
+    const response = method === 'GET'
+      ? await this.fetchRead(url, options)
+      : await fetch(url, options);
 
     if (response && response.headers && typeof response.headers.get === 'function') {
       const serverId = response.headers.get('x-request-id');
@@ -115,8 +240,8 @@ const API = {
     // Refresh the token once and retry the request before surfacing the error.
     // Note: headers (including any Idempotency-Key) are preserved across the retry.
     if (response.status === 419 && !isRetry) {
-      await this.fetchXSRFToken();
-      const freshToken = this.getCsrfToken() || csrfToken;
+      const freshToken = await this.fetchXSRFToken();
+      if (freshToken === null) return this.csrfFailureResult();
       return this.api(method, endpoint, body, freshToken, true, headers);
     }
 
@@ -156,16 +281,22 @@ const API = {
   // State-changing requests automatically include the current XSRF-TOKEN so
   // Sanctum's CSRF protection accepts them on stateful routes.
   async post(endpoint, body, extraHeaders = {}) {
-    return this.api('POST', endpoint, body, await this.ensureCsrfToken(), false, extraHeaders);
+    const csrfToken = await this.ensureCsrfToken();
+    if (csrfToken === null) return this.csrfFailureResult();
+    return this.api('POST', endpoint, body, csrfToken, false, extraHeaders);
   },
   get(endpoint, extraHeaders = {}) {
     return this.api('GET', endpoint, null, null, false, extraHeaders);
   },
   async put(endpoint, body, extraHeaders = {}) {
-    return this.api('PUT', endpoint, body, await this.ensureCsrfToken(), false, extraHeaders);
+    const csrfToken = await this.ensureCsrfToken();
+    if (csrfToken === null) return this.csrfFailureResult();
+    return this.api('PUT', endpoint, body, csrfToken, false, extraHeaders);
   },
   async delete(endpoint, extraHeaders = {}) {
-    return this.api('DELETE', endpoint, null, await this.ensureCsrfToken(), false, extraHeaders);
+    const csrfToken = await this.ensureCsrfToken();
+    if (csrfToken === null) return this.csrfFailureResult();
+    return this.api('DELETE', endpoint, null, csrfToken, false, extraHeaders);
   },
 
   // Multipart form post helper for file uploads (CSV import).
@@ -173,6 +304,7 @@ const API = {
   async postForm(endpoint, formData, isRetry = false, extraHeaders = {}) {
     const url = `${API_BASE_URL}/api${endpoint}`;
     const csrfToken = await this.ensureCsrfToken();
+    if (csrfToken === null) return this.csrfFailureResult();
     const headers = { Accept: 'application/json', ...(extraHeaders || {}) };
     if (!headers['X-Request-Id']) {
       headers['X-Request-Id'] = this.generateRequestId();
@@ -228,9 +360,10 @@ const API = {
     const url = `${API_BASE_URL}/api${endpoint}`;
     const reqId = this.generateRequestId();
     this.lastRequestId = reqId;
-    const response = await fetch(url, {
+    const response = await this.fetchRead(url, {
       method: 'GET',
       credentials: 'include',
+      cache: 'no-store',
       headers: {
         Accept: 'text/csv, application/json, text/plain, */*',
         'X-Request-Id': reqId,
@@ -296,7 +429,12 @@ const API = {
     if (status === 200) {
       return { success: true, user: data.user, message: data.message };
     }
-    return { success: false, message: this.formatAuthError(status, data, 'Invalid email or password.', response) };
+    const needsVerification = (data && data.verificationRequired) || this.isVerificationResponse(response, data);
+    return {
+      success: false,
+      message: this.formatAuthError(status, data, 'Invalid email or password.', response),
+      verificationUrl: needsVerification ? this.getCsrfVerificationUrl() : null,
+    };
   },
 
   async logout() {
@@ -310,16 +448,32 @@ const API = {
     if (status === 201) {
       return { success: true, user: data.user, message: data.message };
     }
-    return { success: false, message: this.formatAuthError(status, data, 'Registration failed. Please check your inputs.', response) };
+    const needsVerification = (data && data.verificationRequired) || this.isVerificationResponse(response, data);
+    return {
+      success: false,
+      message: this.formatAuthError(status, data, 'Registration failed. Please check your inputs.', response),
+      verificationUrl: needsVerification ? this.getCsrfVerificationUrl() : null,
+    };
+  },
+
+  isVerificationResponse(response, data) {
+    const headers = response && response.headers;
+    if (!headers || typeof headers.get !== 'function') return !!(data && data.isHtml);
+    return headers.get('cf-mitigated') === 'challenge'
+      || (headers.get('content-type') || '').toLowerCase().includes('text/html');
   },
 
   formatAuthError(status, data, defaultMsg, response) {
+    if (data && data.csrfSetupFailed) {
+      return data.message || 'The security token was unavailable. Please try again.';
+    }
+
     // 1. Detect Cloudflare Edge Challenges or HTML challenge responses
     const isCfMitigated = response && response.headers && typeof response.headers.get === 'function' && response.headers.get('cf-mitigated') === 'challenge';
     const isHtml = (data && data.isHtml) || (response && response.headers && typeof response.headers.get === 'function' && (response.headers.get('content-type') || '').includes('text/html'));
 
     if (isCfMitigated || isHtml) {
-      return 'Service is temporarily verifying connections. Please try again in a moment.';
+      return 'This request needs browser verification. Complete it, then try again.';
     }
 
     if (status === 401) {
@@ -378,9 +532,10 @@ const API = {
 
     this._sessionUserPromise = (async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/user`, {
+        const response = await this.fetchRead(`${API_BASE_URL}/api/user`, {
           method: 'GET',
           credentials: 'include',
+          cache: 'no-store',
           headers: { Accept: 'application/json' },
         });
 
@@ -1014,3 +1169,4 @@ document.addEventListener('click', (event) => {
     event.stopPropagation();
   }
 });
+
