@@ -296,6 +296,11 @@ test('income edit and delete keep filters and list state consistent', async (t) 
   const server = http.createServer((req, res) => {
     const url = new URL(req.url, 'http://127.0.0.1');
     const pathname = url.pathname;
+    if (pathname === '/sanctum/csrf-cookie') {
+      res.writeHead(204, { 'Set-Cookie': 'XSRF-TOKEN=test-csrf-token; Path=/' });
+      res.end();
+      return;
+    }
     if (pathname === '/api/incomes' && req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(paginate(incomes, 1, 15)));
