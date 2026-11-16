@@ -473,7 +473,7 @@ const API = {
     const isHtml = (data && data.isHtml) || (response && response.headers && typeof response.headers.get === 'function' && (response.headers.get('content-type') || '').includes('text/html'));
 
     if (isCfMitigated || isHtml) {
-      return 'This request needs browser verification. Complete it, then try again.';
+      return 'Service is temporarily verifying connections. Please try again in a moment.';
     }
 
     if (status === 401) {
@@ -1169,4 +1169,3 @@ document.addEventListener('click', (event) => {
     event.stopPropagation();
   }
 });
-
