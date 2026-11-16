@@ -63,7 +63,7 @@ function createMockServer(rootDir) {
     const jsonHeaders = { 'Content-Type': 'application/json' };
 
     if (pathname === '/sanctum/csrf-cookie') {
-      res.writeHead(204);
+      res.writeHead(204, { 'Set-Cookie': 'XSRF-TOKEN=test-csrf-token; Path=/' });
       return res.end();
     }
 
