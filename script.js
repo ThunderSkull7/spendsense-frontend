@@ -30,7 +30,7 @@ const API = {
     if (response.headers.get('cf-mitigated') === 'challenge') return false;
     if (response.status === 429) return false;
     const status = response.status;
-    if ([502, 503, 504, 520, 522, 524].includes(status)) return true;
+    if (status >= 500) return true;
     const contentType = (response.headers.get('content-type') || '').toLowerCase();
     return response.ok && contentType.includes('text/html');
   },
