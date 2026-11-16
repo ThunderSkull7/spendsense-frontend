@@ -29,7 +29,20 @@ function loadClient({ fetchImpl, cookie = '' }) {
   };
   const context = {
     document: documentStub,
-    fetch: fetchImpl,
+    fetch: async (url, options) => {
+      const response = await fetchImpl(url, options);
+      const setCookie = response && response.headers && response.headers.get('set-cookie');
+      const xsrfCookie = setCookie && setCookie.match(/(?:^|,\s*)XSRF-TOKEN=([^;,]+)/i);
+      if (xsrfCookie) {
+        const cookies = documentStub.cookie
+          .split(';')
+          .map((cookie) => cookie.trim())
+          .filter((cookie) => cookie && !/^XSRF-TOKEN=/i.test(cookie));
+        cookies.push(`XSRF-TOKEN=${xsrfCookie[1]}`);
+        documentStub.cookie = cookies.join('; ');
+      }
+      return response;
+    },
     console,
     crypto,
     Headers,
@@ -159,7 +172,9 @@ test('an idempotency key survives the CSRF retry unchanged', async () => {
 
 test('a 401 on /login preserves the real error message and does not emit session-expired', async () => {
   const { api, events } = loadClient({
-    fetchImpl: async () => jsonResponse(401, { message: 'Invalid credentials' }),
+    fetchImpl: async (url) => String(url).endsWith('/sanctum/csrf-cookie')
+      ? new Response(null, { status: 204, headers: { 'Set-Cookie': 'XSRF-TOKEN=csrf-token; Path=/; SameSite=Lax' } })
+      : jsonResponse(401, { message: 'Invalid credentials' }),
   });
   api.init('http://127.0.0.1:8002');
   const result = await api.post('/login', { email: 'user@test.com', password: 'bad' });
@@ -445,5 +460,3 @@ test('CSRF token is fetched lazily before state-changing POST when cookie is abs
   assert.equal(result.status, 200);
   assert.deepEqual(callSequence, ['CSRF', 'POST'], 'CSRF cookie must be fetched before state-changing POST');
 });
-
-
